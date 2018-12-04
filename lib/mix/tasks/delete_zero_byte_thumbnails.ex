@@ -14,7 +14,6 @@ defmodule EvercamMedia.DeleteZeroByteThumbnails do
   end
 
   defp handle_response({:ok, %HTTPoison.Response{status_code: 404, request_url: request_url}}) do
-    IO.inspect "yahan hon"
     HTTPoison.delete("#{request_url}", [], hackney: [pool: :seaweedfs_download_pool, recv_timeout: 30_000_000])
     |> IO.inspect
   end
