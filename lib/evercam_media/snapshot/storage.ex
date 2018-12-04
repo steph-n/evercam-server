@@ -844,7 +844,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     hackney = [pool: :seaweedfs_download_pool, recv_timeout: 30_000_000]
     date = extract_date_from_url(url, camera_exid)
     Logger.info "[#{camera_exid}] [storage_delete] [#{date}]"
-    HTTPoison.delete!("#{url}?recursive=true", [], hackney: hackney)
+    HTTPoison.delete!("#{url |> String.replace_suffix("/", "")}?recursive=true", [], hackney: hackney)
   end
 
   def expired?(camera_exid, cloud_recording, url) do
@@ -921,7 +921,7 @@ defmodule EvercamMedia.Snapshot.Storage do
 
   defp extract_date_from_url(url, camera_exid) do
     url
-    |> String.replace_leading("#{@seaweedfs}/#{camera_exid}/snapshots/", "")
+    |> String.replace_leading("#{@seaweedfs_new}/#{camera_exid}/snapshots/", "")
     |> String.replace_trailing("/", "")
   end
 
