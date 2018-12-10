@@ -41,8 +41,8 @@ defmodule EvercamMediaWeb.CameraView do
       location: Camera.get_location(camera),
       rights: Camera.get_rights(camera, user),
       proxy_url: %{
-        hls: Camera.get_hls_url(camera) <> add_user_param(camera, user),
-        rtmp: Camera.get_rtmp_url(camera) <> add_user_param(camera, user),
+        hls: Camera.get_hls_url(camera, User.get_fullname(user)),
+        rtmp: Camera.get_rtmp_url(camera, User.get_fullname(user)),
       },
       thumbnail_url: thumbnail_url(camera),
     }
@@ -107,14 +107,6 @@ defmodule EvercamMediaWeb.CameraView do
       status: cloud_recording.status,
       schedule: cloud_recording.schedule
     }
-  end
-
-  defp add_user_param(camera, user) do
-    case Camera.port(camera, "external", "rtsp") do
-      nil -> ""
-      "" -> ""
-      _ -> "&user=#{Util.encode([User.get_fullname(user)])}"
-    end
   end
 
   defp timelapse_recording(nil), do: nil

@@ -16,9 +16,45 @@ defmodule MetaData do
     timestamps(type: Ecto.DateTime, default: Ecto.DateTime.utc)
   end
 
+  def by_camera(camera_id, action \\ "rtmp") do
+    MetaData
+    |> where(camera_id: ^camera_id)
+    |> where(action: ^action)
+    |> Repo.one
+  end
+
   def insert_meta(params) do
     meta_changeset = changeset(%MetaData{}, params)
     Repo.insert(meta_changeset)
+  end
+
+  def update_requesters(nil, _), do: :noop
+  def update_requesters(meta_data, requester) do
+    extra = meta_data |> Map.get(:extra)
+    case String.contains?(extra["requester"], requester) do
+      false ->
+        extra = Map.put(extra, "requester", "#{extra["requester"]}, #{requester}")
+        meta_params = %{extra: extra}
+        changeset(meta_data, meta_params)
+        |> Repo.update
+      _ -> :noop
+    end
+  end
+
+  def remove_requesters(nil, _), do: :noop
+  def remove_requesters(meta_data, requester) do
+    extra = meta_data |> Map.get(:extra)
+    requesters =
+      extra["requester"]
+      |> String.split([", ", ","], trim: true)
+      |> Enum.map(fn(user) -> String.trim(user) end)
+      |> Enum.reject(fn(user) -> user == requester end)
+      |> Enum.join(",")
+
+    extra = extra |> Map.put("requester", requesters)
+    meta_params = %{extra: extra}
+    changeset(meta_data, meta_params)
+    |> Repo.update
   end
 
   def delete_by_process_id(process_id) do

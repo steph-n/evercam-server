@@ -1,5 +1,6 @@
 defmodule EvercamMediaWeb.StreamController do
   use EvercamMediaWeb, :controller
+  alias EvercamMedia.Util
   import EvercamMedia.HikvisionNVR, only: [get_stream_info: 5]
 
   @hls_dir "/tmp/hls"
@@ -12,6 +13,30 @@ defmodule EvercamMediaWeb.StreamController do
   def hls(conn, params) do
     code = ensure_nvr_hls(conn, params, params["nvr"])
     hls_response(code, conn, params)
+  end
+
+  def close_stream(conn, params) do
+    [exid, _camera_name] = Base.url_decode64!(params["token"]) |> String.split("|")
+    [_, _, rtsp_url, user] = Util.decode(params["stream_token"])
+    camera = Camera.get_full(exid)
+    meta_data = MetaData.by_camera(camera.id, "hls")
+
+    requester = Util.deep_get(meta_data, [:extra, "requester"], "")
+    message =
+      cond do
+        String.trim(requester) == "" || String.trim(requester) == user ->
+          delete_meta_and_kill(camera.id, rtsp_url)
+          "Stream closed. Zero active users."
+        true ->
+          MetaData.remove_requesters(meta_data, user)
+          "Requester (#{user}) removed from feed table."
+       end
+    json(conn, %{message: message})
+  end
+
+  defp delete_meta_and_kill(camera_id, rtsp_url) do
+    MetaData.delete_by_camera_id(camera_id)
+    kill_streams(rtsp_url)
   end
 
   defp hls_response(200, conn, params) do
@@ -32,16 +57,14 @@ defmodule EvercamMediaWeb.StreamController do
 
   defp ensure_nvr_hls(conn, params, is_nvr) when is_nvr in [nil, ""] do
     requester_ip = user_request_ip(conn)
-    fullname = get_username(params["user"])
-    request_stream(params["camera_id"], params["token"], requester_ip, fullname, :check)
+    request_stream(params["token"], params["stream_token"], requester_ip, :check)
   end
   defp ensure_nvr_hls(_conn, _params, _is_nvr), do: 200
 
   defp ensure_nvr_stream(conn, params, is_nvr) when is_nvr in [nil, ""] do
     requester_ip = get_requester_ip(conn, params["requester"])
-    fullname = get_username(params["user"])
     conn
-    |> put_status(request_stream(params["camera_id"], params["name"], requester_ip, fullname, :kill))
+    |> put_status(request_stream(params["name"], params["stream_token"], requester_ip, :kill))
     |> text("")
   end
   defp ensure_nvr_stream(conn, _params, nvr) do
@@ -52,14 +75,10 @@ defmodule EvercamMediaWeb.StreamController do
   defp get_requester_ip(conn, requester) when requester in [nil, ""], do: user_request_ip(conn)
   defp get_requester_ip(_conn, requester), do: requester
 
-  defp request_stream(camera_exid, token, ip, fullname, command) do
+  defp request_stream(token, stream_token, ip, command) do
     try do
-      [token_string, exid] =
-        case Base.decode64!(token) |> String.split("|") do
-          [str_toekn, _name] -> [str_toekn, camera_exid]
-          [str_toekn, _name, c_exid] -> [str_toekn, c_exid]
-        end
-      [username, password, rtsp_url] = Util.decode(token_string)
+      [exid, _name] = Base.url_decode64!(token) |> String.split("|")
+      [username, password, rtsp_url, fullname] = Util.decode(stream_token)
       camera = Camera.get_full(exid)
       check_auth(camera, username, password)
       check_port(camera)
@@ -87,15 +106,22 @@ defmodule EvercamMediaWeb.StreamController do
   end
 
   defp stream(rtsp_url, token, camera, ip, fullname, :check) do
-    if length(ffmpeg_pids(rtsp_url)) == 0 do
-      spawn(fn -> MetaData.delete_by_camera_and_action(camera.id, "hls") end)
-      start_stream(rtsp_url, token, camera, ip, fullname, "hls")
+    case length(ffmpeg_pids(rtsp_url)) do
+      0 ->
+        spawn(fn -> MetaData.delete_by_camera_and_action(camera.id, "hls") end)
+        start_stream(rtsp_url, token, camera, ip, fullname, "hls")
+      _ ->
+        spawn(fn ->
+          MetaData.by_camera(camera.id, "hls")
+          |> MetaData.update_requesters(fullname)
+        end)
     end
     sleep_until_hls_playlist_exists(token)
   end
 
   defp stream(rtsp_url, token, camera, ip, fullname, :kill) do
-    kill_streams(rtsp_url, camera.id)
+    spawn(fn -> MetaData.delete_by_camera_and_action(camera.id, "rtmp") end)
+    kill_streams(rtsp_url)
     start_stream(rtsp_url, token, camera, ip, fullname, "rtmp")
   end
 
@@ -106,8 +132,7 @@ defmodule EvercamMediaWeb.StreamController do
     spawn(fn -> insert_meta_data(rtsp_url, action, camera, ip, fullname, token) end)
   end
 
-  defp kill_streams(rtsp_url, camera_id) do
-    spawn(fn -> MetaData.delete_by_camera_and_action(camera_id, "rtmp") end)
+  defp kill_streams(rtsp_url) do
     rtsp_url
     |> ffmpeg_pids
     |> Enum.each(fn(pid) -> Porcelain.shell("kill -9 #{pid}") end)
@@ -264,11 +289,5 @@ defmodule EvercamMediaWeb.StreamController do
     |> String.split("/")
     |> List.first
     |> String.to_integer
-  end
-
-  defp get_username(value) when value in [nil, ""], do: ""
-  defp get_username(value) do
-    [user_fullname] = Util.decode(value)
-    user_fullname
   end
 end

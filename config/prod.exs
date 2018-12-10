@@ -61,7 +61,7 @@ config :evercam_media,
   start_evercam_bot: true
 
 config :evercam_media,
-  start_timelapse_workers: true
+  start_timelapse_workers: false
 
 config :evercam_media,
   storage_dir: "/storage"
