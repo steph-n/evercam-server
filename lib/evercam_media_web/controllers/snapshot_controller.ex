@@ -240,9 +240,10 @@ defmodule EvercamMediaWeb.SnapshotController do
   swagger_path :nearest do
     get "/cameras/{id}/recordings/snapshots/{timestamp}/nearest"
     summary "Returns the nearest snapshot image in base64 format."
+    description "**Returns the snapshot nearest to a given timestamp (within that hour). It does not check outside of the specified hour.**"
     parameters do
       id :path, :string, "Unique identifier for the camera.", required: true
-      timestamp :path, :string, "Unix timestamp", required: true
+      timestamp :path, :string, "**Can be either unix or ISO. e.g (1479780886 or 2016-11-22T02:14:46.000Z)**", required: true
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
     end
@@ -308,7 +309,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     summary "Returns the jpeg image of given timestamp."
     parameters do
       id :path, :string, "Unique identifier for the camera.", required: true
-      timestamp :path, :string, "Unix timestamp", required: true
+      timestamp :path, :string, "**Can be either unix or ISO. e.g (1479780886 or 2016-11-22T02:14:46.000Z)**", required: true
       notes :query,
             :string, "
             - Evercam Proxy = Recording

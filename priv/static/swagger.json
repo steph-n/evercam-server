@@ -3113,7 +3113,7 @@
             "required": true,
             "name": "timestamp",
             "in": "path",
-            "description": "Unix timestamp"
+            "description": "**Can be either unix or ISO. e.g (1479780886 or 2016-11-22T02:14:46.000Z)**"
           },
           {
             "type": "string",
@@ -3131,7 +3131,7 @@
           }
         ],
         "operationId": "EvercamMediaWeb.SnapshotController.nearest",
-        "description": ""
+        "description": "**Returns the snapshot nearest to a given timestamp (within that hour). It does not check outside of the specified hour.**"
       }
     },
     "/cameras/{id}/recordings/snapshots/{timestamp}": {
@@ -3167,7 +3167,7 @@
             "required": true,
             "name": "timestamp",
             "in": "path",
-            "description": "Unix timestamp"
+            "description": "**Can be either unix or ISO. e.g (1479780886 or 2016-11-22T02:14:46.000Z)**"
           },
           {
             "type": "string",
