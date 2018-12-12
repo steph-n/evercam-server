@@ -160,7 +160,7 @@ defmodule EvercamMedia.UserMailer do
     new()
     |> from(@from)
     |> to(email)
-    |> bcc("azhar@evercam.io")
+    |> bcc(["azhar@evercam.io", "marco@evercam.io"])
     |> add_attachment(thumbnail)
     |> subject("Archive #{archive.title} is failed.")
     |> render_body("archive_create_failed.html", %{archive: archive, thumbnail_available: !!thumbnail, year: @year})
