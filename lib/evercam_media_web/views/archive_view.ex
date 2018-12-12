@@ -36,7 +36,7 @@ defmodule EvercamMediaWeb.ArchiveView do
       public: archive.public,
       embed_code: "",
       file_name: archive.file_name,
-      type: archive.type,
+      type: get_archive_type(archive.type),
       media_url: archive.url,
       thumbnail_url: "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{archive.camera.exid}/archives/#{archive.exid}/thumbnail?type=clip"
     }
@@ -64,6 +64,9 @@ defmodule EvercamMediaWeb.ArchiveView do
       thumbnail_url: "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{compare.camera.exid}/archives/#{compare.exid}/thumbnail?type=compare"
     }
   end
+
+  defp get_archive_type("local_clip"), do: "clip"
+  defp get_archive_type(type), do: type
 
   defp status(0), do: "Pending"
   defp status(1), do: "Processing"

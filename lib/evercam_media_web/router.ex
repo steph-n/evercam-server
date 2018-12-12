@@ -155,6 +155,7 @@ end
       delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete
       post "/cameras/:id/archives", ArchiveController, :create
       options "/cameras/:id/archives", ArchiveController, :nothing
+      put "/cameras/:id/archives/:archive_id", ArchiveController, :retry
       patch "/cameras/:id/archives/:archive_id", ArchiveController, :update
       options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
 

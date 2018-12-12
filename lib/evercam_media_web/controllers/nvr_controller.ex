@@ -111,8 +111,7 @@ defmodule EvercamMediaWeb.NVRController do
       port = Camera.port(camera, "external", "rtsp")
       cam_username = Camera.username(camera)
       cam_password = Camera.password(camera)
-      url = camera.vendor_model.h264_url
-      channel = url |> String.split("/channels/") |> List.last |> String.split("/") |> List.first
+      channel = VendorModel.get_channel(camera, camera.vendor_model.channel)
       config =
         %{
           exid: camera.exid,

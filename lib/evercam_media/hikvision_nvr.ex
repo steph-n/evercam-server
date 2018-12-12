@@ -74,8 +74,7 @@ defmodule EvercamMedia.HikvisionNVR do
     port = Camera.port(camera, "external", "rtsp")
     username = Camera.username(camera)
     password = Camera.password(camera)
-    url = camera.vendor_model.h264_url
-    channel = url |> String.split("/channels/") |> List.last |> String.split("/") |> List.first
+    channel = VendorModel.get_channel(camera, camera.vendor_model.channel)
     Archive.update_status(archive, Archive.archive_status.processing)
     archive_directory = "#{@root_dir}/#{ip}#{port}/archive/"
     File.mkdir_p(archive_directory)
