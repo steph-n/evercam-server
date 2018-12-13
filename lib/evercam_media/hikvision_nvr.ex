@@ -75,12 +75,15 @@ defmodule EvercamMedia.HikvisionNVR do
     username = Camera.username(camera)
     password = Camera.password(camera)
     channel = VendorModel.get_channel(camera, camera.vendor_model.channel)
+    duration = get_time_duration(String.to_integer(starttime), String.to_integer(endtime))
+    from = convert_timestamp(starttime)
+    to = convert_timestamp(endtime)
     Archive.update_status(archive, Archive.archive_status.processing)
     archive_directory = "#{@root_dir}/#{ip}#{port}/archive/"
     File.mkdir_p(archive_directory)
     rtsp_url = "rtsp://#{username}:#{password}@#{ip}:#{port}/Streaming/tracks/"
     kill_published_streams(camera.exid, rtsp_url)
-    Porcelain.shell("ffmpeg -rtsp_transport tcp -i '#{rtsp_url}#{channel}?starttime=#{starttime}&endtime=#{endtime}' -f mp4 -c:v h264_nvenc -pix_fmt yuv420p -b:v 1000 -an #{archive_directory}#{archive.exid}.mp4", [err: :out]).out
+    Porcelain.shell("ffmpeg -rtsp_transport tcp -t #{duration} -i '#{rtsp_url}#{channel}?starttime=#{from}&endtime=#{to}' -f mp4 -c:v h264_nvenc -pix_fmt yuv420p -b:v 1000 -an #{archive_directory}#{archive.exid}.mp4", [err: :out]).out
 
     case File.exists?("#{archive_directory}#{archive.exid}.mp4") do
       true ->
@@ -228,6 +231,24 @@ defmodule EvercamMedia.HikvisionNVR do
       5000 ->
         Logger.debug "No response after 5 seconds."
     end
+  end
+
+  defp convert_timestamp(timestamp) do
+    timestamp
+    |> String.to_integer
+    |> Calendar.DateTime.Parse.unix!
+    |> Calendar.Strftime.strftime!("%Y%m%dT%H%M%SZ")
+  end
+
+  defp get_time_duration(from, to) do
+    from_date = Calendar.DateTime.Parse.unix!(from)
+    to_date = Calendar.DateTime.Parse.unix!(to)
+    {:ok, seconds, _, _} = Calendar.DateTime.diff(to_date, from_date)
+    case div(seconds, 60) do
+      min when min > 59 -> "01:00:00"
+      min -> "00:#{min}:00"
+    end
+
   end
 
   defp save_temporary(chunk) do

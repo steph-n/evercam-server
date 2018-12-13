@@ -479,7 +479,7 @@ defmodule EvercamMediaWeb.ArchiveController do
 
   defp start_archive_creation(true, camera, archive, unix_from, unix_to, is_nvr) when is_nvr in [true, "true"] do
     spawn fn ->
-      EvercamMedia.HikvisionNVR.extract_clip_from_stream(camera, archive, convert_timestamp(unix_from), convert_timestamp(unix_to))
+      EvercamMedia.HikvisionNVR.extract_clip_from_stream(camera, archive, unix_from, unix_to)
     end
   end
   defp start_archive_creation(true, _camera, archive, _unix_from, _unix_to, _is_nvr) do
@@ -527,13 +527,6 @@ defmodule EvercamMediaWeb.ArchiveController do
     image_base64
     |> String.replace_leading("data:image/png;base64,", "")
     |> Base.decode64!
-  end
-
-  defp convert_timestamp(timestamp) do
-    timestamp
-    |> String.to_integer
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.Strftime.strftime!("%Y%m%dT%H%M%SZ")
   end
 
   defp ensure_camera_exists(nil, exid, conn) do
