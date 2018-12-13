@@ -83,7 +83,7 @@ defmodule EvercamMedia.HikvisionNVR do
     File.mkdir_p(archive_directory)
     rtsp_url = "rtsp://#{username}:#{password}@#{ip}:#{port}/Streaming/tracks/"
     kill_published_streams(camera.exid, rtsp_url)
-    Porcelain.shell("ffmpeg -rtsp_transport tcp -t #{duration} -i '#{rtsp_url}#{channel}?starttime=#{from}&endtime=#{to}' -f mp4 -c:v h264_nvenc -pix_fmt yuv420p -b:v 1000 -an #{archive_directory}#{archive.exid}.mp4", [err: :out]).out
+    Porcelain.shell("ffmpeg -rtsp_transport tcp -t #{duration} -i '#{rtsp_url}#{channel}?starttime=#{from}&endtime=#{to}' -f mp4 -vcodec copy -an #{archive_directory}#{archive.exid}.mp4", [err: :out]).out
 
     case File.exists?("#{archive_directory}#{archive.exid}.mp4") do
       true ->
