@@ -183,7 +183,7 @@ defmodule EvercamMedia.Snapshot.Storage do
       apps_list
       |> Enum.flat_map(fn(app) -> request_from_seaweedfs("#{url_base}/#{app}/#{from_date}/", type, attribute) end)
       |> Enum.uniq
-      |> Enum.map(fn(day) -> parse_hour(from.year, from.month, day, "00:00:00", timezone) end)
+      |> Enum.map(fn(day) -> parse_day(from.year, from.month, day, timezone) end)
       |> Enum.reject(fn(datetime) -> Calendar.DateTime.before?(datetime, from) end)
 
     seaweedfs = point_to_seaweed(to)
@@ -194,7 +194,7 @@ defmodule EvercamMedia.Snapshot.Storage do
       apps_list
       |> Enum.flat_map(fn(app) -> request_from_seaweedfs("#{url_base}/#{app}/#{to_date}/", type, attribute) end)
       |> Enum.uniq
-      |> Enum.map(fn(day) -> parse_hour(to.year, to.month, day, "00:00:00", timezone) end)
+      |> Enum.map(fn(day) -> parse_day(to.year, to.month, day, timezone) end)
       |> Enum.reject(fn(datetime) -> Calendar.DateTime.after?(datetime, to) end)
 
     Enum.concat(from_days, to_days)
@@ -907,6 +907,20 @@ defmodule EvercamMedia.Snapshot.Storage do
     day = String.pad_leading("#{day}", 2, "0")
 
     "#{year}-#{month}-#{day}T#{time}Z"
+    |> Calendar.DateTime.Parse.rfc3339_utc
+    |> elem(1)
+    |> Calendar.DateTime.shift_zone!(timezone)
+  end
+
+  defp parse_day(year, month, day, timezone) do
+    date = Calendar.DateTime.now_utc
+    month = String.pad_leading("#{month}", 2, "0")
+    day = String.pad_leading("#{day}", 2, "0")
+    hour = String.pad_leading("#{date.hour}", 2, "0")
+    minute = String.pad_leading("#{date.minute}", 2, "0")
+    second = String.pad_leading("#{date.second}", 2, "0")
+
+    "#{year}-#{month}-#{day}T#{hour}:#{minute}:#{second}Z"
     |> Calendar.DateTime.Parse.rfc3339_utc
     |> elem(1)
     |> Calendar.DateTime.shift_zone!(timezone)

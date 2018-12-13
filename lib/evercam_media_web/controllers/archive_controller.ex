@@ -213,6 +213,35 @@ defmodule EvercamMediaWeb.ArchiveController do
     end
   end
 
+  def retry(conn, %{"id" => exid, "archive_id" => archive_id} = params) do
+    current_user = conn.assigns[:current_user]
+    camera = Camera.get_full(exid)
+
+    with {:ok, archive} <- archive_exists(conn, archive_id),
+         {:ok, _} <- can_list(false, archive, current_user, camera, conn)
+    do
+      changeset = Archive.changeset(archive, %{status: @status.processing})
+      case Repo.update(changeset) do
+        {:ok, archive} ->
+          updated_archive = archive |> Repo.preload(:camera) |> Repo.preload(:user)
+          extra = %{
+            name: archive.title,
+            agent: get_user_agent(conn, params["agent"])
+          }
+          |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+          CameraActivity.log_activity(current_user, camera, "retry archive creation", extra)
+
+          timezone = Camera.get_timezone(updated_archive.camera)
+          unix_from = convert_to_user_time(updated_archive.from_date, timezone)
+          unix_to = convert_to_user_time(updated_archive.to_date, timezone)
+          start_archive_creation(Application.get_env(:evercam_media, :run_spawn), camera, updated_archive, "#{unix_from}", "#{unix_to}", is_local_clip(updated_archive.type))
+          render(conn, ArchiveView, "show.json", %{archive: updated_archive})
+        {:error, changeset} ->
+          render_error(conn, 400, Util.parse_changeset(changeset))
+      end
+    end
+  end
+
   swagger_path :pending_archives do
     get "/cameras/archives/pending"
     summary "Returns all pending archives."
@@ -338,6 +367,7 @@ defmodule EvercamMediaWeb.ArchiveController do
     unix_to = params["to_date"]
     from_date = clip_date(unix_from, timezone)
     to_date = clip_date(unix_to, timezone)
+    params = update_archive_type(params, params["is_nvr_archive"])
 
     changeset = archive_changeset(params, camera, current_user, @status.pending)
 
@@ -375,6 +405,14 @@ defmodule EvercamMediaWeb.ArchiveController do
         end
     end
   end
+
+  defp update_archive_type(params, is_nvr) when is_nvr in [true, "true"] do
+    Map.put(params, "type", "local_clip")
+  end
+  defp update_archive_type(params, _), do: params
+
+  defp is_local_clip("local_clip"), do: true
+  defp is_local_clip(_), do: false
 
   defp archive_changeset(params, camera, current_user, status) do
     timezone = camera |> Camera.get_timezone
@@ -441,7 +479,7 @@ defmodule EvercamMediaWeb.ArchiveController do
 
   defp start_archive_creation(true, camera, archive, unix_from, unix_to, is_nvr) when is_nvr in [true, "true"] do
     spawn fn ->
-      EvercamMedia.HikvisionNVR.extract_clip_from_stream(camera, archive, convert_timestamp(unix_from), convert_timestamp(unix_to))
+      EvercamMedia.HikvisionNVR.extract_clip_from_stream(camera, archive, unix_from, unix_to)
     end
   end
   defp start_archive_creation(true, _camera, archive, _unix_from, _unix_to, _is_nvr) do
@@ -491,13 +529,6 @@ defmodule EvercamMediaWeb.ArchiveController do
     |> Base.decode64!
   end
 
-  defp convert_timestamp(timestamp) do
-    timestamp
-    |> String.to_integer
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.Strftime.strftime!("%Y%m%dT%H%M%SZ")
-  end
-
   defp ensure_camera_exists(nil, exid, conn) do
     render_error(conn, 404, "Camera '#{exid}' not found!")
   end
@@ -526,7 +557,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   end
 
   defp can_list(true, media, _current_user, _camera, _conn), do: {:ok, media}
-  defp can_list(false, media, current_user, camera, conn) do
+  defp can_list(_, media, current_user, camera, conn) do
     case Permission.Camera.can_list?(current_user, camera) do
       true -> {:ok, media}
       false -> render_error(conn, 403, "Forbidden.")
@@ -561,6 +592,14 @@ defmodule EvercamMediaWeb.ArchiveController do
           _ -> render_error(conn, 403, "Unauthorized.")
         end
     end
+  end
+
+  defp convert_to_user_time(date_time, timezone) do
+    date_time
+    |> Ecto.DateTime.to_erl
+    |> Calendar.DateTime.from_erl!("UTC")
+    |> Calendar.DateTime.shift_zone!(timezone)
+    |> Calendar.DateTime.Format.unix
   end
 
   defp clip_date(unix_timestamp, _timezone) when unix_timestamp in ["", nil], do: nil

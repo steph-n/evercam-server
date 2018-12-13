@@ -47,7 +47,7 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
         total_snapshots = Enum.count(snapshots)
         cond do
           total_snapshots == 0 ->
-            failed_creation(archive)
+            failed_creation(archive, "There are no images for the given time period.")
           true ->
             images_directory = "#{@root_dir}/#{archive.exid}/"
             File.mkdir_p(images_directory)
@@ -64,7 +64,7 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
         error ->
           Logger.error inspect(error)
           Logger.error Exception.format_stacktrace System.stacktrace
-          failed_creation(archive)
+          failed_creation(archive, error.message)
       end
     end
   end
@@ -99,8 +99,8 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
     Repo.update(changeset)
   end
 
-  defp failed_creation(archive) do
-    Archive.update_status(archive, Archive.archive_status.failed)
+  def failed_creation(archive, error_message) do
+    Archive.update_status(archive, Archive.archive_status.failed, %{error_message: error_message})
     EvercamMedia.UserMailer.archive_failed(archive, archive.user.email)
   end
 

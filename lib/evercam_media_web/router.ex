@@ -46,6 +46,8 @@ end
     get "/live/:token/index.m3u8", StreamController, :hls
     get "/live/:token/:filename", StreamController, :ts
     get "/on_play", StreamController, :rtmp
+    delete "/live/:token", StreamController, :close_stream
+    options "/live/:token", StreamController, :nothing
   end
 
   scope "/v1", EvercamMediaWeb do
@@ -153,6 +155,7 @@ end
       delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete
       post "/cameras/:id/archives", ArchiveController, :create
       options "/cameras/:id/archives", ArchiveController, :nothing
+      put "/cameras/:id/archives/:archive_id", ArchiveController, :retry
       patch "/cameras/:id/archives/:archive_id", ArchiveController, :update
       options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
 

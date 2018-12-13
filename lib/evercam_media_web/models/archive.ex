@@ -5,7 +5,7 @@ defmodule Archive do
   alias EvercamMedia.Repo
 
   @required_fields ~w(title exid from_date to_date requested_by camera_id)
-  @optional_fields ~w(status embed_time public frames url file_name type)
+  @optional_fields ~w(status embed_time public frames url file_name type error_message)
 
   @archive_status %{pending: 0, processing: 1, completed: 2, failed: 3}
 
@@ -24,6 +24,7 @@ defmodule Archive do
     field :url, :string
     field :file_name, :string
     field :type, :string
+    field :error_message, :string
     timestamps(inserted_at: :created_at, updated_at: false, type: Ecto.DateTime, default: Ecto.DateTime.utc)
   end
 
@@ -76,8 +77,9 @@ defmodule Archive do
 
   def archive_status, do: @archive_status
 
-  def update_status(archive, status) do
-    archive_changeset = changeset(archive, %{status: status})
+  def update_status(archive, status, options \\ %{}) do
+    archive_params = Map.merge(%{status: status}, options)
+    archive_changeset = changeset(archive, archive_params)
     Repo.update(archive_changeset)
   end
 

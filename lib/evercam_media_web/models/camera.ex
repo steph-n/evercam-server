@@ -269,28 +269,31 @@ defmodule Camera do
     end
   end
 
-  def get_rtmp_url(camera) do
+  def get_rtmp_url(camera, requester \\ "Anonymous") do
     if rtsp_url(camera) != "" do
       base_url = EvercamMediaWeb.Endpoint.url |> String.replace("http", "rtmp") |> String.replace("4000", "1935")
-      base_url <> "/live/" <> streaming_token(camera) <> "?camera_id=" <> camera.exid
+      "#{base_url}/live/#{url_token(camera)}?stream_token=#{streaming_token(camera, requester)}"
     else
       ""
     end
   end
 
-  def get_hls_url(camera) do
+  def get_hls_url(camera, requester \\ "Anonymous") do
     if rtsp_url(camera) != "" do
       base_url = EvercamMediaWeb.Endpoint.static_url
-      base_url <> "/live/" <> streaming_token(camera) <> "/index.m3u8?camera_id=" <> camera.exid
+      "#{base_url}/live/#{url_token(camera)}/index.m3u8?stream_token=#{streaming_token(camera, requester)}"
     else
       ""
     end
   end
 
-  defp streaming_token(camera) do
-    token = username(camera) <> "|" <> password(camera) <> "|" <> rtsp_url(camera)
-    token_string = Util.encode([token])
-    Base.url_encode64("#{token_string}|#{camera.name}")
+  defp url_token(camera) do
+    Base.url_encode64("#{camera.exid}|#{camera.name}")
+  end
+
+  defp streaming_token(camera, requester) do
+    token = "#{username(camera)}|#{password(camera)}|#{rtsp_url(camera)}|#{requester}"
+    Util.encode([token])
   end
 
   def get_vendor_attr(camera_full, attr) do
