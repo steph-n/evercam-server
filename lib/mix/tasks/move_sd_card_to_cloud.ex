@@ -14,7 +14,7 @@ defmodule EvercamMedia.MoveSdCardToCloud do
 
   @contentmgmtsearch "/ISAPI/ContentMgmt/search"
   @max_results 200
-  @days_in_sec 432000 # This will vary with the frequency of image and image count
+  @days_in_sec 200 # This will vary with the frequency of image and image count
 
   def run(start_date, end_date, camera_exid) do
     {:ok, _} = Application.ensure_all_started(:evercam_media)
