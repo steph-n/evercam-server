@@ -81,9 +81,11 @@ defmodule EvercamMedia.HikvisionNVR do
     Archive.update_status(archive, Archive.archive_status.processing)
     archive_directory = "#{@root_dir}/#{ip}#{port}/archive/"
     File.mkdir_p(archive_directory)
-    rtsp_url = "rtsp://#{username}:#{password}@#{ip}:#{port}/Streaming/tracks/"
-    kill_published_streams(camera.exid, rtsp_url)
-    Porcelain.shell("ffmpeg -rtsp_transport tcp -t #{duration} -i '#{rtsp_url}#{channel}?starttime=#{from}&endtime=#{to}' -f mp4 -vcodec copy -an #{archive_directory}#{archive.exid}.mp4", [err: :out]).out
+    rtsp_basic_url = "rtsp://#{username}:#{password}@#{ip}:#{port}/Streaming/tracks/"
+    kill_published_streams(camera.exid, rtsp_basic_url)
+    rtsp_url = "#{rtsp_basic_url}#{channel}?starttime=#{from}&endtime=#{to}"
+    log_file = "#{archive_directory}#{archive.exid}.txt"
+    Porcelain.shell("ffmpeg -rtsp_transport tcp -loglevel error -t #{duration} -i '#{rtsp_url}' -f mp4 -vcodec copy -an #{archive_directory}#{archive.exid}.mp4 2> #{log_file}", [err: :out]).out
 
     case File.exists?("#{archive_directory}#{archive.exid}.mp4") do
       true ->
@@ -94,7 +96,13 @@ defmodule EvercamMedia.HikvisionNVR do
         Archive.update_status(archive, Archive.archive_status.completed)
         EvercamMedia.UserMailer.archive_completed(archive, archive.user.email)
       _ ->
-        Archive.update_status(archive, Archive.archive_status.failed)
+        error_message =
+          log_file
+          |> File.read!()
+          |> String.replace("\n", "")
+          |> String.replace("#{username}:#{password}@", "")
+        Archive.update_status(archive, Archive.archive_status.failed, %{error_message: error_message})
+        File.rm_rf "#{@root_dir}/#{ip}#{port}/"
         EvercamMedia.UserMailer.archive_failed(archive, archive.user.email)
     end
   end
