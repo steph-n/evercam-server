@@ -378,6 +378,8 @@ defmodule EvercamMediaWeb.ArchiveController do
     cond do
       !changeset.valid? ->
         render_error(conn, 400, Util.parse_changeset(changeset))
+      !check_port(camera, params["is_nvr_archive"]) ->
+        render_error(conn, 400, "Sorry RTSP port is not available.")
       to_date < from_date ->
         render_error(conn, 400, "To date cannot be less than from date.")
       current_date_time <= from_date ->
@@ -471,6 +473,13 @@ defmodule EvercamMediaWeb.ArchiveController do
         end
     end
   end
+
+  defp check_port(camera, is_nvr) when is_nvr in [true, "true"] do
+    host = Camera.host(camera)
+    port = Camera.port(camera, "external", "rtsp")
+    Util.port_open?(host, "#{port}")
+  end
+  defp check_port(_, _), do: true
 
   defp add_parameter(params, _field, _key, nil), do: params
   defp add_parameter(params, "field", key, value) do
