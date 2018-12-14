@@ -100,8 +100,8 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
   end
 
   def failed_creation(archive, error_message) do
-    Archive.update_status(archive, Archive.archive_status.failed, %{error_message: error_message})
-    EvercamMedia.UserMailer.archive_failed(archive, archive.user.email)
+    {:ok, updated_archive} = Archive.update_status(archive, Archive.archive_status.failed, %{error_message: error_message})
+    EvercamMedia.UserMailer.archive_failed(updated_archive, updated_archive.user.email)
   end
 
   defp convert_to_unix(timestamp) do

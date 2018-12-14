@@ -145,7 +145,7 @@ defmodule EvercamMedia.UserMailer do
   end
 
   def archive_completed(archive, email) do
-    thumbnail = get_thumbnail(archive.camera)
+    thumbnail = Storage.load_archive_thumbnail(archive.camera.exid, archive.exid)
     new()
     |> from(@from)
     |> to(email)

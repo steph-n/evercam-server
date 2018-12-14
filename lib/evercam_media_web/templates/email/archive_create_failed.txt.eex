@@ -2,6 +2,8 @@ Hello from Evercam,
 
 <%= full_name(@archive.user) %> your clip <%= @archive.title %> for camera <% @archive.camera.name %> has been failed.
 
+Error: <%= @archive.error_message %>
+
 To access this clip, you will need to click on the link below.
 
 https://dash.evercam.io/v1/cameras/<%= @archive.camera.exid %>/archives

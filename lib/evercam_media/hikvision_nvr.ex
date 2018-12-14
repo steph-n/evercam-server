@@ -101,9 +101,9 @@ defmodule EvercamMedia.HikvisionNVR do
           |> File.read!()
           |> String.replace("\n", "")
           |> String.replace("#{username}:#{password}@", "")
-        Archive.update_status(archive, Archive.archive_status.failed, %{error_message: error_message})
+        {:ok, updated_archive} = Archive.update_status(archive, Archive.archive_status.failed, %{error_message: error_message})
         File.rm_rf "#{@root_dir}/#{ip}#{port}/"
-        EvercamMedia.UserMailer.archive_failed(archive, archive.user.email)
+        EvercamMedia.UserMailer.archive_failed(updated_archive, updated_archive.user.email)
     end
   end
 
