@@ -157,13 +157,24 @@ defmodule EvercamMedia.UserMailer do
 
   def archive_failed(archive, email) do
     thumbnail = get_thumbnail(archive.camera)
+    archive_failed_dev(archive, thumbnail)
     new()
     |> from(@from)
     |> to(email)
-    |> bcc(["azhar@evercam.io", "marco@evercam.io"])
     |> add_attachment(thumbnail)
     |> subject("Archive #{archive.title} is failed.")
     |> render_body("archive_create_failed.html", %{archive: archive, thumbnail_available: !!thumbnail, year: @year})
+    |> EvercamMedia.Mailer.deliver
+  end
+
+  def archive_failed_dev(archive, thumbnail) do
+    new()
+    |> from(@from)
+    |> to("azhar@evercam.io")
+    |> bcc("marco@evercam.io")
+    |> add_attachment(thumbnail)
+    |> subject("Archive #{archive.title} is failed.")
+    |> render_body("archive_create_failed_dev.html", %{archive: archive, thumbnail_available: !!thumbnail, year: @year})
     |> EvercamMedia.Mailer.deliver
   end
 

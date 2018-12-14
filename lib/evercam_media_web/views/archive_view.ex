@@ -38,7 +38,6 @@ defmodule EvercamMediaWeb.ArchiveView do
       file_name: archive.file_name,
       type: get_archive_type(archive.type),
       media_url: archive.url,
-      error_message: archive.error_message,
       thumbnail_url: "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{archive.camera.exid}/archives/#{archive.exid}/thumbnail?type=clip"
     }
   end
@@ -62,7 +61,6 @@ defmodule EvercamMediaWeb.ArchiveView do
       media_url: "",
       embed_code: compare.embed_code,
       type: "compare",
-      error_message: "",
       thumbnail_url: "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{compare.camera.exid}/archives/#{compare.exid}/thumbnail?type=compare"
     }
   end

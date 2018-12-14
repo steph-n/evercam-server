@@ -96,12 +96,7 @@ defmodule EvercamMedia.HikvisionNVR do
         Archive.update_status(archive, Archive.archive_status.completed)
         EvercamMedia.UserMailer.archive_completed(archive, archive.user.email)
       _ ->
-        error_message =
-          log_file
-          |> File.read!()
-          |> String.split("\n")
-          |> List.first
-          |> String.replace(rtsp_url, "")
+        error_message = File.read!(log_file)
         {:ok, updated_archive} = Archive.update_status(archive, Archive.archive_status.failed, %{error_message: error_message})
         File.rm_rf "#{@root_dir}/#{ip}#{port}/"
         EvercamMedia.UserMailer.archive_failed(updated_archive, updated_archive.user.email)
