@@ -424,14 +424,21 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   defp delete_user(user) do
-    Camera.delete_by_owner(user.id)
+    delete_user_camera_compares(user)
     CameraShare.delete_by_user(user.id)
     CameraShareRequest.delete_by_user_id(user.id)
+    Camera.delete_by_owner(user.id)
     User.delete_by_id(user.id)
     User.invalidate_auth(user.api_id, user.api_key)
     Camera.invalidate_user(user)
     User.invalidate_share_users(user)
     Intercom.delete_user(user.username)
+  end
+
+  defp delete_user_camera_compares(user) do
+    Camera.for(user, false)
+    |> Enum.map(fn(cam) -> cam.id end)
+    |> Enum.each(fn(id) -> Compare.delete_by_camera(id) end)
   end
 
   defp user_exists(conn, email) do
