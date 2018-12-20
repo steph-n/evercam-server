@@ -319,6 +319,13 @@
           },
           {
             "type": "string",
+            "required": false,
+            "name": "telegram_username",
+            "in": "query",
+            "description": ""
+          },
+          {
+            "type": "string",
             "required": true,
             "name": "email",
             "in": "query",
@@ -2983,6 +2990,13 @@
           {
             "type": "string",
             "required": false,
+            "name": "telegram_username",
+            "in": "query",
+            "description": ""
+          },
+          {
+            "type": "string",
+            "required": false,
             "name": "api_id",
             "in": "query",
             "description": "The Evercam API id for the requester."
@@ -4578,11 +4592,6 @@
           "format": "text",
           "description": ""
         },
-        "username_telegram": {
-          "type": "string",
-          "format": "text",
-          "description": ""
-        },
         "username": {
           "type": "string",
           "format": "text",
@@ -4596,6 +4605,11 @@
         "token_expires_at": {
           "type": "string",
           "format": "timestamp",
+          "description": ""
+        },
+        "telegram_username": {
+          "type": "string",
+          "format": "text",
           "description": ""
         },
         "stripe_customer_id": {

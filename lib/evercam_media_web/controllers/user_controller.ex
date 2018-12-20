@@ -19,7 +19,7 @@ defmodule EvercamMediaWeb.UserController do
           firstname :string, "", format: "text"
           lastname :string, "", format: "text"
           username :string, "", format: "text"
-          username_telegram :string, "", format: "text"
+          telegram_username :string, "", format: "text"
           password :string, "", format: "text"
           country_id :integer, ""
           email :string, "", format: "text"
@@ -152,6 +152,7 @@ defmodule EvercamMediaWeb.UserController do
       firstname :query, :string, "", required: true
       lastname :query, :string, "", required: true
       username :query, :string, "", required: true
+      telegram_username :query, :string, ""
       email :query, :string, "", required: true
       password :query, :string, "", required: true
       token :query, :string, "Please use your token according to your platform (WEB, IOS, ANDROID)", required: true
@@ -324,6 +325,7 @@ defmodule EvercamMediaWeb.UserController do
       firstname :query, :string, ""
       lastname :query, :string, ""
       username :query, :string, ""
+      telegram_username :query, :string, ""
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
     end
