@@ -37,7 +37,6 @@ defmodule EvercamMediaWeb.CameraShareController do
     response 401, "Invalid API keys"
     response 403, "Forbidden camera access"
   end
-
   def show(conn, %{"id" => exid} = params) do
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
@@ -79,7 +78,6 @@ defmodule EvercamMediaWeb.CameraShareController do
     response 401, "Invalid API keys or Unauthorized"
     response 404, "Camera does not exist"
   end
-
   def create(conn, params) do
     caller = conn.assigns[:current_user]
     camera = Camera.get_full(params["id"])
@@ -108,15 +106,7 @@ defmodule EvercamMediaWeb.CameraShareController do
           do
             case CameraShare.create_share(camera, sharee, caller, params["rights"], params["message"]) do
               {:ok, camera_share} ->
-                spawn(fn ->
-                  unless caller == sharee do
-                    send_email_notification(caller, camera, sharee.email, camera_share.message)
-                  end
-                  Camera.invalidate_user(sharee)
-                  Camera.invalidate_camera(camera)
-                  CameraActivity.log_activity(caller, camera, "shared", Map.merge(extra, %{with: sharee.email}), next_datetime)
-                  broadcast_share_to_users(camera)
-                end)
+                create_camera_share(Application.get_env(:evercam_media, :run_spawn), caller, sharee, camera, camera_share, extra, next_datetime)
                 add_contact_to_zoho(false, zoho_camera, sharee, caller.username)
                 {[camera_share | shares], share_requests, changes, next_datetime}
               {:error, changeset} ->
@@ -126,11 +116,8 @@ defmodule EvercamMediaWeb.CameraShareController do
             {:not_found, email} ->
               case CameraShareRequest.create_share_request(camera, email, caller, params["rights"], params["message"]) do
                 {:ok, camera_share_request} ->
-                  spawn(fn ->
-                    send_email_notification(caller, camera, email, camera_share_request.message, camera_share_request.key)
-                    CameraActivity.log_activity(caller, camera, "shared", Map.merge(extra, %{with: camera_share_request.email}), next_datetime)
-                    Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), get_user_model(camera_share_request.email), get_user_agent(conn), requester_ip, "Shared-Non-Registered")
-                  end)
+                  Application.get_env(:evercam_media, :run_spawn)
+                  |> create_camera_share_request(caller, camera, camera_share_request, extra, next_datetime, requester_ip, conn)
                   {shares, [camera_share_request | share_requests], changes, next_datetime}
                 {:error, changeset} ->
                   {shares, share_requests, [attach_email_to_message(changeset, email) | changes], next_datetime}
@@ -143,6 +130,148 @@ defmodule EvercamMediaWeb.CameraShareController do
       |> render(CameraShareView, "all_shares.json", %{shares: total_shares, share_requests: share_requests, errors: errors})
     end
   end
+
+  swagger_path :update do
+    patch "/cameras/{id}/shares"
+    summary "Change the camera rights to user."
+    parameters do
+      id :path, :string, "Unique identifier for camera.", required: true
+      email :query, :string, "Give shared user's email", required: true
+      rights :query, :string, "", required: true, enum: ["snapshot","minimal+share","full"]
+      api_id :query, :string, "The Evercam API id for the requester."
+      api_key :query, :string, "The Evercam API key for the requester."
+    end
+    tag "Shares"
+    response 200, "Success"
+    response 400, "Invalid rights specified in request"
+    response 401, "Invalid API keys or Unauthorized"
+    response 404, "Camera does not exist or Share not found"
+  end
+  def update(conn, %{"id" => exid, "email" => email, "rights" => rights} = params) do
+    caller = conn.assigns[:current_user]
+    camera = Camera.get_full(exid)
+    sharee = User.by_username_or_email(email)
+
+    with :ok <- camera_exists(conn, exid, camera),
+         :ok <- caller_has_permission(conn, caller, camera),
+         :ok <- sharee_exists(conn, email, sharee),
+         {:ok, camera_share} <- share_exists(conn, sharee, camera)
+    do
+      share_changeset = CameraShare.changeset(camera_share, %{rights: rights})
+      if share_changeset.valid? do
+        CameraShare.update_share(sharee, camera, rights)
+
+        extra =
+          %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
+          |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+        CameraActivity.log_activity(caller, camera, "updated share", extra)
+        Camera.invalidate_user(sharee)
+        Camera.invalidate_camera(camera)
+        camera_share =
+          camera_share
+          |> Repo.preload([camera: :access_rights], force: true)
+          |> Repo.preload([camera: [access_rights: :access_token]], force: true)
+        conn
+        |> render(CameraShareView, "show.json", %{camera_share: camera_share})
+      else
+        render_error(conn, 400, Util.parse_changeset(share_changeset))
+      end
+    end
+  end
+
+  swagger_path :shared_users do
+    get "/shares/users"
+    summary "Returns the shared users."
+    parameters do
+      camera_id :query, :string, "Unique identifier for camera.", required: true
+      api_id :query, :string, "The Evercam API id for the requester."
+      api_key :query, :string, "The Evercam API key for the requester."
+    end
+    tag "Shares"
+    response 200, "Success"
+    response 401, "Invalid API keys or Unauthorized"
+  end
+  def shared_users(conn, params) do
+    caller = conn.assigns[:current_user]
+
+    cond do
+      !caller ->
+        render_error(conn, 401, "Unauthorized.")
+      params["camera_id"] == "evercam-remembrance-camera" -> json(conn, %{})
+      true ->
+        shared_users =
+          caller.id
+          |> CameraShare.shared_users(params["camera_id"])
+          |> Enum.map(fn(u) -> %{email: u.user.email, name: User.get_fullname(u.user)} end)
+          |> Enum.sort
+          |> Enum.uniq
+        json(conn, shared_users)
+    end
+  end
+
+  swagger_path :delete do
+    delete "/cameras/{id}/shares"
+    summary "Delete the camera access."
+    parameters do
+      id :path, :string, "Unique identifier for camera.", required: true
+      email :query, :string, "Give shared user's email", required: true
+      api_id :query, :string, "The Evercam API id for the requester."
+      api_key :query, :string, "The Evercam API key for the requester."
+    end
+    tag "Shares"
+    response 200, "Success"
+    response 401, "Invalid API keys or Unauthorized"
+    response 404, "Camera does not exist or Share not found"
+  end
+  def delete(conn, %{"id" => exid, "email" => email} = params) do
+    caller = conn.assigns[:current_user]
+    camera = Camera.get_full(exid)
+    sharee = User.by_username_or_email(email)
+
+    with :ok <- camera_exists(conn, exid, camera),
+         :ok <- sharee_exists(conn, email, sharee),
+         :ok <- user_can_delete_share(conn, caller, sharee, camera),
+         {:ok, _share} <- share_exists(conn, sharee, camera)
+    do
+      CameraShare.delete_share(sharee, camera)
+      delete_snapmails(Application.get_env(:evercam_media, :run_spawn), sharee, camera)
+      Camera.invalidate_user(sharee)
+      Camera.invalidate_camera(camera)
+      delete_share_to_zoho(false, exid, User.get_fullname(sharee), caller.username)
+
+      extra =
+        %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
+        |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+      CameraActivity.log_activity(caller, camera, "stopped sharing", extra)
+      json(conn, %{})
+    end
+  end
+
+  #######################################
+  ########## Private Functions ##########
+  #######################################
+
+  defp create_camera_share(true, caller, sharee, camera, camera_share, extra, next_datetime) do
+    spawn(fn ->
+      unless caller == sharee do
+        send_email_notification(caller, camera, sharee.email, camera_share.message)
+      end
+      Camera.invalidate_user(sharee)
+      Camera.invalidate_camera(camera)
+      CameraActivity.log_activity(caller, camera, "shared", Map.merge(extra, %{with: sharee.email}), next_datetime)
+      broadcast_share_to_users(camera)
+    end)
+  end
+  defp create_camera_share(_mode, _, _, _, _, _, _), do: :noop
+
+  defp create_camera_share_request(true, caller, camera, camera_share_request, extra, next_datetime, ip, conn) do
+    spawn(fn ->
+      send_email_notification(caller, camera, camera_share_request.email, camera_share_request.message, camera_share_request.key)
+      CameraActivity.log_activity(caller, camera, "shared", Map.merge(extra, %{with: camera_share_request.email}), next_datetime)
+      Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), get_user_model(camera_share_request.email), get_user_agent(conn), ip, "Shared-Non-Registered")
+    end)
+  end
+  defp create_camera_share_request(_mode, _, _, _, _, _, _, _), do: :noop
 
   def broadcast_share_to_users(camera) do
     User.with_access_to(camera)
@@ -194,98 +323,13 @@ defmodule EvercamMediaWeb.CameraShareController do
     end
   end
 
-  swagger_path :update do
-    patch "/cameras/{id}/shares"
-    summary "Change the camera rights to user."
-    parameters do
-      id :path, :string, "Unique identifier for camera.", required: true
-      email :query, :string, "Give shared user's email", required: true
-      rights :query, :string, "", required: true, enum: ["snapshot","minimal+share","full"]
-      api_id :query, :string, "The Evercam API id for the requester."
-      api_key :query, :string, "The Evercam API key for the requester."
-    end
-    tag "Shares"
-    response 200, "Success"
-    response 400, "Invalid rights specified in request"
-    response 401, "Invalid API keys or Unauthorized"
-    response 404, "Camera does not exist or Share not found"
+  defp delete_snapmails(true, sharee, camera) do
+    spawn(fn ->
+      SnapmailCamera.delete_by_sharee(sharee.id, camera.id)
+      Snapmail.delete_no_camera_snapmail()
+     end)
   end
-
-  def update(conn, %{"id" => exid, "email" => email, "rights" => rights} = params) do
-    caller = conn.assigns[:current_user]
-    camera = Camera.get_full(exid)
-    sharee = User.by_username_or_email(email)
-
-    with :ok <- camera_exists(conn, exid, camera),
-         :ok <- caller_has_permission(conn, caller, camera),
-         :ok <- sharee_exists(conn, email, sharee),
-         {:ok, camera_share} <- share_exists(conn, sharee, camera)
-    do
-      share_changeset = CameraShare.changeset(camera_share, %{rights: rights})
-      if share_changeset.valid? do
-        CameraShare.update_share(sharee, camera, rights)
-
-        extra =
-          %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
-          |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-        CameraActivity.log_activity(caller, camera, "updated share", extra)
-        Camera.invalidate_user(sharee)
-        Camera.invalidate_camera(camera)
-        camera_share =
-          camera_share
-          |> Repo.preload([camera: :access_rights], force: true)
-          |> Repo.preload([camera: [access_rights: :access_token]], force: true)
-        conn
-        |> render(CameraShareView, "show.json", %{camera_share: camera_share})
-      else
-        render_error(conn, 400, Util.parse_changeset(share_changeset))
-      end
-    end
-  end
-
-  swagger_path :delete do
-    delete "/cameras/{id}/shares"
-    summary "Delete the camera access."
-    parameters do
-      id :path, :string, "Unique identifier for camera.", required: true
-      email :query, :string, "Give shared user's email", required: true
-      api_id :query, :string, "The Evercam API id for the requester."
-      api_key :query, :string, "The Evercam API key for the requester."
-    end
-    tag "Shares"
-    response 200, "Success"
-    response 401, "Invalid API keys or Unauthorized"
-    response 404, "Camera does not exist or Share not found"
-  end
-
-  def delete(conn, %{"id" => exid, "email" => email} = params) do
-    caller = conn.assigns[:current_user]
-    camera = Camera.get_full(exid)
-    sharee = User.by_username_or_email(email)
-
-    with :ok <- camera_exists(conn, exid, camera),
-         :ok <- sharee_exists(conn, email, sharee),
-         :ok <- user_can_delete_share(conn, caller, sharee, camera),
-         {:ok, _share} <- share_exists(conn, sharee, camera)
-    do
-      CameraShare.delete_share(sharee, camera)
-      spawn(fn -> delete_snapmails(sharee, camera) end)
-      Camera.invalidate_user(sharee)
-      Camera.invalidate_camera(camera)
-      delete_share_to_zoho(false, exid, User.get_fullname(sharee), caller.username)
-
-      extra =
-        %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
-        |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-      CameraActivity.log_activity(caller, camera, "stopped sharing", extra)
-      json(conn, %{})
-    end
-  end
-
-  defp delete_snapmails(sharee, camera) do
-    SnapmailCamera.delete_by_sharee(sharee.id, camera.id)
-    Snapmail.delete_no_camera_snapmail()
-  end
+  defp delete_snapmails(_mode, _, _), do: :noop
 
   defp delete_share_to_zoho(true, camera_exid, user_fullname, user_id) when user_id in ["garda", "gardashared", "construction", "oldconstruction", "smartcities"] do
     spawn fn ->
@@ -296,36 +340,6 @@ defmodule EvercamMediaWeb.CameraShareController do
     end
   end
   defp delete_share_to_zoho(_mode, _camera_exid, _user_fullname, _user_id), do: :noop
-
-  swagger_path :shared_users do
-    get "/shares/users"
-    summary "Returns the shared users."
-    parameters do
-      camera_id :query, :string, "Unique identifier for camera.", required: true
-      api_id :query, :string, "The Evercam API id for the requester."
-      api_key :query, :string, "The Evercam API key for the requester."
-    end
-    tag "Shares"
-    response 200, "Success"
-    response 401, "Invalid API keys or Unauthorized"
-  end
-  def shared_users(conn, params) do
-    caller = conn.assigns[:current_user]
-
-    cond do
-      !caller ->
-        render_error(conn, 401, "Unauthorized.")
-      params["camera_id"] == "evercam-remembrance-camera" -> json(conn, %{})
-      true ->
-        shared_users =
-          caller.id
-          |> CameraShare.shared_users(params["camera_id"])
-          |> Enum.map(fn(u) -> %{email: u.user.email, name: User.get_fullname(u.user)} end)
-          |> Enum.sort
-          |> Enum.uniq
-        json(conn, shared_users)
-    end
-  end
 
   defp camera_exists(conn, camera_exid, nil), do: render_error(conn, 404, "The #{camera_exid} camera does not exist.")
   defp camera_exists(_conn, _camera_exid, _camera), do: :ok

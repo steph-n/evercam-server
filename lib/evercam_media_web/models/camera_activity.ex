@@ -19,6 +19,10 @@ defmodule CameraActivity do
   end
 
   def log_activity(user, camera, action, extra \\ nil, done_at \\ Ecto.DateTime.utc) do
+    do_log(Application.get_env(:evercam_media, :run_spawn), user, camera, action, extra, done_at)
+  end
+
+  defp do_log(true, user, camera, action, extra, done_at) do
     access_token_id = AccessToken.active_token_id_for(user.id)
     params = %{
       camera_id: camera.id,
@@ -33,6 +37,7 @@ defmodule CameraActivity do
     |> changeset(params)
     |> SnapshotRepo.insert
   end
+  defp do_log(_mode, _, _, _, _, _), do: :noop
 
   def get_all(query) do
     query

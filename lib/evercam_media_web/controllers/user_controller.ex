@@ -98,15 +98,7 @@ defmodule EvercamMediaWeb.UserController do
     with :ok <- ensure_user_exists(user, username, conn),
          :ok <- password(params["password"], user, conn)
     do
-      spawn(fn ->
-        changeset = User.changeset(user, %{"last_login_at" => Calendar.DateTime.to_erl(Calendar.DateTime.now_utc)})
-        Repo.update(changeset)
-
-        extra =
-          %{ agent: get_user_agent(conn, params["agent"]) }
-          |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-        CameraActivity.log_activity(user, %{ id: 0, exid: "" }, "login", extra)
-      end)
+      update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
       conn |> render(UserView, "credentials.json", %{user: user})
     end
   end
@@ -543,6 +535,19 @@ defmodule EvercamMediaWeb.UserController do
       _ -> {:ok, country.id}
     end
   end
+
+  defp update_last_login_and_log(true, conn, user, params) do
+    spawn(fn ->
+      changeset = User.changeset(user, %{"last_login_at" => Calendar.DateTime.to_erl(Calendar.DateTime.now_utc)})
+      Repo.update(changeset)
+
+      extra =
+        %{ agent: get_user_agent(conn, params["agent"]) }
+        |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+      CameraActivity.log_activity(user, %{ id: 0, exid: "" }, "login", extra)
+    end)
+  end
+  defp update_last_login_and_log(_mode, _conn, _user, _params), do: :noop
 
   defp has_share_request_key?(value) when value in [nil, ""], do: false
   defp has_share_request_key?(_value), do: true
