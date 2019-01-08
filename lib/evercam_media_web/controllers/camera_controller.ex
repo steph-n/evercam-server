@@ -2,7 +2,6 @@ defmodule EvercamMediaWeb.CameraController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
   alias EvercamMediaWeb.CameraView
-  alias EvercamMediaWeb.ErrorView
   alias EvercamMedia.Repo
   alias EvercamMedia.Snapshot.Storage
   alias EvercamMedia.Snapshot.WorkerSupervisor
@@ -101,9 +100,7 @@ defmodule EvercamMediaWeb.CameraController do
 
       json(conn, data)
     else
-      conn
-      |> put_status(404)
-      |> render(ErrorView, "error.json", %{message: "Not found."})
+      render_error(conn, 404, "Not found.")
     end
   end
 
@@ -129,12 +126,9 @@ defmodule EvercamMediaWeb.CameraController do
       |> Camera.get_full
 
     if Permission.Camera.can_list?(current_user, camera) do
-      conn
-      |> render("show.json", %{camera: camera, user: current_user})
+      render(conn, "show.json", %{camera: camera, user: current_user})
     else
-      conn
-      |> put_status(404)
-      |> render(ErrorView, "error.json", %{message: "Not found."})
+      render_error(conn, 404, "Not found.")
     end
   end
 
@@ -169,9 +163,7 @@ defmodule EvercamMediaWeb.CameraController do
       rights = CameraShare.rights_list("full") |> Enum.join(",")
       CameraShare.create_share(camera, old_owner, user, rights, "")
       update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
-
-      conn
-      |> render("show.json", %{camera: camera, user: current_user})
+      render(conn, "show.json", %{camera: camera, user: current_user})
     end
   end
 
@@ -217,8 +209,7 @@ defmodule EvercamMediaWeb.CameraController do
     do
       camera_changeset = camera_update_changeset(old_camera, params, caller.email)
       with true <- camera_changeset.changes == %{} do
-        conn
-        |> render("show.json", %{camera: old_camera, user: caller})
+        render(conn, "show.json", %{camera: old_camera, user: caller})
       else
         false ->
           case Repo.update(camera_changeset) do
@@ -233,8 +224,7 @@ defmodule EvercamMediaWeb.CameraController do
               CameraActivity.log_activity(caller, camera, "camera edited", extra)
               update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
               update_camera_to_zoho(false, camera, caller.username)
-              conn
-              |> render("show.json", %{camera: camera, user: caller})
+              render(conn, "show.json", %{camera: camera, user: caller})
             {:error, changeset} ->
               render_error(conn, 400, Util.parse_changeset(changeset))
           end
@@ -427,23 +417,17 @@ defmodule EvercamMediaWeb.CameraController do
   defp invalid(key), do: {:invalid, "The parameter '#{key}' isn't valid."}
 
   defp is_authorized(conn, nil) do
-    conn
-    |> put_status(401)
-    |> render(ErrorView, "error.json", %{message: "Unauthorized."})
+    render_error(conn, 401, "Unauthorized.")
   end
   defp is_authorized(_conn, _user), do: :ok
 
   defp camera_exists(conn, camera_exid, nil) do
-    conn
-    |> put_status(404)
-    |> render(ErrorView, "error.json", %{message: "The #{camera_exid} camera does not exist."})
+    render_error(conn, 404, "The #{camera_exid} camera does not exist.")
   end
   defp camera_exists(_conn, _camera_exid, _camera), do: :ok
 
   defp user_exists(conn, user_id, nil) do
-    conn
-    |> put_status(404)
-    |> render(ErrorView, "error.json", %{message: "User '#{user_id}' does not exist."})
+    render_error(conn, 404, "User '#{user_id}' does not exist.")
   end
   defp user_exists(_conn, _user_id, _user), do: :ok
 
@@ -451,9 +435,7 @@ defmodule EvercamMediaWeb.CameraController do
     if Camera.is_owner?(user, camera) do
       :ok
     else
-      conn
-      |> put_status(403)
-      |> render(ErrorView, "error.json", %{message: "Unauthorized."})
+      render_error(conn, 403, "Unauthorized.")
     end
   end
 
@@ -484,9 +466,7 @@ defmodule EvercamMediaWeb.CameraController do
 
   defp user_has_rights(conn, user, camera) do
     if !Permission.Camera.can_edit?(user, camera) do
-      conn
-      |> put_status(403)
-      |> render(ErrorView, "error.json", %{message: "Unauthorized."})
+      render_error(conn, 403, "Unauthorized.")
     else
       :ok
     end
@@ -494,9 +474,7 @@ defmodule EvercamMediaWeb.CameraController do
 
   defp user_has_delete_rights(conn, user, camera) do
     if !Permission.Camera.can_delete?(user, camera) do
-      conn
-      |> put_status(403)
-      |> render(ErrorView, "error.json", %{message: "Unauthorized."})
+      render_error(conn, 403, "Unauthorized.")
     else
       true
     end

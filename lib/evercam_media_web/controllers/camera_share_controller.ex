@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.CameraShareController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.CameraShareView
   alias EvercamMedia.Intercom
   alias EvercamMedia.Zoho
 
@@ -57,8 +56,7 @@ defmodule EvercamMediaWeb.CameraShareController do
           true ->
             []
         end
-        conn
-        |> render(CameraShareView, "index.json", %{camera_shares: shares, camera: camera, user: current_user})
+        render(conn, "index.json", %{camera_shares: shares, camera: camera, user: current_user})
     end
   end
 
@@ -127,7 +125,7 @@ defmodule EvercamMediaWeb.CameraShareController do
       {total_shares, share_requests, errors, _} = fetch_shares
       conn
       |> put_status(:created)
-      |> render(CameraShareView, "all_shares.json", %{shares: total_shares, share_requests: share_requests, errors: errors})
+      |> render("all_shares.json", %{shares: total_shares, share_requests: share_requests, errors: errors})
     end
   end
 
@@ -171,8 +169,7 @@ defmodule EvercamMediaWeb.CameraShareController do
           camera_share
           |> Repo.preload([camera: :access_rights], force: true)
           |> Repo.preload([camera: [access_rights: :access_token]], force: true)
-        conn
-        |> render(CameraShareView, "show.json", %{camera_share: camera_share})
+        render(conn, "show.json", %{camera_share: camera_share})
       else
         render_error(conn, 400, Util.parse_changeset(share_changeset))
       end

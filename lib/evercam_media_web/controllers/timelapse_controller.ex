@@ -1,6 +1,5 @@
 defmodule EvercamMediaWeb.TimelapseController do
   use EvercamMediaWeb, :controller
-  alias EvercamMediaWeb.TimelapseView
   alias EvercamMedia.Timelapse.TimelapserSupervisor
 
   def user_all(conn, _params) do
@@ -9,7 +8,7 @@ defmodule EvercamMediaWeb.TimelapseController do
     with :ok <- authorized(conn, caller)
     do
       timelapses = Timelapse.by_user_id(caller.id)
-      render(conn, TimelapseView, "index.json", %{timelapses: timelapses})
+      render(conn, "index.json", %{timelapses: timelapses})
     end
   end
 
@@ -21,7 +20,7 @@ defmodule EvercamMediaWeb.TimelapseController do
          :ok <- user_can_list(conn, caller, camera)
     do
       timelapses = Timelapse.by_camera_id(camera.id)
-      render(conn, TimelapseView, "index.json", %{timelapses: timelapses})
+      render(conn, "index.json", %{timelapses: timelapses})
     end
   end
 
@@ -32,7 +31,7 @@ defmodule EvercamMediaWeb.TimelapseController do
     with :ok <- user_can_list(conn, caller, camera),
          {:ok, timelapse} <- timelapse_exist(conn, timelapse_exid)
     do
-      render(conn |> put_status(:created), TimelapseView, "show.json", %{timelapse: timelapse})
+      render(conn, "show.json", %{timelapse: timelapse})
     end
   end
 
@@ -51,7 +50,7 @@ defmodule EvercamMediaWeb.TimelapseController do
       case Timelapse.create_timelapse(timelapse_params) do
         {:ok, timelapse} ->
           start_timelapse_worker(Application.get_env(:evercam_media, :start_timelapse_workers), timelapse)
-          render(conn |> put_status(:created), TimelapseView, "show.json", %{timelapse: timelapse})
+          render(conn |> put_status(:created), "show.json", %{timelapse: timelapse})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -69,7 +68,7 @@ defmodule EvercamMediaWeb.TimelapseController do
       case Timelapse.update_timelapse(timelapse, timelapse_params) do
         {:ok, timelapse} ->
           update_timelapse_worker(Application.get_env(:evercam_media, :start_timelapse_workers), timelapse)
-          render(conn, TimelapseView, "show.json", %{timelapse: timelapse})
+          render(conn, "show.json", %{timelapse: timelapse})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end

@@ -89,8 +89,8 @@ defmodule EvercamMedia.Intercom do
     intercom_url = @intercom_url |> String.replace("users", "tags")
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
     tag_params = %{
-      "name": tag,
-      "users": [%{"email": email}]
+      name: tag,
+      users: [%{email: email}]
     }
 
     json =

@@ -3,8 +3,6 @@ defmodule EvercamMediaWeb.LogController do
   use PhoenixSwagger
   import EvercamMedia.Validation.Log
   import Ecto.Query
-  alias EvercamMediaWeb.ErrorView
-  alias EvercamMediaWeb.LogView
   import String, only: [to_integer: 1]
 
   @default_limit 50
@@ -64,9 +62,7 @@ defmodule EvercamMediaWeb.LogController do
   end
 
   defp ensure_camera_exists(nil, exid, conn) do
-    conn
-    |> put_status(404)
-    |> render(ErrorView, "error.json", %{message: "Camera '#{exid}' not found!"})
+    render_error(conn, 404, "Camera '#{exid}' not found!")
   end
   defp ensure_camera_exists(_camera, _id, _conn), do: :ok
 
@@ -74,7 +70,7 @@ defmodule EvercamMediaWeb.LogController do
     if current_user && Permission.Camera.can_edit?(current_user, camera) do
       :ok
     else
-      conn |> put_status(401) |> render(ErrorView, "error.json", %{message: "Unauthorized."})
+      render_error(conn, 401, "Unauthorized.")
     end
   end
 
@@ -96,8 +92,7 @@ defmodule EvercamMediaWeb.LogController do
     total_pages = Float.floor(logs_count / limit)
     logs = Enum.slice(all_logs, page * limit, limit)
 
-    conn
-    |> render(LogView, "show.json", %{total_pages: total_pages, camera_exid: camera.exid, camera_name: camera.name, logs: logs})
+    render(conn, "show.json", %{total_pages: total_pages, camera_exid: camera.exid, camera_name: camera.name, logs: logs})
   end
 
   defp camera_exists(camera_exid) when camera_exid in [nil, ""] do

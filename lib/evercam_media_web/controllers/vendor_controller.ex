@@ -1,8 +1,6 @@
 defmodule EvercamMediaWeb.VendorController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.VendorView
-  alias EvercamMediaWeb.ErrorView
 
   def swagger_definitions do
     %{
@@ -35,12 +33,9 @@ defmodule EvercamMediaWeb.VendorController do
   def show(conn, %{"id" => exid}) do
     case Vendor.by_exid(exid) do
       nil ->
-        conn
-        |> put_status(404)
-        |> render(ErrorView, "error.json", %{message: "Vendor not found."})
+        render_error(conn, 404, %{message: "Vendor not found."})
       vendor ->
-        conn
-        |> render(VendorView, "show.json", %{vendor: vendor})
+        render(conn, "show.json", %{vendor: vendor})
     end
   end
 
@@ -64,7 +59,6 @@ defmodule EvercamMediaWeb.VendorController do
       |> Vendor.with_known_macs_if_given(params["mac"])
       |> Vendor.get_all
 
-    conn
-    |> render(VendorView, "index.json", %{vendors: vendors})
+    render(conn, "index.json", %{vendors: vendors})
   end
 end

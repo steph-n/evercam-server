@@ -119,12 +119,12 @@ defmodule EvercamMedia.Zoho do
           "Share_ID" => create_share_id(camera["Evercam_ID"], contact["Full_Name"]),
           "Description" => "#{camera["Name"]} shared with #{contact["Full_Name"]}",
           "Related_Camera_Sharees" => %{
-            "name": camera["Name"],
-            "id": camera["id"]
+            name: camera["Name"],
+            id: camera["id"]
           },
           "Camera_Sharees" => %{
-            "name": contact["Full_Name"],
-            "id": contact["id"]
+            name: contact["Full_Name"],
+            id: contact["id"]
           }
         }]
       }

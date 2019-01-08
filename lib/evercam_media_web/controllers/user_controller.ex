@@ -1,9 +1,7 @@
 defmodule EvercamMediaWeb.UserController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.UserView
   alias EvercamMediaWeb.LogView
-  alias EvercamMediaWeb.ErrorView
   alias EvercamMedia.Repo
   alias EvercamMedia.Util
   alias EvercamMedia.Intercom
@@ -63,16 +61,10 @@ defmodule EvercamMediaWeb.UserController do
 
     cond do
       !user ->
-        conn
-        |> put_status(404)
-        |> render(ErrorView, "error.json", %{message: "User does not exist."})
+        render_error(conn, 404, "User does not exist.")
       !caller || !Permission.User.can_view?(caller, user) ->
-        conn
-        |> put_status(401)
-        |> render(ErrorView, "error.json", %{message: "Unauthorized."})
-      true ->
-        conn
-        |> render(UserView, "show.json", %{user: user})
+        render_error(conn, 401, %{message: "Unauthorized."})
+      true -> render(conn, "show.json", %{user: user})
     end
   end
 
@@ -99,7 +91,7 @@ defmodule EvercamMediaWeb.UserController do
          :ok <- password(params["password"], user, conn)
     do
       update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
-      conn |> render(UserView, "credentials.json", %{user: user})
+      render(conn, "credentials.json", %{user: user})
     end
   end
 
@@ -124,16 +116,12 @@ defmodule EvercamMediaWeb.UserController do
 
     cond do
       !user ->
-        conn
-        |> put_status(404)
-        |> render(ErrorView, "error.json", %{message: "User does not exist."})
+        render_error(conn, 404, %{message: "User does not exist."})
       !caller || !Permission.User.can_view?(caller, user) ->
-        conn
-        |> put_status(401)
-        |> render(ErrorView, "error.json", %{message: "Unauthorized."})
+        render_error(conn, 401, %{message: "Unauthorized."})
       true ->
         conn
-        |> render(UserView, "show.json", %{user: user})
+        |> render("show.json", %{user: user})
     end
   end
 
@@ -216,7 +204,7 @@ defmodule EvercamMediaWeb.UserController do
           Logger.info "[POST v1/users] [#{user_agent}] [#{requester_ip}] [#{user.username}] [#{user.email}] [#{params["token"]}]"
           conn
           |> put_status(:created)
-          |> render(UserView, "show.json", %{user: user |> Repo.preload(:country, force: true)})
+          |> render("show.json", %{user: user |> Repo.preload(:country, force: true)})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -351,7 +339,7 @@ defmodule EvercamMediaWeb.UserController do
           updated_user = new_user |> Repo.preload(:country, force: true)
           insert_activity(old_user, updated_user, requester_ip, user_agent, params["u_country"], params["u_country_code"])
           Intercom.update_intercom_user(Application.get_env(:evercam_media, :create_intercom_user), updated_user, username, user_agent, requester_ip)
-          conn |> render(UserView, "show.json", %{user: updated_user})
+          render(conn, "show.json", %{user: updated_user})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -413,7 +401,8 @@ defmodule EvercamMediaWeb.UserController do
       user_logs = CameraActivity.for_a_user(user.access_tokens.id, from, to, types)
 
       conn
-      |> render(LogView, "user_logs.json", %{user_logs: user_logs})
+      |> put_view(LogView)
+      |> render("user_logs.json", %{user_logs: user_logs})
     end
   end
 

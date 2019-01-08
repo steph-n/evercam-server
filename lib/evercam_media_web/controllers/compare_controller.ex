@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.CompareController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.CompareView
   alias EvercamMedia.Util
   alias EvercamMedia.TimelapseRecording.S3
 
@@ -49,7 +48,7 @@ defmodule EvercamMediaWeb.CompareController do
          :ok <- ensure_can_list(current_user, camera, conn)
     do
       compare_archives = Compare.get_by_camera(camera.id)
-      render(conn, CompareView, "index.json", %{compares: compare_archives})
+      render(conn, "index.json", %{compares: compare_archives})
     end
   end
 
@@ -76,7 +75,7 @@ defmodule EvercamMediaWeb.CompareController do
          :ok <- deliver_content(conn, camera_exid, compare_id),
          {:ok, compare} <- compare_can_list(current_user, camera, compare_id, conn)
     do
-      render(conn, CompareView, "show.json", %{compare: compare})
+      render(conn, "show.json", %{compare: compare})
     end
   end
 
@@ -100,7 +99,7 @@ defmodule EvercamMediaWeb.CompareController do
           changeset = Compare.changeset(compare_archive, update_params)
           case Repo.update(changeset) do
             {:ok, compare} ->
-              render(conn, CompareView, "show.json", %{compare: compare})
+              render(conn, "show.json", %{compare: compare})
             {:error, changeset} ->
               render_error(conn, 400, Util.parse_changeset(changeset))
           end
@@ -163,7 +162,7 @@ defmodule EvercamMediaWeb.CompareController do
           |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
           CameraActivity.log_activity(current_user, camera, "compare created", extra)
           start_export(Application.get_env(:evercam_media, :run_spawn), camera_exid, compare.exid, params)
-          render(conn |> put_status(:created), CompareView, "show.json", %{compare: created_compare})
+          render(conn |> put_status(:created), "show.json", %{compare: created_compare})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end

@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.ArchiveController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.ArchiveView
   alias EvercamMedia.Util
   alias EvercamMedia.Snapshot.Storage
   import Ecto.Changeset
@@ -65,7 +64,7 @@ defmodule EvercamMediaWeb.ArchiveController do
 
       compare_archives = Compare.get_by_camera(camera.id)
 
-      render(conn, ArchiveView, "index.json", %{archives: archives, compares: compare_archives})
+      render(conn, "index.json", %{archives: archives, compares: compare_archives})
     end
   end
 
@@ -93,8 +92,8 @@ defmodule EvercamMediaWeb.ArchiveController do
          {:ok, media} <- archive_can_list(current_user, camera, archive_id, conn)
     do
       case media do
-        %Compare{} = compare -> render(conn, ArchiveView, "compare.json", %{compare: compare})
-        %Archive{} = archive -> render(conn, ArchiveView, "show.json", %{archive: archive})
+        %Compare{} = compare -> render(conn, "compare.json", %{compare: compare})
+        %Archive{} = archive -> render(conn, "show.json", %{archive: archive})
       end
     end
   end
@@ -235,7 +234,7 @@ defmodule EvercamMediaWeb.ArchiveController do
           unix_from = convert_to_user_time(updated_archive.from_date, timezone)
           unix_to = convert_to_user_time(updated_archive.to_date, timezone)
           start_archive_creation(Application.get_env(:evercam_media, :run_spawn), camera, updated_archive, "#{unix_from}", "#{unix_to}", is_local_clip(updated_archive.type))
-          render(conn, ArchiveView, "show.json", %{archive: updated_archive})
+          render(conn, "show.json", %{archive: updated_archive})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -263,8 +262,7 @@ defmodule EvercamMediaWeb.ArchiveController do
         |> Archive.with_status_if_given(@status.pending)
         |> Archive.get_one_with_associations
 
-      conn
-      |> render(ArchiveView, "show.json", %{archive: archive})
+      render(conn, "show.json", %{archive: archive})
     else
       render_error(conn, 401, "Unauthorized.")
     end
@@ -316,7 +314,7 @@ defmodule EvercamMediaWeb.ArchiveController do
         }
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
         CameraActivity.log_activity(current_user, camera, "saved media URL", extra)
-        render(conn |> put_status(:created), ArchiveView, "show.json", %{archive: archive})
+        render(conn |> put_status(:created), "show.json", %{archive: archive})
       {:error, changeset} ->
         render_error(conn, 400, Util.parse_changeset(changeset))
     end
@@ -336,7 +334,7 @@ defmodule EvercamMediaWeb.ArchiveController do
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
         CameraActivity.log_activity(current_user, camera, "file uploaded", extra)
         copy_uploaded_file(Application.get_env(:evercam_media, :run_spawn), camera.exid, archive.exid, params["file_url"], params["file_extension"])
-        render(conn |> put_status(:created), ArchiveView, "show.json", %{archive: archive})
+        render(conn |> put_status(:created), "show.json", %{archive: archive})
       {:error, changeset} ->
         render_error(conn, 400, Util.parse_changeset(changeset))
     end
@@ -356,7 +354,7 @@ defmodule EvercamMediaWeb.ArchiveController do
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
         CameraActivity.log_activity(current_user, camera, "file uploaded", extra)
         save_edited_image(camera.exid, archive.exid, params["content"])
-        render(conn |> put_status(:created), ArchiveView, "show.json", %{archive: archive})
+        render(conn |> put_status(:created), "show.json", %{archive: archive})
       {:error, changeset} ->
         render_error(conn, 400, Util.parse_changeset(changeset))
     end
@@ -401,7 +399,7 @@ defmodule EvercamMediaWeb.ArchiveController do
             |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
             CameraActivity.log_activity(current_user, camera, "archive created", extra)
             start_archive_creation(Application.get_env(:evercam_media, :run_spawn), camera, archive, unix_from, unix_to, params["is_nvr_archive"])
-            render(conn |> put_status(:created), ArchiveView, "show.json", %{archive: archive})
+            render(conn |> put_status(:created), "show.json", %{archive: archive})
           {:error, changeset} ->
             render_error(conn, 400, Util.parse_changeset(changeset))
         end
@@ -467,7 +465,7 @@ defmodule EvercamMediaWeb.ArchiveController do
             |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
             CameraActivity.log_activity(user, camera, "archive edited", extra)
             save_edited_image(camera.exid, archive.exid, params["content"])
-            render(conn, ArchiveView, "show.json", %{archive: updated_archive})
+            render(conn, "show.json", %{archive: updated_archive})
           {:error, changeset} ->
             render_error(conn, 400, Util.parse_changeset(changeset))
         end

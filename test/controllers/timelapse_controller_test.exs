@@ -99,7 +99,7 @@ defmodule EvercamMedia.TimelapseControllerTest do
       |> Map.get("timelapses")
       |> List.first
 
-    assert response.status == 201
+    assert response.status == 200
     assert timelapse["id"] == "timel-exid"
   end
 

@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.CloudRecordingController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.ErrorView
   alias EvercamMedia.Snapshot.WorkerSupervisor
   import EvercamMedia.Validation.CloudRecording
 
@@ -83,8 +82,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
           |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
           CameraActivity.log_activity(current_user, camera, "cloud recordings #{action_log}", extra)
           send_email_on_cr_change(Application.get_env(:evercam_media, :run_spawn), current_user, camera, cloud_recording, old_cloud_recording, user_request_ip(conn, params["requester_ip"]))
-          conn
-          |> render("cloud_recording.json", %{cloud_recording: cloud_recording})
+          render(conn, "cloud_recording.json", %{cloud_recording: cloud_recording})
         {:error, changeset} ->
           render_error(conn, 400, changeset)
       end
@@ -418,9 +416,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   end
 
   defp ensure_camera_exists(nil, exid, conn) do
-    conn
-    |> put_status(404)
-    |> render(ErrorView, "error.json", %{message: "Camera '#{exid}' not found!"})
+    render_error(conn, 404, "Camera '#{exid}' not found!")
   end
   defp ensure_camera_exists(_camera, _id, _conn), do: :ok
 
@@ -428,9 +424,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     if Permission.Camera.can_edit?(current_user, camera) do
       :ok
     else
-      conn
-      |> put_status(403)
-      |> render(ErrorView, "error.json", %{message: "You don't have sufficient rights for this."})
+      render_error(conn, 403, %{message: "You don't have sufficient rights for this."})
     end
   end
 

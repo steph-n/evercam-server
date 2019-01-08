@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.CameraShareRequestController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.CameraShareRequestView
   alias EvercamMedia.Intercom
 
   swagger_path :show do
@@ -27,10 +26,8 @@ defmodule EvercamMediaWeb.CameraShareRequestController do
     with :ok <- camera_exists(conn, exid, camera),
          :ok <- caller_has_rights(conn, caller, camera)
     do
-     share_requests = CameraShareRequest.by_camera_and_status(camera, status)
-
-      conn
-      |> render(CameraShareRequestView, "index.json", %{camera_share_requests: share_requests})
+      share_requests = CameraShareRequest.by_camera_and_status(camera, status)
+      render(conn, "index.json", %{camera_share_requests: share_requests})
     end
   end
 
@@ -63,8 +60,7 @@ defmodule EvercamMediaWeb.CameraShareRequestController do
       |> Repo.update
       |> case do
         {:ok, camera_share_request} ->
-          conn
-          |> render(CameraShareRequestView, "show.json", %{camera_share_requests: camera_share_request})
+          render(conn, "show.json", %{camera_share_requests: camera_share_request})
         {:error, changeset} ->
           conn
           |> render_error(400, Util.parse_changeset(changeset))

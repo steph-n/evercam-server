@@ -1,7 +1,9 @@
 defmodule EvercamMediaWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :evercam_media
 
-  socket "/socket", EvercamMediaWeb.UserSocket
+  socket "/socket", EvercamMediaWeb.UserSocket,
+    websocket: [check_origin: false],
+    longpoll: [check_origin: false]
 
   # Serve at "/" the static files from "priv/static" directory.
   #

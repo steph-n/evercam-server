@@ -6,7 +6,8 @@ defmodule EvercamMediaWeb.ControllerHelpers do
   def render_error(conn, status, message) do
     conn
     |> put_status(status)
-    |> render(ErrorView, "error.json", %{message: message})
+    |> put_view(ErrorView)
+    |> render("error.json", %{message: message})
   end
 
   def user_request_ip(conn, requester_ip \\ "")

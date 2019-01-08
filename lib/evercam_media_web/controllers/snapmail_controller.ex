@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.SnapmailController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.SnapmailView
   alias EvercamMedia.Snapmail.SnapmailerSupervisor
 
   def swagger_definitions do
@@ -47,7 +46,7 @@ defmodule EvercamMediaWeb.SnapmailController do
     with :ok <- authorized(conn, current_user),
          {:ok, snapmails} <- get_by_user_camera(conn, current_user, camera, params["camera_id"])
     do
-      render(conn, SnapmailView, "index.json", %{snapmails: snapmails})
+      render(conn, "index.json", %{snapmails: snapmails})
     end
   end
 
@@ -59,7 +58,7 @@ defmodule EvercamMediaWeb.SnapmailController do
          :ok <- ensure_can_list(current_user, camera, conn)
     do
       snapmails = Snapmail.camera_and_user_id(camera.id, current_user.id)
-      render(conn, SnapmailView, "index.json", %{snapmails: snapmails})
+      render(conn, "index.json", %{snapmails: snapmails})
     end
   end
 
@@ -84,7 +83,7 @@ defmodule EvercamMediaWeb.SnapmailController do
          {:ok, snapmail} <- snapmail_exist(conn, exid)
     do
       if snapmail.user_id == current_user.id do
-        render(conn, SnapmailView, "show.json", %{snapmail: snapmail})
+        render(conn, "show.json", %{snapmail: snapmail})
       else
         render_error(conn, 401, "Unauthorized.")
       end
@@ -130,7 +129,7 @@ defmodule EvercamMediaWeb.SnapmailController do
             |> Repo.preload(:snapmail_cameras)
             |> Repo.preload([snapmail_cameras: :camera])
           spawn(fn -> start_snapmail_worker(created_snapmail) end)
-          render(conn |> put_status(:created), SnapmailView, "show.json", %{snapmail: created_snapmail})
+          render(conn |> put_status(:created), "show.json", %{snapmail: created_snapmail})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -175,7 +174,7 @@ defmodule EvercamMediaWeb.SnapmailController do
             |> Repo.preload(:snapmail_cameras, force: true)
             |> Repo.preload([snapmail_cameras: :camera], force: true)
           spawn(fn -> update_snapmail_worker(snapmail) end)
-          render(conn, SnapmailView, "show.json", %{snapmail: snapmail})
+          render(conn, "show.json", %{snapmail: snapmail})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -205,7 +204,7 @@ defmodule EvercamMediaWeb.SnapmailController do
       case Repo.update(changeset) do
         {:ok, snapmail} ->
           spawn(fn -> update_snapmail_worker(snapmail) end)
-          render(conn, SnapmailView, "show.json", %{snapmail: snapmail})
+          render(conn, "show.json", %{snapmail: snapmail})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end

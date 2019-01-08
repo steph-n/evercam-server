@@ -2,7 +2,7 @@ sudo: required
 
 language: elixir
 
-elixir: 1.7.1
+elixir: 1.7.4
 
 otp_release: 19.3
 

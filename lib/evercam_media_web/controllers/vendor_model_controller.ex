@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.VendorModelController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.VendorModelView
   import String, only: [to_integer: 1]
 
   @default_limit 25
@@ -74,8 +73,7 @@ defmodule EvercamMediaWeb.VendorModelController do
       total_pages = Float.floor(total_models / limit)
       returned_models = Enum.slice(models, page * limit, limit)
 
-      conn
-      |> render(VendorModelView, "index.json", %{vendor_models: returned_models, pages: total_pages, records: total_models})
+      render(conn, "index.json", %{vendor_models: returned_models, pages: total_pages, records: total_models})
     end
   end
 
@@ -95,8 +93,7 @@ defmodule EvercamMediaWeb.VendorModelController do
       nil ->
         render_error(conn, 404, "Model Not found.")
       model ->
-        conn
-        |> render(VendorModelView, "show.json", %{vendor_model: model})
+        render(conn, "show.json", %{vendor_model: model})
     end
   end
 

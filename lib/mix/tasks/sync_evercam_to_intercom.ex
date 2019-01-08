@@ -75,11 +75,11 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
 
     intercom_new_user = %{
-      "id": intercom_id,
-      "email": intercom_email,
-      "user_id": intercom_email,
-      "custom_attributes": %{
-        "status": "Share-Accepted"
+      id: intercom_id,
+      email: intercom_email,
+      user_id: intercom_email,
+      custom_attributes: %{
+        status: "Share-Accepted"
       }
     }
     |> Poison.encode!
