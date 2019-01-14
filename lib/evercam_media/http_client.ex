@@ -10,6 +10,8 @@ defmodule EvercamMedia.HTTPClient do
   def get(:digest_auth, response, url, username, password) do
     digest_token = DigestAuth.get_digest_token(response, url, username, password)
     hackney = [pool: :snapshot_pool]
+    Logger.info ":digest_auth"
+    IO.inspect digest_token
     HTTPoison.get url, ["Authorization": "Digest #{digest_token}"], hackney: hackney
   end
 
@@ -18,6 +20,7 @@ defmodule EvercamMedia.HTTPClient do
   end
 
   def get(:basic_auth, url, username, password) do
+    Logger.info ":basic_auth"
     hackney = [basic_auth: {username, password}, pool: :snapshot_pool]
     HTTPoison.get url, [], hackney: hackney
   end
@@ -106,7 +109,9 @@ defmodule EvercamMedia.HTTPClient.DigestAuth do
   def get_digest_token(response, url, username, password, method \\ "GET") do
     case response.headers |> Enum.find(fn({k, v}) -> k == "WWW-Authenticate" && String.starts_with?(v, "Digest") end) do
       {"WWW-Authenticate", auth_string} ->
+        IO.inspect auth_string
         digest_head = parse_digest_header(auth_string)
+        IO.inspect digest_head
         %{"realm" => realm, "nonce" => nonce} = digest_head
         cnonce = :crypto.strong_rand_bytes(16) |> md5
         url = URI.parse(url)
@@ -138,7 +143,7 @@ defmodule EvercamMedia.HTTPClient.DigestAuth do
   end
 
   defp parse_digest_header(auth_head) do
-    case Regex.scan(~r/(\w+\s*)=\"([\w=\s|()|:\\]+)/, auth_head) do
+    case Regex.scan(~r/(\w+\s*)=\"([\w=\s|()|:+\/\\]+)/, auth_head) do
       [] ->
         raise "Error in digest authentication header: #{auth_head}"
       parsed ->
