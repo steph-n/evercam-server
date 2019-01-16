@@ -56,7 +56,7 @@ defmodule EvercamMedia.Snapshot.Streamer do
         Logger.debug "[#{camera_exid}] Streaming ..."
         spawn fn -> stream(camera) end
     end
-    Process.send_after(self(), :tick, 1000)
+    Process.send_after(self(), :tick, get_fps(camera_exid))
     {:noreply, [], camera_exid}
   end
 
@@ -107,6 +107,12 @@ defmodule EvercamMedia.Snapshot.Streamer do
     |> Enum.filter(fn(v) -> v != "" end)
     |> Enum.join(", ")
   end
+
+  defp get_fps("dunke-wqnzu"), do: 2000
+  defp get_fps("dunke-ibcwt"), do: 2000
+  defp get_fps("dunke-bnivp"), do: 2000
+  defp get_fps("dunke-gqiwe"), do: 2000
+  defp get_fps(_), do: 1000
 
   defp check_empty_nil(desc, value) when value in [nil, ""], do: desc
   defp check_empty_nil(desc, value), do: "#{desc}, #{value}"
