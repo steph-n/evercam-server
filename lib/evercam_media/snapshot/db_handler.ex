@@ -71,6 +71,7 @@ defmodule EvercamMedia.Snapshot.DBHandler do
         Logger.info "[#{camera_exid}] [update_status] [error] [#{error_code}] [#{error_total}]"
         pause_camera_requests(camera, error_code, rem(error_total, 5))
       status == false ->
+        spawn fn -> check_vh("offline", camera) end
         ConCache.dirty_put(:snapshot_error, camera.exid, error_total)
       true -> :noop
     end
