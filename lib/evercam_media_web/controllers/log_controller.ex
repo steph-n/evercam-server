@@ -105,11 +105,15 @@ defmodule EvercamMediaWeb.LogController do
     end
   end
 
-  defp parse_to(to) when to in [nil, ""], do: Calendar.DateTime.now_utc |> Calendar.DateTime.to_erl
-  defp parse_to(to), do: to |> Calendar.DateTime.Parse.unix! |> Calendar.DateTime.to_erl
+  defp parse_to(to) when to in [nil, ""], do: Calendar.DateTime.now_utc
+  defp parse_to(to), do: to |> Calendar.DateTime.Parse.unix!
 
-  defp parse_from(from) when from in [nil, ""], do: Ecto.DateTime.cast!("2014-01-01T14:00:00Z") |> Ecto.DateTime.to_erl
-  defp parse_from(from), do: from |> Calendar.DateTime.Parse.unix! |> Calendar.DateTime.to_erl
+  defp parse_from(from) when from in [nil, ""] do
+    Calendar.DateTime.Parse.rfc3339_utc("2014-01-01T14:00:00Z")
+    |> elem(1)
+    |> Calendar.DateTime.to_erl
+  end
+  defp parse_from(from), do: from |> Calendar.DateTime.Parse.unix!
 
   defp parse_limit(limit) when limit in [nil, ""], do: @default_limit
   defp parse_limit(limit), do: if to_integer(limit) < 1, do: @default_limit, else: to_integer(limit)

@@ -50,13 +50,11 @@ defmodule EvercamMedia.ComparesDirectoryChange do
 
   defp path_for_snapshot(date) do
     date
-    |> Ecto.DateTime.to_erl
     |> Calendar.Strftime.strftime!("%Y/%m/%d/%H_%M_%S")
   end
 
   defp new_path_for_snapshot(date) do
     date
-    |> Ecto.DateTime.to_erl
     |> Calendar.Strftime.strftime!("%Y-%m-%d-%H_%M_%S")
   end
 

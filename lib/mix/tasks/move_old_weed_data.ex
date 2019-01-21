@@ -98,9 +98,10 @@ defmodule EvercamMedia.MoveOldWeedData do
     |> Repo.all
     |> Enum.filter(& !is_nil(&1.camera))
     |> Enum.map(fn (cr) ->
-      case Ecto.DateTime.compare(cr.camera.created_at, Ecto.DateTime.from_erl({{2017, 11, 01}, {00, 00, 00}})) do
-        :lt -> cr.camera.exid
-        :gt -> nil
+      from_date = Calendar.DateTime.from_erl!({{2017, 11, 01}, {00, 00, 00}}, "UTC")
+      case Calendar.DateTime.diff(from_date, cr.camera.created_at) do
+        {:ok, _, _, :before} -> cr.camera.exid
+        _ -> nil
       end
     end) |> Enum.reject(&is_nil/1) |> Enum.sort
   end

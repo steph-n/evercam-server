@@ -62,7 +62,7 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
       password: cam_password,
       channel: channel,
       start_date: get_starting_date(extractor),
-      end_date: parse_ecto_to_datetime(extractor.to_date),
+      end_date: extractor.to_date,
       interval: extractor.interval,
       schedule: extractor.schedule,
       requester: extractor.requestor,
@@ -76,16 +76,9 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
   defp serve_nil_value(val), do: val
 
   defp get_starting_date(extractor) do
-    File.read!("#{@root_dir}/#{extractor.camera.exid}/extract/#{extractor.id}/CURRENT")
-    |> Timex.parse!("%Y-%m-%d-%H-%M-%S", :strftime)
-    |> Ecto.DateTime.cast!
-    |> parse_ecto_to_datetime
-  end
-
-  defp parse_ecto_to_datetime(datetime) do
-    datetime
-    |> Ecto.DateTime.dump
-    |> elem(1)
-    |> Timex.DateTime.Helpers.construct("Etc/UTC")
+    {:ok, extraction_date} =
+      File.read!("#{@root_dir}/#{extractor.camera.exid}/extract/#{extractor.id}/CURRENT")
+      |> Calendar.DateTime.Parse.rfc3339_utc
+    extraction_date
   end
 end

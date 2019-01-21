@@ -4,8 +4,8 @@ defmodule Compare do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @required_fields ~w(camera_id name before_date after_date embed_code status requested_by exid)
-  @optional_fields ~w(create_animation public)
+  @required_fields [:camera_id, :name, :before_date, :after_date, :embed_code, :status, :requested_by, :exid]
+  @optional_fields [:create_animation, :public]
 
   # @status %{processing: 0, completed: 1, failed: 2}
 
@@ -15,13 +15,13 @@ defmodule Compare do
 
     field :exid, :string
     field :name, :string
-    field :before_date, Ecto.DateTime
-    field :after_date, Ecto.DateTime
+    field :before_date, :utc_datetime_usec
+    field :after_date, :utc_datetime_usec
     field :embed_code, :string
     field :public, :boolean
     field :create_animation, :boolean
     field :status, :integer, default: 0
-    timestamps(type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def get_by_camera(camera_id) do
@@ -70,13 +70,9 @@ defmodule Compare do
     |> Repo.one
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
   end
 end

@@ -3,8 +3,8 @@ defmodule CameraShare do
   alias EvercamMedia.Repo
   import Ecto.Query
 
-  @required_fields ~w(camera_id user_id kind)
-  @optional_fields ~w(sharer_id message updated_at created_at)
+  @required_fields [:camera_id, :user_id, :kind]
+  @optional_fields [:sharer_id, :message, :updated_at, :created_at]
 
   schema "camera_shares" do
     belongs_to :camera, Camera
@@ -13,7 +13,7 @@ defmodule CameraShare do
 
     field :kind, :string
     field :message, :string
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def rights_list("full"), do: ["snapshot", "view", "edit", "list"]
@@ -207,14 +207,10 @@ defmodule CameraShare do
     |> Repo.delete_all
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields())
     |> unique_constraint(:share, [name: "camera_shares_camera_id_user_id_index", message: "The camera has already been shared with this user."])
     |> validate_rights(params[:rights])
     |> can_share(params[:owner])

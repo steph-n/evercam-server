@@ -1,5 +1,7 @@
 defmodule EvercamMedia.Repo do
-  use Ecto.Repo, otp_app: :evercam_media
+  use Ecto.Repo,
+    otp_app: :evercam_media,
+    adapter: Ecto.Adapters.Postgres
 
   defmodule NewRelic do
     use Elixir.NewRelic.Plug.Repo, repo: EvercamMedia.Repo
@@ -7,10 +9,12 @@ defmodule EvercamMedia.Repo do
 end
 
 defmodule EvercamMedia.SnapshotRepo do
-  use Ecto.Repo, otp_app: :evercam_media
+  use Ecto.Repo,
+    otp_app: :evercam_media,
+    adapter: Ecto.Adapters.Postgres
   require Ecto.Query
 
-  def exists?(queryable) do
+  def existss?(queryable) do
     queryable
     |> Ecto.Query.from(select: 1, limit: 1)
     |> Ecto.Queryable.to_query

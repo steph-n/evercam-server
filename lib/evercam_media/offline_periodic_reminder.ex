@@ -18,12 +18,7 @@ defmodule EvercamMedia.OfflinePeriodicReminder do
   defp can_send_reminder(_camera, alert_emails, _last_online_at) when alert_emails in [nil, ""], do: :noop
   defp can_send_reminder(camera, _alert_emails, _last_online_at) do
     current_date = Calendar.DateTime.now!("UTC")
-    last_online_date =
-      camera.last_online_at
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!("UTC")
-
-    case Calendar.DateTime.diff(current_date, last_online_date) do
+    case Calendar.DateTime.diff(current_date, camera.last_online_at) do
       {:ok, seconds, _, :after} -> do_send_notification(camera, seconds)
       _ -> 0
     end

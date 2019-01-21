@@ -4,21 +4,21 @@ defmodule CameraActivity do
   import Ecto.Query
   alias EvercamMedia.SnapshotRepo
 
-  @required_fields ~w(camera_id action)
-  @optional_fields ~w(access_token_id camera_exid name action extra done_at)
+  @required_fields [:camera_id, :action]
+  @optional_fields [:access_token_id, :camera_exid, :name, :action, :extra, :done_at]
 
   schema "camera_activities" do
     belongs_to :camera, Camera
     belongs_to :access_token, AccessToken
 
     field :action, :string
-    field :done_at, Ecto.DateTime, default: Ecto.DateTime.utc
+    field :done_at, :utc_datetime_usec, default: Calendar.DateTime.now_utc
     field :extra, EvercamMedia.Types.JSON
     field :camera_exid, :string
     field :name, :string
   end
 
-  def log_activity(user, camera, action, extra \\ nil, done_at \\ Ecto.DateTime.utc) do
+  def log_activity(user, camera, action, extra \\ nil, done_at \\ Calendar.DateTime.now_utc) do
     do_log(Application.get_env(:evercam_media, :run_spawn), user, camera, action, extra, done_at)
   end
 
@@ -77,14 +77,10 @@ defmodule CameraActivity do
     |> where([c], c.action in ^types)
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(camera_activity, params \\ :invalid) do
     camera_activity
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> unique_constraint(:camera_id, name: :camera_activities_camera_id_done_at_index)
   end
 end

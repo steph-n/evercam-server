@@ -18,11 +18,6 @@ defmodule EvercamMedia.ShareRequestReminder do
 
   defp send_reminder(share_request) do
     current_date = Calendar.DateTime.now!("UTC")
-    created_date =
-      share_request.created_at
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!("UTC")
-
     camera_time =
       Calendar.DateTime.now!("UTC")
       |> Calendar.DateTime.shift_zone!(Camera.get_timezone(share_request.camera))
@@ -30,7 +25,7 @@ defmodule EvercamMedia.ShareRequestReminder do
       |> elem(1)
     {hour, _minute, _second} = camera_time
     if hour == 9 do
-      case Calendar.DateTime.diff(current_date, created_date) do
+      case Calendar.DateTime.diff(current_date, share_request.created_at) do
         {:ok, total_seconds, _, :after} ->
           can_send_reminder(share_request, current_date, total_seconds)
         _ -> 0
@@ -39,11 +34,7 @@ defmodule EvercamMedia.ShareRequestReminder do
   end
 
   defp can_send_reminder(share_request, current_date, total_seconds) when total_seconds < 1_814_400 do
-    last_reminder =
-      share_request.updated_at
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!("UTC")
-    case Calendar.DateTime.diff(current_date, last_reminder) do
+    case Calendar.DateTime.diff(current_date, share_request.updated_at) do
       {:ok, seconds, _, :after} -> send_notification(share_request, seconds)
       _ -> 0
     end

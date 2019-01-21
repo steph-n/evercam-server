@@ -56,12 +56,7 @@ defmodule EvercamMedia.AddCameraLogs do
   end
 
   defp done_at_after_two_minutes(done_at) do
-    done_at
-    |> Ecto.DateTime.to_erl
-    |> :calendar.datetime_to_gregorian_seconds
-    |> Kernel.+(60 * 2)
-    |> :calendar.gregorian_seconds_to_datetime
-    |> Ecto.DateTime.from_erl
+    done_at |> Calendar.DateTime.advance!(60 * 2)
   end
 
   defp pass_values_to_db(action, done_at, camera) do

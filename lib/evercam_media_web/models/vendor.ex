@@ -4,7 +4,7 @@ defmodule Vendor do
   alias EvercamMedia.Repo
 
   schema "vendors" do
-    has_many :vendor_models, VendorModel
+    has_many :vendor_models, VendorModel, foreign_key: :vendor_id
 
     field :exid, :string
     field :name, :string

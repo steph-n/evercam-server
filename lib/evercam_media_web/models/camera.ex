@@ -6,8 +6,8 @@ defmodule Camera do
   alias EvercamMedia.Schedule
   alias EvercamMedia.Util
 
-  @required_fields ~w(name owner_id config is_public is_online_email_owner_notification)
-  @optional_fields ~w(exid timezone thumbnail_url is_online offline_reason last_polled_at alert_emails last_online_at updated_at created_at model_id location mac_address discoverable)
+  @required_fields [:name, :owner_id, :config, :is_public, :is_online_email_owner_notification]
+  @optional_fields [:exid, :timezone, :thumbnail_url, :is_online, :offline_reason, :last_polled_at, :alert_emails, :last_online_at, :updated_at, :created_at, :model_id, :location, :mac_address, :discoverable]
 
   schema "cameras" do
     belongs_to :owner, User, foreign_key: :owner_id
@@ -29,10 +29,10 @@ defmodule Camera do
     field :discoverable, :boolean, default: false
     field :config, EvercamMedia.Types.JSON
     field :mac_address, EvercamMedia.Types.MACADDR
-    field :location, Geo.Point
-    field :last_polled_at, Ecto.DateTime, default: Ecto.DateTime.utc
-    field :last_online_at, Ecto.DateTime, default: Ecto.DateTime.utc
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    field :location, Geo.PostGIS.Geometry
+    field :last_polled_at, :utc_datetime_usec, default: Calendar.DateTime.now_utc
+    field :last_online_at, :utc_datetime_usec, default: Calendar.DateTime.now_utc
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def all do
@@ -45,7 +45,7 @@ defmodule Camera do
 
   def get_timelapse_recording_cameras() do
     Camera
-    |> join(:inner, [c], tr in TimelapseRecording, tr.camera_id == c.id)
+    |> join(:inner, [c], tr in TimelapseRecording, on: tr.camera_id == c.id)
     |> preload(:timelapse_recordings)
     |> preload(:owner)
     |> preload(:vendor_model)
@@ -519,14 +519,10 @@ defmodule Camera do
     |> cast(params, @required_fields ++ @optional_fields)
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(camera, params \\ :invalid) do
     camera
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> validate_length(:name, max: 24, message: "Camera Name is too long. Maximum 24 characters.")
     |> validate_exid
     |> validate_params

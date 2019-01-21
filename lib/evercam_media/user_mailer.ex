@@ -56,8 +56,6 @@ defmodule EvercamMedia.UserMailer do
     timezone = camera |> Camera.get_timezone
     current_time =
       camera.last_online_at
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!("UTC")
       |> Calendar.DateTime.shift_zone!(timezone)
       |> Calendar.Strftime.strftime!("%A, %d %b %Y %H:%M")
     thumbnail = get_thumbnail(camera)
@@ -290,9 +288,7 @@ defmodule EvercamMedia.UserMailer do
   defp parse_interval(interval) when interval > 60, do: "1 Frame Every #{Integer.floor_div(interval, 60)} hours"
 
   defp get_formatted_date(datetime) do
-    datetime
-    |> Ecto.DateTime.to_erl
-    |> Calendar.Strftime.strftime!("%A, %d %b %Y %H:%M")
+    datetime |> Calendar.Strftime.strftime!("%A, %d %b %Y %H:%M")
   end
 
   defp get_dropbox_url(snapshot_extractor) do

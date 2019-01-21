@@ -105,7 +105,7 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
   end
 
   defp extract_image(config, url, start_date, path, upload_path, timezone) do
-    image_name = start_date |> Calendar.Strftime.strftime!("%Y-%m-%d-%H-%M-%S")
+    image_name = start_date |> Calendar.DateTime.Format.rfc3339
     saved_file_name = start_date |> DateTime.to_unix
     images_path = "#{path}#{saved_file_name}.jpg"
     upload_image_path = "#{upload_path}#{image_name}.jpg"

@@ -17,11 +17,7 @@ defmodule EvercamMedia.CreateArchiveThumbnail do
       case archive.camera do
         nil -> Logger.info "Camera not found with id: #{archive.camera_id}, Archive: #{archive.exid}"
         _ ->
-          archive_date =
-            archive.created_at
-            |> Ecto.DateTime.to_erl
-            |> Calendar.DateTime.from_erl!("UTC")
-          seaweed_url = Storage.point_to_seaweed(archive_date)
+          seaweed_url = Storage.point_to_seaweed(archive.created_at)
           archive_url = "#{seaweed_url}/#{archive.camera.exid}/clips/#{archive.exid}.mp4"
           Logger.info archive_url
           download_archive_and_create_thumbnail(archive, archive_url)

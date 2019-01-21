@@ -366,12 +366,8 @@ defmodule EvercamMediaWeb.ArchiveController do
     from_date = clip_date(unix_from, timezone)
     to_date = clip_date(unix_to, timezone)
     params = update_archive_type(params, params["is_nvr_archive"])
-
+    current_date_time = Calendar.DateTime.now_utc
     changeset = archive_changeset(params, camera, current_user, @status.pending)
-
-    current_date_time =
-      Calendar.DateTime.now_utc
-      |> Calendar.DateTime.to_erl
 
     cond do
       !changeset.valid? ->
@@ -475,7 +471,11 @@ defmodule EvercamMediaWeb.ArchiveController do
   defp check_port(camera, is_nvr) when is_nvr in [true, "true"] do
     host = Camera.host(camera)
     port = Camera.port(camera, "external", "rtsp")
-    Util.port_open?(host, "#{port}")
+    case port do
+      "" -> true
+      nil -> false
+      _ -> Util.port_open?(host, "#{port}")
+    end
   end
   defp check_port(_, _), do: true
 
@@ -603,31 +603,22 @@ defmodule EvercamMediaWeb.ArchiveController do
 
   defp convert_to_user_time(date_time, timezone) do
     date_time
-    |> Ecto.DateTime.to_erl
-    |> Calendar.DateTime.from_erl!("UTC")
     |> Calendar.DateTime.shift_zone!(timezone)
     |> Calendar.DateTime.Format.unix
   end
 
   defp clip_date(unix_timestamp, _timezone) when unix_timestamp in ["", nil], do: nil
-  defp clip_date(unix_timestamp, "Etc/UTC") do
-    unix_timestamp
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.DateTime.to_erl
-  end
+  defp clip_date(unix_timestamp, "Etc/UTC"), do: Calendar.DateTime.Parse.unix!(unix_timestamp)
   defp clip_date(unix_timestamp, timezone) do
     unix_timestamp
     |> Calendar.DateTime.Parse.unix!
     |> Calendar.DateTime.to_erl
     |> Calendar.DateTime.from_erl!(timezone)
     |> Calendar.DateTime.shift_zone!("Etc/UTC")
-    |> Calendar.DateTime.to_erl
   end
 
-  defp date_difference(from_date, to_date) do
-    from = Calendar.DateTime.from_erl!(to_date, "Etc/UTC")
-    to = Calendar.DateTime.from_erl!(from_date, "Etc/UTC")
-    case Calendar.DateTime.diff(from, to) do
+  defp date_difference(from, to) do
+    case Calendar.DateTime.diff(to, from) do
       {:ok, seconds, _, :after} -> seconds
       _ -> 1
     end

@@ -137,8 +137,9 @@ defmodule EvercamMedia.Intercom do
     headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "Accept:application/json", "Content-Type": "application/json"]
 
     case HTTPoison.delete(url, headers) do
-      {:ok, _response} -> :noop
-      {:error, _reason} -> delete_user(user, by_val, tries + 1)
+      {:ok, _} -> :noop
+      {:error, _} -> delete_user(user, by_val, tries + 1)
+      _ -> :noop
     end
   end
 
@@ -173,7 +174,7 @@ defmodule EvercamMedia.Intercom do
         firstname: "",
         lastname: "",
         email: email,
-        created_at: Ecto.DateTime.utc
+        created_at: Calendar.DateTime.now_utc
       }
       create_user(user, user_agent, ip, "Share-Revoked")
     end)

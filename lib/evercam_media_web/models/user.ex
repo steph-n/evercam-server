@@ -6,8 +6,8 @@ defmodule User do
   @email_regex ~r/^(?!.*\.{2})[a-z0-9._-]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/
   @name_regex ~r/^[\p{Xwd}\s,.']+$/
 
-  @required_fields ~w(password firstname lastname email)
-  @optional_fields ~w(username telegram_username referral_url api_id api_key reset_token token_expires_at payment_method country_id confirmed_at updated_at last_login_at created_at)
+  @required_fields [:password, :firstname, :lastname, :email]
+  @optional_fields [:username, :telegram_username, :referral_url, :api_id, :api_key, :reset_token, :token_expires_at, :payment_method, :country_id, :confirmed_at, :updated_at, :last_login_at, :created_at]
 
   schema "users" do
     belongs_to :country, Country, foreign_key: :country_id
@@ -25,12 +25,12 @@ defmodule User do
     field :api_id, :string
     field :api_key, :string
     field :reset_token, :string
-    field :token_expires_at, Ecto.DateTime
+    field :token_expires_at, :utc_datetime
     field :stripe_customer_id, :string
-    field :confirmed_at, Ecto.DateTime
-    field :last_login_at, Ecto.DateTime
+    field :confirmed_at, :utc_datetime
+    field :last_login_at, :utc_datetime
     field :payment_method, :integer
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def invalidate_auth(api_id, api_key) do
@@ -150,14 +150,10 @@ defmodule User do
     end
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> has_username
     |> unique_constraint(:email, [name: :user_email_unique_index, message: "Email has already been taken."])
     |> unique_constraint(:username, [name: :user_username_unique_index, message: "Username has already been taken."])

@@ -4,8 +4,8 @@ defmodule Timelapse do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @required_fields ~w(camera_id user_id title frequency status date_always time_always)
-  @optional_fields ~w(exid snapshot_count resolution from_datetime to_datetime watermark_logo watermark_position recreate_hls start_recreate_hls last_snapshot_at extra)
+  @required_fields [:camera_id, :user_id, :title, :frequency, :status, :date_always, :time_always]
+  @optional_fields [:exid, :snapshot_count, :resolution, :from_datetime, :to_datetime, :watermark_logo, :watermark_position, :recreate_hls, :start_recreate_hls, :last_snapshot_at, :extra]
 
   # @status %{active: 0, scheduled: 1, expired: 2, paused: 3, stopped: 4}
 
@@ -21,18 +21,18 @@ defmodule Timelapse do
     field :status, :integer, default: 0
 
     field :date_always, :boolean
-    field :from_datetime, Ecto.DateTime, default: Ecto.DateTime.utc
+    field :from_datetime, :utc_datetime_usec, default: Calendar.DateTime.now_utc
     field :time_always, :boolean
-    field :to_datetime, Ecto.DateTime, default: Ecto.DateTime.utc
+    field :to_datetime, :utc_datetime_usec, default: Calendar.DateTime.now_utc
     field :watermark_logo, :string
     field :watermark_position, :string
     field :recreate_hls, :boolean, default: false
     field :start_recreate_hls, :boolean, default: false
     field :hls_created, :boolean, default: false
-    field :last_snapshot_at, Ecto.DateTime
+    field :last_snapshot_at, :utc_datetime_usec
     field :extra, EvercamMedia.Types.JSON
 
-    timestamps(type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def all do
@@ -90,14 +90,8 @@ defmodule Timelapse do
 
   def scheduled_now?(timezone, from_date, to_date, date_always, time_always) do
     current_time = Calendar.DateTime.now!(timezone)
-    from_date =
-      from_date
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!(timezone)
-    to_date =
-      to_date
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!(timezone)
+    from_date = Calendar.DateTime.shift_zone!(from_date, timezone)
+    to_date = Calendar.DateTime.shift_zone!(to_date, timezone)
 
     is_scheduled_now?(timezone, current_time, from_date, to_date, date_always, time_always)
   end
@@ -202,8 +196,8 @@ defmodule Timelapse do
   defp validate_from_to_datetime(changeset) do
     date_always = get_field(changeset, :date_always)
     time_always = get_field(changeset, :time_always)
-    from_datetime = get_field(changeset, :from_datetime) |> Ecto.DateTime.to_erl |> Calendar.DateTime.from_erl!("UTC")
-    to_datetime = get_field(changeset, :to_datetime) |> Ecto.DateTime.to_erl |> Calendar.DateTime.from_erl!("UTC")
+    from_datetime = get_field(changeset, :from_datetime)
+    to_datetime = get_field(changeset, :to_datetime)
     case validate_datetime_parameter(from_datetime, to_datetime, date_always, time_always) do
       {:ok} -> changeset
       {:invalid, message} -> add_error(changeset, :invalid_from_to_datetime, message)
@@ -238,14 +232,10 @@ defmodule Timelapse do
     |> validate_from_to_datetime
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> validate_exid
   end
 end

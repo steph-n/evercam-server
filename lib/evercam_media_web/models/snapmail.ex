@@ -5,8 +5,8 @@ defmodule Snapmail do
   alias EvercamMedia.Repo
 
   @email_regex ~r/^\S+@\S+$/
-  @required_fields ~w(subject notify_time)
-  @optional_fields ~w(exid user_id recipients message notify_days timezone is_paused is_public)
+  @required_fields [:subject, :notify_time]
+  @optional_fields [:exid, :user_id, :recipients, :message, :notify_days, :timezone, :is_paused, :is_public]
 
   schema "snapmails" do
     belongs_to :user, User, foreign_key: :user_id
@@ -21,7 +21,7 @@ defmodule Snapmail do
     field :timezone, :string, default: "Etc/UTC"
     field :is_paused, :boolean, default: false
     field :is_public, :boolean, default: false
-    timestamps(type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def all do
@@ -76,7 +76,7 @@ defmodule Snapmail do
 
   def delete_no_camera_snapmail() do
     Snapmail
-    |> join(:left, [snap], snap_cam in SnapmailCamera, snap_cam.snapmail_id == snap.id)
+    |> join(:left, [snap], snap_cam in SnapmailCamera, on: snap_cam.snapmail_id == snap.id)
     |> where([snap, snap_cam], is_nil(snap_cam.id))
     |> Repo.all
     |> Enum.map(fn(snapmail) -> snapmail.id end)
@@ -220,14 +220,10 @@ defmodule Snapmail do
     end
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> validate_exid
     |> validate_format(:notify_time, ~r/^\d{1,2}:\d{1,2}$/, message: "Notify time is invalid")
     |> validate_recipients

@@ -6,8 +6,8 @@ defmodule CameraShareRequest do
 
   @email_regex ~r/^(?!.*\.{2})[a-z0-9._-]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/
 
-  @required_fields ~w(camera_id user_id key email status rights)
-  @optional_fields ~w(message created_at updated_at)
+  @required_fields [:camera_id, :user_id, :key, :email, :status, :rights]
+  @optional_fields [:message, :created_at, :updated_at]
   @status %{pending: -1, cancelled: -2, used: 1}
 
   schema "camera_share_requests" do
@@ -19,7 +19,7 @@ defmodule CameraShareRequest do
     field :rights, :string
     field :status, :integer
     field :message, :string
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def status, do: @status
@@ -158,14 +158,10 @@ defmodule CameraShareRequest do
     changeset(model, params)
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> validate_format(:email, @email_regex, [message: "Email format isn't valid!"])
     |> update_change(:email, &String.downcase/1)
     |> validate_rights

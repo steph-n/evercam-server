@@ -3,8 +3,8 @@ defmodule AccessRight do
   alias EvercamMedia.Repo
   import Ecto.Query
 
-  @required_fields ~w(token_id right status)
-  @optional_fields ~w(camera_id grantor_id snapshot_id account_id scope updated_at created_at)
+  @required_fields [:token_id, :right, :status]
+  @optional_fields [:camera_id, :grantor_id, :account_id, :scope, :updated_at, :created_at]
   @camera_rights ["delete", "edit", "list", "snapshot", "share", "view", "grant~delete",
                   "grant~edit", "grant~list", "grant~snapshot", "grant~share", "grant~view"]
   @status %{active: 1, deleted: -1}
@@ -13,13 +13,12 @@ defmodule AccessRight do
     belongs_to :access_token, AccessToken, foreign_key: :token_id
     belongs_to :camera, Camera, foreign_key: :camera_id
     belongs_to :grantor, User, foreign_key: :grantor_id
-    belongs_to :snapshot, Snapshot, foreign_key: :snapshot_id
     belongs_to :account, User, foreign_key: :account_id
 
     field :right, :string
     field :status, :integer
     field :scope, :string
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def allows?(requester, resource, right, scope) do
@@ -86,13 +85,9 @@ defmodule AccessRight do
     end
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
   end
 end

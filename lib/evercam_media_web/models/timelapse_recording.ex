@@ -3,7 +3,7 @@ defmodule TimelapseRecording do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @required_fields ~w(camera_id frequency storage_duration status schedule)
+  @required_fields [:camera_id, :frequency, :storage_duration, :status, :schedule]
 
   schema "timelapse_recordings" do
     belongs_to :camera, Camera, foreign_key: :camera_id
@@ -13,7 +13,7 @@ defmodule TimelapseRecording do
     field :status, :string
     field :schedule, EvercamMedia.Types.JSON
 
-    timestamps(type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def get_all_ephemeral do
@@ -67,13 +67,9 @@ defmodule TimelapseRecording do
     end
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
   end
 end

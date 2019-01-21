@@ -3,8 +3,8 @@ defmodule MetaData do
   alias EvercamMedia.Repo
   import Ecto.Query
 
-  @required_fields ~w(action)
-  @optional_fields ~w(camera_id user_id process_id extra)
+  @required_fields [:action]
+  @optional_fields [:camera_id, :user_id, :process_id, :extra]
 
   schema "meta_datas" do
     belongs_to :camera, Camera
@@ -13,7 +13,7 @@ defmodule MetaData do
     field :action, :string
     field :process_id, :integer
     field :extra, EvercamMedia.Types.JSON
-    timestamps(type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def by_camera(camera_id, action \\ "rtmp") do
@@ -81,13 +81,9 @@ defmodule MetaData do
     |> Repo.delete_all
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
   end
 end

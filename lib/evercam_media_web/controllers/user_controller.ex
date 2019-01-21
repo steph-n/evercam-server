@@ -163,7 +163,7 @@ defmodule EvercamMediaWeb.UserController do
       params =
         case has_share_request_key?(share_request_key) do
           true ->
-            Map.merge(params, %{"confirmed_at" => Calendar.DateTime.to_erl(Calendar.DateTime.now_utc)})
+            Map.merge(params, %{"confirmed_at" => Calendar.DateTime.now_utc})
             |> Map.delete("share_request_key")
           false ->
             Map.delete(params, "share_request_key")
@@ -183,7 +183,6 @@ defmodule EvercamMediaWeb.UserController do
           if !has_share_request_key?(share_request_key) do
             created_at =
               user.created_at
-              |> Ecto.DateTime.to_erl
               |> Calendar.Strftime.strftime!("%Y-%m-%d %T UTC")
 
             code =
@@ -223,7 +222,6 @@ defmodule EvercamMediaWeb.UserController do
             expires =
               Calendar.DateTime.now_utc
               |> Calendar.DateTime.advance!(60 * 60 * 24)
-              |> Calendar.DateTime.to_erl
             %{reset_token: UUID.uuid4(:hex), token_expires_at: expires}
         end
 
@@ -435,12 +433,8 @@ defmodule EvercamMediaWeb.UserController do
   defp validate_reset_token(_token, token_expires_at) when token_expires_at in [nil, ""], do: false
   defp validate_reset_token(_token, token_expires_at) do
     current_date = Calendar.DateTime.now_utc
-    expire_date =
-      token_expires_at
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!("UTC")
 
-    case Calendar.DateTime.diff(current_date, expire_date) do
+    case Calendar.DateTime.diff(current_date, token_expires_at) do
       {:ok, _, _, :before} -> true
       _ -> false
     end
@@ -453,17 +447,10 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
 
+  def is_expired_token(conn, token_expires_at) when token_expires_at in [nil, ""], do: render_error(conn, 404, "your password reset token has been expired.")
   def is_expired_token(conn, token_expires_at) do
-    current_date = Calendar.DateTime.now_utc
-    expire_date =
-      token_expires_at
-      |> Ecto.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!("UTC")
-
-    case Calendar.DateTime.diff(expire_date, current_date) do
-      {:ok, seconds, _, :before} ->
-        IO.inspect seconds
-        render_error(conn, 404, "your password reset token has been expired.")
+    case Calendar.DateTime.diff(token_expires_at, Calendar.DateTime.now_utc) do
+      {:ok, _, _, :before} -> render_error(conn, 404, "your password reset token has been expired.")
       _ -> :ok
     end
   end
@@ -574,11 +561,14 @@ defmodule EvercamMediaWeb.UserController do
     Enum.each(share_requests, fn(share_request) -> create_share_for_request(share_request, user, conn) end)
   end
 
-  defp parse_to(to) when to in [nil, ""], do: Calendar.DateTime.now_utc |> Calendar.DateTime.to_erl
-  defp parse_to(to), do: to |> Calendar.DateTime.Parse.unix! |> Calendar.DateTime.to_erl
+  defp parse_to(to) when to in [nil, ""], do: Calendar.DateTime.now_utc
+  defp parse_to(to), do: to |> Calendar.DateTime.Parse.unix!
 
-  defp parse_from(from) when from in [nil, ""], do: "2014-01-01T14:00:00Z" |> Ecto.DateTime.cast! |> Ecto.DateTime.to_erl
-  defp parse_from(from), do: from |> Calendar.DateTime.Parse.unix! |> Calendar.DateTime.to_erl
+  defp parse_from(from) when from in [nil, ""] do
+    Calendar.DateTime.Parse.rfc3339_utc("2014-01-01T14:00:00Z")
+    |> elem(1)
+  end
+  defp parse_from(from), do: from |> Calendar.DateTime.Parse.unix!
 
   defp parse_types(types) when types in [nil, ""], do: nil
   defp parse_types(types), do: types |> String.split(",", trim: true) |> Enum.map(&String.trim/1)

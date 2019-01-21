@@ -4,14 +4,14 @@ defmodule SnapshotExtractor do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @required_fields ~w(camera_id to_date from_date status interval schedule)
-  @optional_fields ~w(notes requestor updated_at created_at create_mp4 jpegs_to_dropbox inject_to_cr)
+  @required_fields [:camera_id, :to_date, :from_date, :status, :interval, :schedule]
+  @optional_fields [:notes, :requestor, :updated_at, :created_at, :create_mp4, :jpegs_to_dropbox, :inject_to_cr]
 
   schema "snapshot_extractors" do
     belongs_to :camera, Camera, foreign_key: :camera_id
 
-    field :from_date, Ecto.DateTime, default: Ecto.DateTime.utc
-    field :to_date, Ecto.DateTime, default: Ecto.DateTime.utc
+    field :from_date, :utc_datetime, default: Calendar.DateTime.now_utc
+    field :to_date, :utc_datetime, default: Calendar.DateTime.now_utc
     field :interval, :integer
     field :schedule, EvercamMedia.Types.JSON
     field :status, :integer
@@ -20,7 +20,7 @@ defmodule SnapshotExtractor do
     field :create_mp4, :boolean
     field :jpegs_to_dropbox, :boolean
     field :inject_to_cr, :boolean
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def by_id(id) do
@@ -61,13 +61,9 @@ defmodule SnapshotExtractor do
     |> Repo.delete_all
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(snapshot_extractor, params \\ :invalid) do
     snapshot_extractor
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
   end
 end

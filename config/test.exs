@@ -29,9 +29,10 @@ config :evercam_media,
   storage_dir: "tmp/storage",
   dummy_auth: "foo:bar"
 
+config :evercam_media, ecto_repos: [EvercamMedia.Repo]
+
 # Configure your database
 config :evercam_media, EvercamMedia.Repo,
-  adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
   database: "evercam_tst",
@@ -39,7 +40,6 @@ config :evercam_media, EvercamMedia.Repo,
   types: EvercamMedia.PostgresTypes
 
 config :evercam_media, EvercamMedia.SnapshotRepo,
-  adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
   database: "evercam_tst",

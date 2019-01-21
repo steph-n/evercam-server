@@ -4,8 +4,8 @@ defmodule SnapmailLogs do
   alias EvercamMedia.Util
   require Logger
 
-  @required_fields ~w(body)
-  @optional_fields ~w(subject recipients image_timestamp)
+  @required_fields [:body]
+  @optional_fields [:subject, :recipients, :image_timestamp]
 
   schema "snapmail_logs" do
     field :recipients, :string
@@ -13,7 +13,7 @@ defmodule SnapmailLogs do
     field :body, :string
     field :image_timestamp, :string
 
-    timestamps(type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def save_snapmail(recipients, subject, body, image_timestamp) do
@@ -30,13 +30,9 @@ defmodule SnapmailLogs do
   defp handle_save_results({:ok, _}), do: :noop
   defp handle_save_results({:error, changeset}), do: Logger.info Util.parse_changeset(changeset)
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
   end
 end

@@ -92,11 +92,7 @@ defmodule EvercamMedia.Snapshot.DBHandler do
 
   def change_camera_status(camera, timestamp, status, error_code \\ nil) do
     do_pause_camera(camera, 20000)
-    datetime =
-      timestamp
-      |> Calendar.DateTime.Parse.unix!
-      |> Calendar.DateTime.to_erl
-      |> Ecto.DateTime.cast!
+    datetime = Calendar.DateTime.Parse.unix!(timestamp)
 
     try do
       params = construct_camera(datetime, error_code, status, camera.is_online == status)

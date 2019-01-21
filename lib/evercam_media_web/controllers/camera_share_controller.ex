@@ -92,14 +92,8 @@ defmodule EvercamMediaWeb.CameraShareController do
       zoho_camera = %{}
 
       fetch_shares =
-        Enum.reduce(email_array, {[], [], [], Ecto.DateTime.utc}, fn email, {shares, share_requests, changes, datetime} = _acc ->
-          next_datetime =
-            datetime
-            |> Ecto.DateTime.to_erl
-            |> Calendar.DateTime.from_erl!("Etc/UTC", {123456, 6})
-            |> Calendar.DateTime.advance!(2)
-            |> NaiveDateTime.to_erl
-            |> Ecto.DateTime.from_erl
+        Enum.reduce(email_array, {[], [], [], Calendar.DateTime.now_utc}, fn email, {shares, share_requests, changes, datetime} = _acc ->
+          next_datetime = datetime |> Calendar.DateTime.advance!(2)
           with {:found_user, sharee} <- ensure_user(email)
           do
             case CameraShare.create_share(camera, sharee, caller, params["rights"], params["message"]) do
@@ -414,7 +408,7 @@ defmodule EvercamMediaWeb.CameraShareController do
       firstname: "",
       lastname: "",
       email: email,
-      created_at: Ecto.DateTime.utc
+      created_at: Calendar.DateTime.now_utc
     }
   end
 end

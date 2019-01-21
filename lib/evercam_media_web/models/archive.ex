@@ -4,8 +4,8 @@ defmodule Archive do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @required_fields ~w(title exid from_date to_date requested_by camera_id)
-  @optional_fields ~w(status embed_time public frames url file_name type error_message)
+  @required_fields [:title, :exid, :from_date, :to_date, :requested_by, :camera_id]
+  @optional_fields [:status, :embed_time, :public, :frames, :url, :file_name, :type, :error_message]
 
   @archive_status %{pending: 0, processing: 1, completed: 2, failed: 3}
 
@@ -15,8 +15,8 @@ defmodule Archive do
 
     field :exid, :string
     field :title, :string
-    field :from_date, Ecto.DateTime
-    field :to_date, Ecto.DateTime
+    field :from_date, :utc_datetime
+    field :to_date, :utc_datetime
     field :status, :integer
     field :embed_time, :boolean
     field :public, :boolean
@@ -25,7 +25,7 @@ defmodule Archive do
     field :file_name, :string
     field :type, :string
     field :error_message, :string
-    timestamps(inserted_at: :created_at, updated_at: false, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, updated_at: false, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def by_exid(exid) do
@@ -101,14 +101,10 @@ defmodule Archive do
     |> Repo.one
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> update_change(:type, &String.downcase/1)
   end
 end

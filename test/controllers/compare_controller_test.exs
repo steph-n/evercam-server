@@ -11,7 +11,7 @@ defmodule EvercamMedia.CompareControllerTest do
     user = Repo.insert!(%User{firstname: "John", lastname: "Doe", username: "johndoe", email: "john@doe.com", password: "password123", country_id: country.id, api_id: UUID.uuid4(:hex), api_key: UUID.uuid4(:hex)})
     _access_token1 = Repo.insert!(%AccessToken{user_id: user.id, request: UUID.uuid4(:hex), is_revoked: false})
     camera = Repo.insert!(%Camera{owner_id: user.id, name: "Austin", exid: "austin", is_public: false, config: %{"external_host" => "192.168.1.100", "external_http_port" => "80"}})
-    compare = Repo.insert!(%Compare{camera_id: camera.id, name: "Test Compare", exid: "compar-gstd", before_date: Ecto.DateTime.utc, after_date: Ecto.DateTime.utc, public: false, embed_code: "<div></div>", requested_by: user.id})
+    compare = Repo.insert!(%Compare{camera_id: camera.id, name: "Test Compare", exid: "compar-gstd", before_date: Calendar.DateTime.now_utc, after_date: Calendar.DateTime.now_utc, public: false, embed_code: "<div></div>", requested_by: user.id})
 
     {:ok, user: user, camera: camera, compare: compare}
   end

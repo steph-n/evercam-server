@@ -106,8 +106,6 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
 
   defp convert_to_unix(timestamp) do
     timestamp
-    |> Ecto.DateTime.to_erl
-    |> Calendar.DateTime.from_erl!("Etc/UTC")
     |> Calendar.DateTime.Format.unix
   end
 end

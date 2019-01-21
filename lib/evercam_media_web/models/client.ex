@@ -3,8 +3,8 @@ defmodule Client do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @required_fields ~w(api_id api_key)
-  @optional_fields ~w(name callback_uris settings)
+  @required_fields [:api_id, :api_key]
+  @optional_fields [:name, :callback_uris, :settings]
 
   schema "clients" do
     has_many :access_tokens, AccessToken
@@ -14,7 +14,7 @@ defmodule Client do
     field :api_key, :string
     field :callback_uris, {:array, :string}
     field :settings, :string
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def get_by_bearer(token) do
@@ -22,18 +22,14 @@ defmodule Client do
     |> join(:left, [cl], t in assoc(cl, :access_tokens))
     |> where([_, t], t.request == ^token)
     |> where([_, t], t.is_revoked == false)
-    |> where([_, t], t.expires_at > ^Ecto.DateTime.utc)
+    |> where([_, t], t.expires_at > ^Calendar.DateTime.now_utc)
     |> Repo.one
-  end
-
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
   end
 
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
     |> unique_constraint(:api_id, [name: "ux_clients_exid"])
   end
 end

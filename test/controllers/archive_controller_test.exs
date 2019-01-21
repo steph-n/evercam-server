@@ -5,7 +5,7 @@ defmodule EvercamMedia.ArchiveControllerTest do
     country = Repo.insert!(%Country{name: "Something", iso3166_a2: "SMT"})
     user = Repo.insert!(%User{firstname: "John", lastname: "Doe", username: "johndoe", email: "john@doe.com", password: "password123", api_id: UUID.uuid4(:hex), api_key: UUID.uuid4(:hex), country_id: country.id})
     camera = Repo.insert!(%Camera{owner_id: user.id, name: "Austin", exid: "austin", is_public: false, config: %{ "external_host" => "202.83.28.14", "snapshots" => %{}}})
-    archive = Repo.insert!(%Archive{camera_id: camera.id, title: "dexter", requested_by: user.id, from_date: Calendar.DateTime.Parse.unix!("1467193560") |> Ecto.DateTime.cast |> elem(1), to_date: Calendar.DateTime.Parse.unix!("1467197160") |> Ecto.DateTime.cast |> elem(1), exid: "dexi-test", status: 0})
+    archive = Repo.insert!(%Archive{camera_id: camera.id, title: "dexter", requested_by: user.id, from_date: Calendar.DateTime.Parse.unix!("1467193560"), to_date: Calendar.DateTime.Parse.unix!("1467197160"), exid: "dexi-test", status: 0})
 
     params = %{
       title: "Testing",
@@ -55,7 +55,7 @@ defmodule EvercamMedia.ArchiveControllerTest do
   end
 
   test "POST /v1/cameras/:id/archives when clip duration greater than 60 minutes", context do
-    params = Map.merge(context[:params], %{public: "false", to_date: "1475755545"})
+    params = Map.merge(context[:params], %{public: "false", to_date: "1475755545", type: "clip"})
     response =
       build_conn()
       |> post("/v1/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)

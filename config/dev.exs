@@ -32,16 +32,16 @@ config :evercam_media, :run_spawn, true
 # and calculating stacktraces is usually expensive.
 config :phoenix, :stacktrace_depth, 20
 
+config :evercam_media, ecto_repos: [EvercamMedia.Repo]
+
 # Configure your database
 config :evercam_media, EvercamMedia.Repo,
-  adapter: Ecto.Adapters.Postgres,
   types: EvercamMedia.PostgresTypes,
   username: "postgres",
   password: "postgres",
   database: System.get_env["db"] || "evercam_dev"
 
 config :evercam_media, EvercamMedia.SnapshotRepo,
-  adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
   database: System.get_env["db"] || "evercam_dev"

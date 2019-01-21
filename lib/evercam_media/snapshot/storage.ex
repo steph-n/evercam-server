@@ -474,7 +474,7 @@ defmodule EvercamMedia.Snapshot.Storage do
 
   def import_oldest_image(camera_exid) do
     url = "#{@seaweedfs_new}/#{camera_exid}/snapshots/"
-    {{year, month, day}, {h, _m, _s}} = Ecto.DateTime.utc |> Ecto.DateTime.to_erl
+    {{year, month, day}, {h, _m, _s}} = Calendar.DateTime.now_utc |> Calendar.DateTime.to_erl
 
     {snapshot, error, _datetime} =
       request_from_seaweedfs(url, "Entries", "FullPath")

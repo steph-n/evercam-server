@@ -3,12 +3,12 @@ defmodule VendorModel do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @required_fields ~w(exid name jpg_url vendor_id)
-  @optional_fields ~w(username password h264_url mjpg_url mpeg4_url mobile_url lowres_url shape resolution official_url more_info audio_url poe wifi upnp ptz infrared varifocal sd_card audio_io discontinued onvif psia channel updated_at created_at)
+  @required_fields [:exid, :name, :jpg_url, :vendor_id]
+  @optional_fields [:username, :password, :h264_url, :mjpg_url, :mpeg4_url, :mobile_url, :lowres_url, :shape, :resolution, :official_url, :more_info, :audio_url, :poe, :wifi, :upnp, :ptz, :infrared, :varifocal, :sd_card, :audio_io, :discontinued, :onvif, :psia, :channel, :updated_at, :created_at]
 
   schema "vendor_models" do
     belongs_to :vendor, Vendor, foreign_key: :vendor_id
-    has_many :cameras, Camera
+    has_many :cameras, Camera, foreign_key: :model_id
 
     field :exid, :string
     field :name, :string
@@ -37,7 +37,7 @@ defmodule VendorModel do
     field :onvif, :boolean
     field :psia, :boolean
     field :channel, :integer
-    timestamps(inserted_at: :created_at, type: Ecto.DateTime, default: Ecto.DateTime.utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
   end
 
   def by_exid(exid) do
@@ -126,13 +126,9 @@ defmodule VendorModel do
     "https://evercam-public-assets.s3.amazonaws.com/#{model_full.vendor.exid}/#{model_full.exid}/#{type}.jpg"
   end
 
-  def required_fields do
-    @required_fields |> Enum.map(fn(field) -> String.to_atom(field) end)
-  end
-
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
-    |> validate_required(required_fields())
+    |> validate_required(@required_fields)
   end
 end
