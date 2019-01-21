@@ -3,6 +3,7 @@ defmodule EvercamMedia.CameraStatusAutomation do
   alias EvercamMedia.Util
   alias EvercamMedia.XMLParser
   alias EvercamMedia.HTTPClient
+  alias EvercamMedia.SnapshotRepo
   require Logger
 
   def check_camera_status(camera) do
@@ -27,7 +28,7 @@ defmodule EvercamMedia.CameraStatusAutomation do
     password = Camera.password(camera)
 
     get_vh_status(host, nvr_port, username, password)
-    |> is_enabled(host, nvr_port, username, password)
+    |> is_enabled(host, nvr_port, username, password, camera)
   end
   defp do_action(_camera, vh_port, nvr_port), do: Logger.debug "VH:Closed:#{vh_port}, NVR:Closed:#{nvr_port}"
 
@@ -55,16 +56,23 @@ defmodule EvercamMedia.CameraStatusAutomation do
     end
   end
 
-  defp enable_vh_port(host, port, username, password) do
+  defp enable_vh_port(host, port, username, password, camera) do
     xml = '<networkExtension xmlns="http://www.hikvision.com/ver20/XMLSchema" version="1.0"><enVirtualHost>true</enVirtualHost> </networkExtension>'
     post_url = "http://#{host}:#{port}/ISAPI/System/Network/extension"
     case HTTPClient.put(post_url, username, password, xml) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} -> body
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        insert_log(camera)
+        body
       {_, %HTTPoison.Response{body: body}} -> Logger.error body
     end
   end
 
-  def is_enabled("false", host, nvr_port, username, password), do:  enable_vh_port(host, nvr_port, username, password)
-  def is_enabled(_, _host, _nvr_port, _username, _password), do:  Logger.debug "Does not enable VH status"
+  def is_enabled("false", host, nvr_port, username, password, camera), do:  enable_vh_port(host, nvr_port, username, password, camera)
+  def is_enabled(_, _host, _nvr_port, _username, _password, _), do:  Logger.debug "Does not enable VH status"
 
+  defp insert_log(camera) do
+    parameters = %{camera_id: camera.id, camera_exid: camera.exid, action: "vh status", done_at: Calendar.DateTime.now_utc}
+    changeset = CameraActivity.changeset(%CameraActivity{}, parameters)
+    SnapshotRepo.insert(changeset)
+  end
 end
