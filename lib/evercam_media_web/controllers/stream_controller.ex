@@ -11,8 +11,8 @@ defmodule EvercamMediaWeb.StreamController do
   end
 
   def hls(conn, params) do
-    code = ensure_nvr_hls(conn, params, params["nvr"])
-    hls_response(code, conn, params)
+    {code, msg} = ensure_nvr_hls(conn, params, params["nvr"])
+    hls_response(code, conn, params, msg)
   end
 
   def close_stream(conn, params) do
@@ -39,15 +39,15 @@ defmodule EvercamMediaWeb.StreamController do
     kill_streams(rtsp_url)
   end
 
-  defp hls_response(200, conn, params) do
+  defp hls_response(200, conn, params, _) do
     conn
     |> redirect(external: "#{@hls_url}/#{params["token"]}/index.m3u8")
   end
 
-  defp hls_response(status, conn, _params) do
+  defp hls_response(status, conn, _params, msg) do
     conn
     |> put_status(status)
-    |> text("")
+    |> text(msg)
   end
 
   def ts(conn, params) do
@@ -59,13 +59,14 @@ defmodule EvercamMediaWeb.StreamController do
     requester_ip = user_request_ip(conn)
     request_stream(params["token"], params["stream_token"], requester_ip, :check)
   end
-  defp ensure_nvr_hls(_conn, _params, _is_nvr), do: 200
+  defp ensure_nvr_hls(_conn, _params, _is_nvr), do: {200, ""}
 
   defp ensure_nvr_stream(conn, params, is_nvr) when is_nvr in [nil, ""] do
     requester_ip = get_requester_ip(conn, params["requester"])
+    {code, msg} = request_stream(params["name"], params["stream_token"], requester_ip, :kill)
     conn
-    |> put_status(request_stream(params["name"], params["stream_token"], requester_ip, :kill))
-    |> text("")
+    |> put_status(code)
+    |> text(msg)
   end
   defp ensure_nvr_stream(conn, _params, nvr) do
     Logger.info "[ensure_nvr_stream] [#{nvr}] [No stream request]"
@@ -83,14 +84,14 @@ defmodule EvercamMediaWeb.StreamController do
       check_auth(camera, username, password)
       check_port(camera)
       stream(rtsp_url, token, camera, ip, fullname, command)
-      200
+      {200, ""}
     rescue
       error ->
         Logger.error inspect(error)
         case error.message do
-          "Invalid RTSP port to request the video stream" -> 400
-          "Invalid credentials used to request the video stream" -> 401
-          _ -> 500
+          "Invalid RTSP port to request the video stream" -> {400, "Invalid RTSP port to request the video stream"}
+          "Invalid credentials used to request the video stream" -> {401, "Invalid credentials used to request the video stream"}
+          _ -> {500, "Internal server error"}
         end
     end
   end
