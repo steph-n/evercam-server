@@ -88,7 +88,7 @@ defmodule EvercamMediaWeb.StreamController do
       error ->
         Logger.error inspect(error)
         case error.message do
-          "Invalid RTSP port to request the video stream" -> 404
+          "Invalid RTSP port to request the video stream" -> 400
           "Invalid credentials used to request the video stream" -> 401
           _ -> 500
         end
