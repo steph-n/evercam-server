@@ -25,7 +25,7 @@ defmodule EvercamMediaWeb.StreamController do
     message =
       cond do
         String.trim(requester) == "" || String.trim(requester) == user ->
-          delete_meta_and_kill(camera.id, rtsp_url)
+          delete_meta_and_kill(camera.id, camera.exid, rtsp_url)
           "Stream closed. Zero active users."
         true ->
           MetaData.remove_requesters(meta_data, user)
@@ -34,9 +34,15 @@ defmodule EvercamMediaWeb.StreamController do
     json(conn, %{message: message})
   end
 
-  defp delete_meta_and_kill(camera_id, rtsp_url) do
+  defp delete_meta_and_kill(camera_id, camera_exid, rtsp_url) do
     MetaData.delete_by_camera_id(camera_id)
-    kill_streams(rtsp_url)
+    case camera_exid do
+      "dunke-wqnzu" -> :noop
+      "dunke-ibcwt" -> :noop
+      "dunke-bnivp" -> :noop
+      "dunke-gqiwe" -> :noop
+      _ -> kill_streams(rtsp_url)
+    end
   end
 
   defp hls_response(200, conn, params, _) do
@@ -293,6 +299,13 @@ defmodule EvercamMediaWeb.StreamController do
     |> List.last
     |> String.split("/")
     |> List.first
-    |> String.to_integer
+    |> to_integer
+  end
+
+  defp to_integer(value) do
+    case Integer.parse(value) do
+      {number, ""} -> number
+      _ -> 1
+    end
   end
 end
