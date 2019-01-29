@@ -100,7 +100,7 @@ defmodule EvercamMedia.Util do
 
   defp format_token_message(args) do
     [""]
-    |> Enum.into(args)
+    |> Enum.concat(args)
     |> Enum.join("|")
     |> pad_token_message
   end

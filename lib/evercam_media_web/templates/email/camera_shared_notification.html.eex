@@ -53,34 +53,13 @@
         <table style="font-family: Arial, Helvetica, sans-serif; width: 100%; margin: 0; padding: 0;"><tr style="font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
           <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
-            <%= if @message do %>
-              <% width = (String.length(@user.firstname)*7) + 138 %>
-              <p style="line-height: 1.6; margin: 0 0 10px; padding: 0; clear">
-                <div style="width:<%= width %>px;height:20px;">
-                  <div style="max-height:0;max-width:0;">
-                    <div style="display: inline-block;background-color: rgb(255, 255, 255);font-weight: bold;top: 17px;width: <%= width %>px;height:20px;margin-top:10px;margin-left:5px;"><%= @user.firstname %>'s message for you:</div>
-                  </div>
-                </div>
-
-                <div style="border: solid 1px #e7e7e7;padding:5px;">
-                  <br>
-                  <% message_list = @message |> String.split("\n", trim: true) %>
-                  <%= for message <- message_list do %>
-                    <div style="margin-bottom: 12px;margin-left: 40px;"><%= raw message %></div>
-                  <% end %>
-                </div>
-              </p>
-              <br>
-            <% end %>
+            <%= raw get_shared_message(@user.firstname, @message) %>
 
             <p class="callout" style="line-height: 1.6;color:#428bca;">
               <a style="background-color: #fff;border: 1px solid #428bca;border-radius: 30px;color: #428bca;font-size: 16px;padding: 6px 20px;transition: all 0.2s linear 0s;text-decoration: none;" href="https://dash.evercam.io/v1/cameras/<%= @camera.exid %>">Access your camera</a>
             </p>
-            <%= if @thumbnail_available do %>
-            <img src="cid:snapshot.jpg" alt="<%= @camera.name %>" name="<%= @camera.name %>" style="width: 100%; display:block; margin:0 auto;" >
-            <% end %>
+            <%= raw image_tag(@thumbnail_available) %>
             <br>
-
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Your Evercam account will give you access to this camera and a whole world of possibilities for cameras!</p>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.</p>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>

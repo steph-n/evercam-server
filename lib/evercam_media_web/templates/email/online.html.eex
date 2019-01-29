@@ -57,14 +57,10 @@
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Your camera "<%= @camera.name %>" came back online.</p>
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Click on the link below to access this camera.</p>
-            <!-- Callout Panel -->
             <p class="callout" style="color:#428bca; line-height: 1.6; background: #f5f5f5;  margin: 0 0 15px; padding: 15px;">
               <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v1/cameras/<%= @camera.exid %>">https://dash.evercam.io/v1/cameras/<%= @camera.exid %></a>
-            </p><!-- /Callout Panel -->
-            <%= if @thumbnail_available do %>
-            <br>
-            <img src="cid:snapshot.jpg" alt='Last Snapshot' style="width: 100%; display:block; margin:0 auto;">
-            <% end %>
+            </p>
+            <%= raw image_tag(@thumbnail_available) %>
             <br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.</p><br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Thanks again for joining us,</p><br>

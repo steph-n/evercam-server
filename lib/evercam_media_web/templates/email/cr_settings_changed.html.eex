@@ -66,57 +66,10 @@
             <p class="lead" style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Hi Marco Herbst, </p>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Cloud recording for camera <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v1/cameras/<%= @camera.exid %>"><%= @camera.name %></a> has been updated by <%= full_name(@current_user) %> [ip: <%= @user_request_ip %>].<br>See the changes below.
             </p>
-            <%= if @old_cloud_recording do %>
-            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">
-              Your past cloud recording settings:
-              <table>
-                <tbody>
-                  <tr>
-                    <th>Frequency</th>
-                    <td><%= @old_cloud_recording.frequency %></td>
-                  </tr>
-                  <tr>
-                    <th>Status</th>
-                    <td><%= @old_cloud_recording.status %></td>
-                  </tr>
-                  <tr>
-                    <th>Storage Duration</th>
-                    <td><%= @old_cloud_recording.storage_duration %></td>
-                  </tr>
-                  <tr>
-                    <th>Schedule</th>
-                    <td><%= Poison.encode!(@old_cloud_recording.schedule) %></td>
-                  </tr>
-                </tbody>
-              </table>
-            </p>
-            <% end %>
+            <%= raw get_recordings_html(@old_cloud_recording, "Your past cloud recording settings") %>
             <br>
-            <%= if @cloud_recording do %>
-            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">
-              Your new cloud recording settings:
-              <table>
-                <tbody>
-                  <tr>
-                    <th>Frequency</th>
-                    <td><%= @cloud_recording.frequency %></td>
-                  </tr>
-                  <tr>
-                    <th>Status</th>
-                    <td><%= @cloud_recording.status %></td>
-                  </tr>
-                  <tr>
-                    <th>Storage Duration</th>
-                    <td><%= @cloud_recording.storage_duration %></td>
-                  </tr>
-                  <tr>
-                    <th>Schedule</th>
-                    <td><%= Poison.encode!(@cloud_recording.schedule) %></td>
-                  </tr>
-                </tbody>
-              </table>
-            </p>
-            <% end %>
+            <%= raw get_recordings_html(@cloud_recording, "Your new cloud recording settings") %>
+
             <br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.</p><br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Thanks again for joining us,</p><br>

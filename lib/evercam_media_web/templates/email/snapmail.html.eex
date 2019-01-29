@@ -57,17 +57,7 @@
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Here's the snapshot from your camera.</p>
             <br>
-
-            <%= for camera_image <- @camera_images do %>
-              <%= if !!camera_image.data do %>
-                <img class="last-snapmail-snapshot" id="<%= camera_image.exid %>" src="cid:<%= camera_image.exid %>.jpg" alt='Last Snapshot' style="width: 100%; display:block; margin:0 auto;">
-                <br>
-                <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;"><b><%= camera_image.name %></b> (<%= camera_image.exid %>) - See the live view on Evercam by <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v1/cameras/<%= camera_image.exid %>">clicking here</a></p>
-                <br>
-              <% else %>
-                <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;"><span id="<%= camera_image.exid %>" class="failed-camera">Could not retrieve live image from</span> <a target="_blank" href="https://dash.evercam.io/v1/cameras/<%= camera_image.exid %>"><%= camera_image.name %></a></p>
-              <% end %>
-            <% end %>
+            <%= raw snapmail_images(@camera_images) %>
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Thanks,</p><br>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>

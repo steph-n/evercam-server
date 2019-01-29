@@ -57,16 +57,12 @@
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;"><strong><%= User.get_fullname(@archive.user) %></strong> your clip <strong><%= @archive.title %></strong> for camera <%= @archive.camera.name %> has failed.</p>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0; color: #ff0000;">Reason: <%= @archive.error_message %></p>
 
-            <!-- Callout Panel -->
             <p class="callout" style="color:#428bca; line-height: 1.6; background: #f5f5f5;  margin: 0 0 15px; padding: 15px;">
               <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v1/cameras/<%= @archive.camera.exid %>/archives">
                 https://dash.evercam.io/v1/cameras/<%= @archive.camera.exid %>/archives
               </a>
-            </p><!-- /Callout Panel -->
-            <%= if @thumbnail_available do %>
-              <br>
-              <img src="cid:snapshot.jpg" alt='Camera Preview' style="width: 100%; display:block; margin:0 auto;" >
-            <% end %>
+            </p>
+            <%= raw image_tag(@thumbnail_available) %>
             <br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.</p>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>

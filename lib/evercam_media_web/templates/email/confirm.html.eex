@@ -58,10 +58,9 @@
             </p>
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">You can complete the sign-up process by following the url below to verify your email address.</p>
-            <!-- Callout Panel -->
             <p class="callout" style="color:#428bca; line-height: 1.6; background: #f5f5f5;  margin: 0 0 15px; padding: 15px;">
               <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/confirm?u=<%= @user.username %>&c=<%= @code %>">https://dash.evercam.io/confirm?u=<%= @user.username %>&c=<%= @code %></a>
-            </p><!-- /Callout Panel -->
+            </p>
             <br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.</p><br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Thanks again for joining us,</p><br>

@@ -61,10 +61,7 @@
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">To: <%= @to_d %></p>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Interval: <%= @interval %></p>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">
-              Schedule:
-              <%= for {key, value} <- @snapshot_extractor.schedule do %>
-                <%= key %>: [<%= value %>],
-              <% end %>
+              Schedule: <%= Poison.encode!(@snapshot_extractor.schedule) %>
             </p>
 
             <br>

@@ -57,16 +57,10 @@
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Your camera "<%= @camera.name %>" went offline at <%= @current_time %>.</p>
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Click on the link below to access this camera.</p>
-            <!-- Callout Panel -->
             <p class="callout" style="color:#428bca; line-height: 1.6; background: #f5f5f5;  margin: 0 0 15px; padding: 15px;">
               <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v1/cameras/<%= @camera.exid %>">https://dash.evercam.io/v1/cameras/<%= @camera.exid %></a>
-            </p><!-- /Callout Panel -->
-            <%= if @thumbnail_available do %>
-            <br>
-            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">This is the last image we received from the camera on <%= @current_time %>:</p><br>
-
-            <img src="cid:snapshot.jpg" alt='Last Snapshot' style="width: 100%; display:block; margin:0 auto;">
-            <% end %>
+            </p>
+            <%= raw image_tag(@thumbnail_available, @current_time) %>
             <br>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>
             <p style="color:#aaaaaa; line-height: 1.0; margin: 0 0 10px; padding: 0;"><a href="#" style="text-decoration:none; color:#aaaaaa;">support@evercam.io</a></p>

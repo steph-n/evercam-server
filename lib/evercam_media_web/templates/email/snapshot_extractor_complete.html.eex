@@ -54,13 +54,7 @@
           <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Extractor has been Completed with <%= @count %> images for <%= @camera %>.</p>
-
-            <%= if @count > 0 do %>
-            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">
-              You can see required files at <a style="color:#428bca; text-decoration:none;" href="<%= @dropbox_url %>">DropBox</a>
-            </p>
-            <% end %>
-
+            <%= raw get_dropbox_url(@dropbox_url, @count) %>
             <br>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>
             <p style="color:#aaaaaa; line-height: 1.0; margin: 0 0 10px; padding: 0;"><a href="#" style="text-decoration:none; color:#aaaaaa;">support@evercam.io</a></p>

@@ -96,7 +96,7 @@ defmodule User do
     |> where([_, cs], cs.camera_id == ^camera_full.id)
     |> where([u, cs], u.id == cs.user_id)
     |> Repo.all
-    |> Enum.into([camera_full.owner])
+    |> Enum.concat([camera_full.owner])
   end
 
   def get_country_attr(user, attr) do
