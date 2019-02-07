@@ -4,7 +4,7 @@ defmodule Snapmail do
   import Ecto.Query
   alias EvercamMedia.Repo
 
-  @email_regex ~r/^\S+@\S+$/
+  @email_regex ~r/^(?!.*\.{2})[a-zA-Z0-9._%+"-]+@[a-zA-Z\d\-]+(\.[a-zA-Z]+)*\.[a-zA-Z]+\z/
   @required_fields [:subject, :notify_time]
   @optional_fields [:exid, :user_id, :recipients, :message, :notify_days, :timezone, :is_paused, :is_public]
 

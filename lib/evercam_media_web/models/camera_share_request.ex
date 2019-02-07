@@ -4,7 +4,7 @@ defmodule CameraShareRequest do
   import CameraShare, only: [validate_rights: 1]
   alias EvercamMedia.Repo
 
-  @email_regex ~r/^(?!.*\.{2})[a-z0-9._-]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/
+  @email_regex ~r/^(?!.*\.{2})[a-zA-Z0-9._%+"-]+@[a-zA-Z\d\-]+(\.[a-zA-Z]+)*\.[a-zA-Z]+\z/
 
   @required_fields [:camera_id, :user_id, :key, :email, :status, :rights]
   @optional_fields [:message, :created_at, :updated_at]
