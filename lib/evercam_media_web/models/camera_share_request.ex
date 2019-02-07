@@ -162,6 +162,7 @@ defmodule CameraShareRequest do
     model
     |> cast(params, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
+    |> update_change(:email, &String.downcase/1)
     |> validate_format(:email, @email_regex, [message: "Email format isn't valid!"])
     |> update_change(:email, &String.downcase/1)
     |> validate_rights
