@@ -309,7 +309,7 @@ defmodule EvercamMediaWeb.ArchiveController do
 
   defp create_clip(params, camera, conn, current_user, "url") do
     %{assigns: %{version: version}} = conn
-    datetime = get_current_datetime(version)
+    datetime = "#{get_current_datetime(version)}"
     changeset =
       params
       |> Map.merge(%{"from_date" => datetime, "to_date" => datetime})
@@ -331,7 +331,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   end
   defp create_clip(params, camera, conn, current_user, "file") do
     %{assigns: %{version: version}} = conn
-    datetime = get_current_datetime(version)
+    datetime = "#{get_current_datetime(version)}"
     changeset =
       params
       |> Map.merge(%{"from_date" => datetime, "to_date" => datetime})
@@ -358,7 +358,7 @@ defmodule EvercamMediaWeb.ArchiveController do
     %{assigns: %{version: version}} = conn
     changeset =
       params
-      |> Map.merge(%{"to_date" => get_current_datetime(version)})
+      |> Map.merge(%{"to_date" => "#{get_current_datetime(version)}"})
       |> archive_changeset(camera, current_user, @status.completed, version)
     exid = get_field(changeset, :exid)
     changeset = put_change(changeset, :file_name, "#{exid}.#{params["file_extension"]}")
