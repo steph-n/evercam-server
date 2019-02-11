@@ -49,6 +49,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   end
 
   def index(conn, %{"id" => exid} = params) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
     status = params["status"]
@@ -64,7 +65,7 @@ defmodule EvercamMediaWeb.ArchiveController do
 
       compare_archives = Compare.get_by_camera(camera.id)
 
-      render(conn, "index.json", %{archives: archives, compares: compare_archives})
+      render(conn, "index.#{version}.json", %{archives: archives, compares: compare_archives})
     end
   end
 
@@ -84,6 +85,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   end
 
   def show(conn, %{"id" => exid, "archive_id" => archive_id}) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
 
@@ -92,8 +94,8 @@ defmodule EvercamMediaWeb.ArchiveController do
          {:ok, media} <- archive_can_list(current_user, camera, archive_id, conn)
     do
       case media do
-        %Compare{} = compare -> render(conn, "compare.json", %{compare: compare})
-        %Archive{} = archive -> render(conn, "show.json", %{archive: archive})
+        %Compare{} = compare -> render(conn, "compare.#{version}.json", %{compare: compare})
+        %Archive{} = archive -> render(conn, "show.#{version}.json", %{archive: archive})
       end
     end
   end
@@ -177,7 +179,7 @@ defmodule EvercamMediaWeb.ArchiveController do
     with :ok <- ensure_camera_exists(camera, exid, conn),
          :ok <- ensure_can_list(current_user, camera, conn)
     do
-      create_clip(params, camera, conn, current_user, params["type"])
+      create_clip(params, camera, conn, current_user, String.downcase(params["type"]))
     end
   end
 
@@ -213,6 +215,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   end
 
   def retry(conn, %{"id" => exid, "archive_id" => archive_id} = params) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
 
@@ -234,7 +237,7 @@ defmodule EvercamMediaWeb.ArchiveController do
           unix_from = convert_to_user_time(updated_archive.from_date, timezone)
           unix_to = convert_to_user_time(updated_archive.to_date, timezone)
           start_archive_creation(Application.get_env(:evercam_media, :run_spawn), camera, updated_archive, "#{unix_from}", "#{unix_to}", is_local_clip(updated_archive.type))
-          render(conn, "show.json", %{archive: updated_archive})
+          render(conn, "show.#{version}.json", %{archive: updated_archive})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -254,6 +257,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   end
 
   def pending_archives(conn, _) do
+    %{assigns: %{version: version}} = conn
     requester = conn.assigns[:current_user]
 
     if requester do
@@ -262,7 +266,7 @@ defmodule EvercamMediaWeb.ArchiveController do
         |> Archive.with_status_if_given(@status.pending)
         |> Archive.get_one_with_associations
 
-      render(conn, "show.json", %{archive: archive})
+      render(conn, "show.#{version}.json", %{archive: archive})
     else
       render_error(conn, 401, "Unauthorized.")
     end
@@ -304,7 +308,13 @@ defmodule EvercamMediaWeb.ArchiveController do
   end
 
   defp create_clip(params, camera, conn, current_user, "url") do
-    changeset = archive_changeset(params, camera, current_user, @status.completed)
+    %{assigns: %{version: version}} = conn
+    datetime = get_current_datetime(version)
+    changeset =
+      params
+      |> Map.merge(%{"from_date" => datetime, "to_date" => datetime})
+      |> archive_changeset(camera, current_user, @status.completed, version)
+
     case Repo.insert(changeset) do
       {:ok, archive} ->
         archive = archive |> Repo.preload(:camera) |> Repo.preload(:user)
@@ -314,13 +324,18 @@ defmodule EvercamMediaWeb.ArchiveController do
         }
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
         CameraActivity.log_activity(current_user, camera, "saved media URL", extra)
-        render(conn |> put_status(:created), "show.json", %{archive: archive})
+        render(conn |> put_status(:created), "show.#{version}.json", %{archive: archive})
       {:error, changeset} ->
         render_error(conn, 400, Util.parse_changeset(changeset))
     end
   end
   defp create_clip(params, camera, conn, current_user, "file") do
-    changeset = archive_changeset(params, camera, current_user, @status.completed)
+    %{assigns: %{version: version}} = conn
+    datetime = get_current_datetime(version)
+    changeset =
+      params
+      |> Map.merge(%{"from_date" => datetime, "to_date" => datetime})
+      |> archive_changeset(camera, current_user, @status.completed, version)
     exid = get_field(changeset, :exid)
     changeset = put_change(changeset, :file_name, "#{exid}.#{params["file_extension"]}")
 
@@ -334,13 +349,17 @@ defmodule EvercamMediaWeb.ArchiveController do
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
         CameraActivity.log_activity(current_user, camera, "file uploaded", extra)
         copy_uploaded_file(Application.get_env(:evercam_media, :run_spawn), camera.exid, archive.exid, params["file_url"], params["file_extension"])
-        render(conn |> put_status(:created), "show.json", %{archive: archive})
+        render(conn |> put_status(:created), "show.#{version}.json", %{archive: archive})
       {:error, changeset} ->
         render_error(conn, 400, Util.parse_changeset(changeset))
     end
   end
   defp create_clip(params, camera, conn, current_user, "edit") do
-    changeset = archive_changeset(params, camera, current_user, @status.completed)
+    %{assigns: %{version: version}} = conn
+    changeset =
+      params
+      |> Map.merge(%{"to_date" => get_current_datetime(version)})
+      |> archive_changeset(camera, current_user, @status.completed, version)
     exid = get_field(changeset, :exid)
     changeset = put_change(changeset, :file_name, "#{exid}.#{params["file_extension"]}")
 
@@ -354,20 +373,21 @@ defmodule EvercamMediaWeb.ArchiveController do
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
         CameraActivity.log_activity(current_user, camera, "file uploaded", extra)
         save_edited_image(camera.exid, archive.exid, params["content"])
-        render(conn |> put_status(:created), "show.json", %{archive: archive})
+        render(conn |> put_status(:created), "show.#{version}.json", %{archive: archive})
       {:error, changeset} ->
         render_error(conn, 400, Util.parse_changeset(changeset))
     end
   end
   defp create_clip(params, camera, conn, current_user, _type) do
+    %{assigns: %{version: version}} = conn
     timezone = camera |> Camera.get_timezone
     unix_from = params["from_date"]
     unix_to = params["to_date"]
-    from_date = clip_date(unix_from, timezone)
-    to_date = clip_date(unix_to, timezone)
+    from_date = clip_date(version, unix_from, timezone)
+    to_date = clip_date(version, unix_to, timezone)
     params = update_archive_type(params, params["is_nvr_archive"])
     current_date_time = Calendar.DateTime.now_utc
-    changeset = archive_changeset(params, camera, current_user, @status.pending)
+    changeset = archive_changeset(params, camera, current_user, @status.pending, version)
 
     cond do
       !changeset.valid? ->
@@ -376,9 +396,9 @@ defmodule EvercamMediaWeb.ArchiveController do
         render_error(conn, 400, "Sorry RTSP port is not available.")
       to_date < from_date ->
         render_error(conn, 400, "To date cannot be less than from date.")
-      current_date_time <= from_date ->
+      compare_datetime(current_date_time, from_date) ->
         render_error(conn, 400, "From date cannot be greater than current time.")
-      current_date_time <= to_date ->
+      compare_datetime(current_date_time, to_date) ->
         render_error(conn, 400, "To date cannot be greater than current time.")
       to_date == from_date ->
         render_error(conn, 400, "To date and from date cannot be same.")
@@ -395,7 +415,7 @@ defmodule EvercamMediaWeb.ArchiveController do
             |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
             CameraActivity.log_activity(current_user, camera, "archive created", extra)
             start_archive_creation(Application.get_env(:evercam_media, :run_spawn), camera, archive, unix_from, unix_to, params["is_nvr_archive"])
-            render(conn |> put_status(:created), "show.json", %{archive: archive})
+            render(conn |> put_status(:created), "show.#{version}.json", %{archive: archive})
           {:error, changeset} ->
             render_error(conn, 400, Util.parse_changeset(changeset))
         end
@@ -410,13 +430,10 @@ defmodule EvercamMediaWeb.ArchiveController do
   defp is_local_clip("local_clip"), do: true
   defp is_local_clip(_), do: false
 
-  defp archive_changeset(params, camera, current_user, status) do
+  defp archive_changeset(params, camera, current_user, status, version) do
     timezone = camera |> Camera.get_timezone
-    unix_from = params["from_date"]
-    unix_to = params["to_date"]
-    from_date = clip_date(unix_from, timezone)
-    to_date = clip_date(unix_to, timezone)
-    clip_exid = generate_exid(params["title"])
+    from_date = clip_date(version, params["from_date"], timezone)
+    to_date = clip_date(version, params["to_date"], timezone)
 
     archive_params =
       params
@@ -430,14 +447,15 @@ defmodule EvercamMediaWeb.ArchiveController do
         "from_date" => from_date,
         "to_date" => to_date,
         "status" => status,
-        "exid" => clip_exid,
         "url" => params["url"],
+        "exid" => Util.generate_unique_exid(params["title"]),
         "type" => params["type"]
       })
     Archive.changeset(%Archive{}, archive_params)
   end
 
   defp update_clip(conn, user, camera, params, archive_id) do
+    %{assigns: %{version: version}} = conn
     case Archive.by_exid(archive_id) do
       nil ->
         render_error(conn, 404, "Archive '#{archive_id}' not found!")
@@ -461,7 +479,7 @@ defmodule EvercamMediaWeb.ArchiveController do
             |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
             CameraActivity.log_activity(user, camera, "archive edited", extra)
             save_edited_image(camera.exid, archive.exid, params["content"])
-            render(conn, "show.json", %{archive: updated_archive})
+            render(conn, "show.#{version}.json", %{archive: updated_archive})
           {:error, changeset} ->
             render_error(conn, 400, Util.parse_changeset(changeset))
         end
@@ -607,14 +625,32 @@ defmodule EvercamMediaWeb.ArchiveController do
     |> Calendar.DateTime.Format.unix
   end
 
-  defp clip_date(unix_timestamp, _timezone) when unix_timestamp in ["", nil], do: nil
-  defp clip_date(unix_timestamp, "Etc/UTC"), do: Calendar.DateTime.Parse.unix!(unix_timestamp)
-  defp clip_date(unix_timestamp, timezone) do
-    unix_timestamp
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.DateTime.to_erl
-    |> Calendar.DateTime.from_erl!(timezone)
-    |> Calendar.DateTime.shift_zone!("Etc/UTC")
+  defp get_current_datetime(:v1), do: Calendar.DateTime.now_utc |> Calendar.DateTime.Format.unix
+  defp get_current_datetime(:v2), do: Calendar.DateTime.now_utc |> Calendar.DateTime.Format.iso8601
+
+  defp clip_date(:v2, clip_datetime, _) when clip_datetime in ["", nil], do: nil
+  defp clip_date(:v2, clip_datetime, _), do: Util.datetime_from_iso(clip_datetime)
+
+  defp clip_date(:v1, unix_timestamp, _timezone) when unix_timestamp in ["", nil], do: nil
+  defp clip_date(:v1, unix_timestamp, "Etc/UTC"), do: Calendar.DateTime.Parse.unix!(unix_timestamp)
+  defp clip_date(:v1, unix_timestamp, timezone) do
+    case Util.string_to_integer(unix_timestamp) do
+      :error -> "invalid"
+      number ->
+        number
+        |> Calendar.DateTime.Parse.unix!
+        |> Calendar.DateTime.to_erl
+        |> Calendar.DateTime.from_erl!(timezone)
+        |> Calendar.DateTime.shift_zone!("Etc/UTC")
+    end
+
+  end
+
+  defp compare_datetime(current_datetime, datetime) do
+    case Calendar.DateTime.diff(current_datetime, datetime) do
+      {:ok, _, _, :after} -> false
+      {:ok, _, _, :before} -> true
+    end
   end
 
   defp date_difference(from, to) do
@@ -622,19 +658,6 @@ defmodule EvercamMediaWeb.ArchiveController do
       {:ok, seconds, _, :after} -> seconds
       _ -> 1
     end
-  end
-
-  defp generate_exid(title) when title in ["", nil], do: nil
-  defp generate_exid(title) do
-    clip_exid =
-      title
-      |> Util.slugify
-      |> String.replace(~r/\W/, "")
-      |> String.downcase
-      |> String.slice(0..5)
-
-    random_string = Enum.concat(?a..?z, ?0..?9) |> Enum.take_random(4)
-    "#{clip_exid}-#{random_string}"
   end
 
   defp deliver_content(conn, exid, archive_id, requester) do

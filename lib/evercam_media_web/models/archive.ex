@@ -3,9 +3,10 @@ defmodule Archive do
   import Ecto.Changeset
   import Ecto.Query
   alias EvercamMedia.Repo
+  alias EvercamMedia.Util
 
-  @required_fields [:title, :exid, :from_date, :to_date, :requested_by, :camera_id]
-  @optional_fields [:status, :embed_time, :public, :frames, :url, :file_name, :type, :error_message]
+  @required_fields [:title, :from_date, :to_date, :requested_by, :camera_id]
+  @optional_fields [:exid, :status, :embed_time, :public, :frames, :url, :file_name, :type, :error_message]
 
   @archive_status %{pending: 0, processing: 1, completed: 2, failed: 3}
 
@@ -15,8 +16,8 @@ defmodule Archive do
 
     field :exid, :string
     field :title, :string
-    field :from_date, :utc_datetime
-    field :to_date, :utc_datetime
+    field :from_date, :utc_datetime_usec
+    field :to_date, :utc_datetime_usec
     field :status, :integer
     field :embed_time, :boolean
     field :public, :boolean
@@ -25,7 +26,7 @@ defmodule Archive do
     field :file_name, :string
     field :type, :string
     field :error_message, :string
-    timestamps(inserted_at: :created_at, updated_at: false, type: :utc_datetime, default: Calendar.DateTime.now_utc)
+    timestamps(inserted_at: :created_at, updated_at: false, type: :utc_datetime_usec, default: Calendar.DateTime.now_utc)
   end
 
   def by_exid(exid) do
@@ -101,10 +102,22 @@ defmodule Archive do
     |> Repo.one
   end
 
+  defp validate_url(changeset) do
+    case get_field(changeset, :type) do
+      "url" -> has_url(changeset, get_field(changeset, :url))
+      _url -> changeset
+    end
+  end
+
+  defp has_url(changeset, url) when url in [nil, ""], do: add_error(changeset, :url, "can't be blank")
+  defp has_url(changeset, _), do: changeset
+
   def changeset(model, params \\ :invalid) do
     model
     |> cast(params, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
+    |> Util.validate_exid(:title)
     |> update_change(:type, &String.downcase/1)
+    |> validate_url
   end
 end

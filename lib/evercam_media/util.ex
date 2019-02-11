@@ -1,6 +1,7 @@
 defmodule EvercamMedia.Util do
   require Logger
   import String, only: [to_integer: 1]
+  import Ecto.Changeset, only: [get_field: 2, update_change: 3, put_change: 3]
 
   def deep_get(map, keys, default \\ nil), do: do_deep_get(map, keys, default)
 
@@ -117,6 +118,27 @@ defmodule EvercamMedia.Util do
     |> Calendar.DateTime.Format.unix
   end
 
+  def convert_unix_to_iso(unix_timestamp, timezone) do
+    unix_timestamp
+    |> Calendar.DateTime.Parse.unix!
+    |> datetime_to_iso8601(timezone)
+  end
+
+  def datetime_to_iso8601(datetime, timezone \\ "Etc/UTC")
+  def datetime_to_iso8601(nil, _), do: nil
+  def datetime_to_iso8601(datetime, timezone) do
+    datetime
+    |> Calendar.DateTime.shift_zone!(timezone)
+    |> Calendar.DateTime.Format.iso8601
+  end
+
+  def datetime_from_iso(iso_datetime) do
+    case Calendar.DateTime.Parse.rfc3339_utc(iso_datetime) do
+      {:ok, datetime} -> datetime
+      {:bad_format, nil} -> iso_datetime
+    end
+  end
+
   def get_list(values) when values in [nil, ""], do: []
   def get_list(values) do
     values
@@ -130,6 +152,35 @@ defmodule EvercamMedia.Util do
     end)
   end
 
+  def validate_exid(changeset, attr) do
+    case get_field(changeset, :exid) do
+      nil -> auto_generate_camera_id(changeset, attr)
+      _exid -> changeset |> update_change(:exid, &String.downcase/1)
+    end
+  end
+
+  defp auto_generate_camera_id(changeset, attr) do
+    case get_field(changeset, attr) do
+      nil ->
+        changeset
+      name ->
+        exid = generate_unique_exid(name)
+        put_change(changeset, :exid, exid)
+    end
+  end
+
+  def generate_unique_exid(name) do
+    exid =
+      name
+      |> slugify
+      |> String.replace(" ", "")
+      |> String.replace("-", "")
+      |> String.downcase
+      |> String.slice(0..4)
+    "#{exid}-#{Enum.take_random(?a..?z, 5)}"
+  end
+
+  def slugify(string) when string in [nil, ""], do: ""
   def slugify(string) do
     string |> String.normalize(:nfd) |> String.replace(~r/[^A-z0-9-\s]/u, "")
   end
@@ -175,6 +226,13 @@ defmodule EvercamMedia.Util do
       :moved -> "Camera url has changed, please update it."
       :not_a_jpeg -> "Camera didn't respond with an image."
       _reason -> "Sorry, we dropped the ball."
+    end
+  end
+
+  def string_to_integer(value) do
+    case Integer.parse(value) do
+      {number, ""} -> number
+      _ -> :error
     end
   end
 end

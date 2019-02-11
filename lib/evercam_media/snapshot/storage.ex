@@ -120,7 +120,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     !Enum.empty?(hours)
   end
 
-  def nearest(camera_exid, timestamp) do
+  def nearest(camera_exid, timestamp, version \\ :v1, timezone \\ "UTC") do
     parse_timestamp = timestamp |> Calendar.DateTime.Parse.unix!
     list_of_snapshots =
       camera_exid
@@ -136,7 +136,10 @@ defmodule EvercamMedia.Snapshot.Storage do
       snapshot ->
         {:ok, image, _notes} = load(camera_exid, snapshot.created_at, snapshot.notes)
         data = "data:image/jpeg;base64,#{Base.encode64(image)}"
-        [%{created_at: snapshot.created_at, notes: snapshot.notes, data: data}]
+        case version do
+          :v1 -> [%{created_at: snapshot.created_at, notes: snapshot.notes, data: data}]
+          :v2 -> [%{created_at: Util.convert_unix_to_iso(snapshot.created_at, timezone), notes: snapshot.notes, data: data}]
+        end
     end
   end
 
@@ -236,7 +239,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     |> Enum.uniq
   end
 
-  def hour(camera_exid, hour) do
+  def hour(camera_exid, hour, version \\ :v1, timezone \\ "UTC") do
     seaweedfs = point_to_seaweed(hour)
     files = seaweedfs_files(seaweedfs)
     name = seaweedfs_name(seaweedfs)
@@ -259,22 +262,23 @@ defmodule EvercamMedia.Snapshot.Storage do
         metadata = Util.deep_get(hour_metadata, [file_name, "motion_level"], nil)
 
         Map.get(dir_paths, app_name)
-        |> construct_snapshot_record(file_name, app_name, metadata)
+        |> construct_snapshot_record(file_name, app_name, metadata, version, timezone)
       end)
     end)
   end
 
-  def seaweedfs_load_range(camera_exid, from, to) do
+  def seaweedfs_load_range(camera_exid, from, to, version \\ :v1, timezone \\ "UTC") do
     from_date = parse_timestamp(from)
     to_date = parse_timestamp(to)
+
     camera_exid
     |> get_camera_apps_list(from_date)
-    |> Enum.flat_map(fn(app) -> do_seaweedfs_load_range(camera_exid, from, app) end)
+    |> Enum.flat_map(fn(app) -> do_seaweedfs_load_range(camera_exid, from, app, version, timezone) end)
     |> Enum.reject(fn(snapshot) -> not_is_between?(snapshot.created_at, from_date, to_date) end)
     |> Enum.sort_by(fn(snapshot) -> snapshot.created_at end)
   end
 
-  defp do_seaweedfs_load_range(camera_exid, from, app_name) do
+  defp do_seaweedfs_load_range(camera_exid, from, app_name, version \\ :v1, timezone \\ "UTC") do
     storage_url =
       from
       |> parse_timestamp
@@ -290,7 +294,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
     |> Enum.map(fn(file_name) ->
       metadata = Util.deep_get(hour_metadata, [file_name, "motion_level"], nil)
-      construct_snapshot_record(directory_path, file_name, app_name, metadata)
+      construct_snapshot_record(directory_path, file_name, app_name, metadata, version, timezone)
     end)
   end
 
@@ -476,7 +480,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     url = "#{@seaweedfs_new}/#{camera_exid}/snapshots/"
     {{year, month, day}, {h, _m, _s}} = Calendar.DateTime.now_utc |> Calendar.DateTime.to_erl
 
-    {snapshot, error, _datetime} =
+    {snapshot, _error, _datetime} =
       request_from_seaweedfs(url, "Entries", "FullPath")
       |> Enum.reduce({{}, {}, {year, month, day, h}}, fn(note, {snapshot, error, datetime}) ->
         {yr, mh, dy, hr} = datetime
@@ -488,7 +492,7 @@ defmodule EvercamMedia.Snapshot.Storage do
         end
       end)
     case snapshot do
-      {} -> error
+      {} -> {:error, "Oldest image does not exist."}
       {:ok, image, datetime} ->
         spawn fn -> save_oldest_snapshot(camera_exid, image, datetime) end
         {:ok, image, datetime}
@@ -884,9 +888,16 @@ defmodule EvercamMedia.Snapshot.Storage do
     |> format_file_name
   end
 
-  defp construct_snapshot_record(directory_path, file_name, app_name, motion_level) do
+  defp construct_snapshot_record(directory_path, file_name, app_name, motion_level, :v1, _) do
     %{
       created_at: parse_file_timestamp(directory_path, file_name),
+      notes: app_name_to_notes(app_name),
+      motion_level: motion_level
+    }
+  end
+  defp construct_snapshot_record(directory_path, file_name, app_name, motion_level, :v2, timezone) do
+    %{
+      created_at: parse_file_timestamp_v2(directory_path, file_name, timezone),
       notes: app_name_to_notes(app_name),
       motion_level: motion_level
     }
@@ -900,6 +911,16 @@ defmodule EvercamMedia.Snapshot.Storage do
     |> Calendar.DateTime.Parse.rfc3339_utc
     |> elem(1)
     |> Calendar.DateTime.Format.unix
+  end
+
+  defp parse_file_timestamp_v2(directory_path, file_path, timezone) do
+    [_, _, _, year, month, day, hour] = String.split(directory_path, "/", trim: true)
+    [minute, second, _] = String.split(file_path, "_")
+
+    "#{year}-#{month}-#{day}T#{hour}:#{minute}:#{second}Z"
+    |> Calendar.DateTime.Parse.rfc3339_utc
+    |> elem(1)
+    |> Util.datetime_to_iso8601(timezone)
   end
 
   defp parse_hour(year, month, day, time, timezone) do
@@ -981,10 +1002,14 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
 
   defp parse_timestamp(unix_timestamp) do
-    unix_timestamp
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.DateTime.to_erl
-    |> Calendar.DateTime.from_erl!("Etc/UTC")
+    case Calendar.DateTime.Parse.rfc3339_utc("#{unix_timestamp}") do
+      {:ok, datetime} -> datetime
+      {:bad_format, nil} ->
+        unix_timestamp
+        |> Calendar.DateTime.Parse.unix!
+        |> Calendar.DateTime.to_erl
+        |> Calendar.DateTime.from_erl!("Etc/UTC")
+    end
   end
 
   defp not_is_between?(snapshot_date, from, to) do

@@ -32,7 +32,7 @@ defmodule Camera do
     field :location, Geo.PostGIS.Geometry
     field :last_polled_at, :utc_datetime_usec, default: Calendar.DateTime.now_utc
     field :last_online_at, :utc_datetime_usec, default: Calendar.DateTime.now_utc
-    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime_usec, default: Calendar.DateTime.now_utc)
   end
 
   def all do

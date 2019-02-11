@@ -100,6 +100,7 @@ defmodule EvercamMediaWeb.NVRController do
   end
 
   def extract_snapshots(conn, %{"id" => exid, "start_date" => start_date, "end_date" => end_date, "interval" => interval} = params) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera = Camera.by_exid_with_associations(exid)
 
@@ -111,18 +112,19 @@ defmodule EvercamMediaWeb.NVRController do
       port = Camera.port(camera, "external", "rtsp")
       cam_username = Camera.username(camera)
       cam_password = Camera.password(camera)
+      timezone = Camera.get_timezone(camera)
       channel = VendorModel.get_channel(camera, camera.vendor_model.channel)
       config =
         %{
           exid: camera.exid,
-          timezone: Camera.get_timezone(camera),
+          timezone: timezone,
           host: host,
           port: port,
           username: cam_username,
           password: cam_password,
           channel: channel,
-          start_date: convert_timestamp(start_date),
-          end_date: convert_timestamp(end_date),
+          start_date: convert_timestamp(version, start_date),
+          end_date: convert_timestamp(version, end_date),
           interval: String.to_integer(interval),
           schedule: get_schedule(params["schedule"]),
           requester: params["requester"],
@@ -144,7 +146,8 @@ defmodule EvercamMediaWeb.NVRController do
           :ets.insert(:extractions, {exid, extraction_pid})
           conn
           |> put_status(:created)
-          |> render(SnapshotExtractorView, "show.json", %{snapshot_extractor: full_snapshot_extractor})
+          |> put_view(SnapshotExtractorView)
+          |> render("show.json", %{snapshot_extractor: full_snapshot_extractor})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -199,10 +202,14 @@ defmodule EvercamMediaWeb.NVRController do
     end
   end
 
-  defp convert_timestamp(timestamp) do
+  defp convert_timestamp(:v1, timestamp) do
     timestamp
     |> String.to_integer
     |> Calendar.DateTime.Parse.unix!
+  end
+  defp convert_timestamp(:v2, timestamp) do
+    {:ok, datetime} = Calendar.DateTime.Parse.rfc3339_utc(timestamp)
+    datetime
   end
 
   defp ensure_process_exists(camera, conn) do

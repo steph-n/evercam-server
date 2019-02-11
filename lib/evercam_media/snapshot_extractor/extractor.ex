@@ -34,8 +34,8 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
 
   defp _start_extractor(_state, config) do
     spawn fn ->
-      start_date = config.start_date
-      end_date = config.end_date
+      start_date = config.start_date |> Calendar.DateTime.shift_zone(config.timezone) |> elem(1)
+      end_date = config.end_date |> Calendar.DateTime.shift_zone(config.timezone) |> elem(1)
       url = nvr_url(config.host, config.port, config.username, config.password, config.channel)
       images_directory = "#{@root_dir}/#{config.exid}/extract/#{config.id}/"
       upload_path =

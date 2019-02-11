@@ -53,6 +53,7 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def get(conn, params) do
+    %{assigns: %{version: version}} = conn
     caller = conn.assigns[:current_user]
     user =
       params["id"]
@@ -64,7 +65,7 @@ defmodule EvercamMediaWeb.UserController do
         render_error(conn, 404, "User does not exist.")
       !caller || !Permission.User.can_view?(caller, user) ->
         render_error(conn, 401, %{message: "Unauthorized."})
-      true -> render(conn, "show.json", %{user: user})
+      true -> render(conn, "show.#{version}.json", %{user: user})
     end
   end
 
@@ -108,6 +109,7 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def credentialstelegram(conn, %{"id" => telegram_username}) do
+    %{assigns: %{version: version}} = conn
     caller = conn.assigns[:current_user]
     user =
       telegram_username
@@ -121,7 +123,7 @@ defmodule EvercamMediaWeb.UserController do
         render_error(conn, 401, %{message: "Unauthorized."})
       true ->
         conn
-        |> render("show.json", %{user: user})
+        |> render("show.#{version}.json", %{user: user})
     end
   end
 
@@ -143,6 +145,7 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def create(conn, params) do
+    %{assigns: %{version: version}} = conn
     with :ok <- ensure_application(conn, params["token"]),
          {:ok, country_id} <- ensure_country(params["country"], conn)
     do
@@ -203,7 +206,7 @@ defmodule EvercamMediaWeb.UserController do
           Logger.info "[POST v1/users] [#{user_agent}] [#{requester_ip}] [#{user.username}] [#{user.email}] [#{params["token"]}]"
           conn
           |> put_status(:created)
-          |> render("show.json", %{user: user |> Repo.preload(:country, force: true)})
+          |> render("show.#{version}.json", %{user: user |> Repo.preload(:country, force: true)})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -313,6 +316,7 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def update(conn, %{"id" => username} = params) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     requester_ip = user_request_ip(conn, params["requester_ip"])
     user_agent = get_user_agent(conn, params["agent"])
@@ -337,7 +341,7 @@ defmodule EvercamMediaWeb.UserController do
           updated_user = new_user |> Repo.preload(:country, force: true)
           insert_activity(old_user, updated_user, requester_ip, user_agent, params["u_country"], params["u_country_code"])
           Intercom.update_intercom_user(Application.get_env(:evercam_media, :create_intercom_user), updated_user, username, user_agent, requester_ip)
-          render(conn, "show.json", %{user: updated_user})
+          render(conn, "show.#{version}.json", %{user: updated_user})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
@@ -388,6 +392,7 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def user_activities(conn, params) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     from = parse_from(params["from"])
     to = parse_to(params["to"])
@@ -400,7 +405,7 @@ defmodule EvercamMediaWeb.UserController do
 
       conn
       |> put_view(LogView)
-      |> render("user_logs.json", %{user_logs: user_logs})
+      |> render("user_logs.#{version}.json", %{user_logs: user_logs})
     end
   end
 

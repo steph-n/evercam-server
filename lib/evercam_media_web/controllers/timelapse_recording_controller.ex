@@ -51,7 +51,8 @@ defmodule EvercamMediaWeb.TimelapseRecordingController do
               }
           )
           conn
-          |> render(TimelapsedRecordingView, "timelapse_recording.json", %{timelapse_recording: timelapse_recording})
+          |> put_view(TimelapsedRecordingView)
+          |> render("timelapse_recording.json", %{timelapse_recording: timelapse_recording})
         {:error, changeset} ->
           render_error(conn, 400, changeset)
       end
@@ -97,8 +98,8 @@ defmodule EvercamMediaWeb.TimelapseRecordingController do
     end
   end
 
-  defp render_timelapse_recording(nil, conn), do: conn |> render(TimelapsedRecordingView, "show.json", %{timelapse_recording: []})
-  defp render_timelapse_recording(tr, conn), do: conn |> render(TimelapsedRecordingView, "timelapse_recording.json", %{timelapse_recording: tr})
+  defp render_timelapse_recording(nil, conn), do: conn |> put_view(TimelapsedRecordingView) |> render("show.json", %{timelapse_recording: []})
+  defp render_timelapse_recording(tr, conn), do: conn |> put_view(TimelapsedRecordingView) |> render("timelapse_recording.json", %{timelapse_recording: tr})
 
   defp get_action_log(nil), do: "created"
   defp get_action_log(_cloud_recording), do: "updated"

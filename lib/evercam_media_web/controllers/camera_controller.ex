@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.CameraController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.CameraView
   alias EvercamMedia.Repo
   alias EvercamMedia.Snapshot.Storage
   alias EvercamMedia.Snapshot.WorkerSupervisor
@@ -75,6 +74,7 @@ defmodule EvercamMediaWeb.CameraController do
   end
 
   def index(conn, params) do
+    %{assigns: %{version: version}} = conn
     requester = conn.assigns[:current_user]
 
     if requester do
@@ -91,14 +91,11 @@ defmodule EvercamMediaWeb.CameraController do
           _ -> true
         end
 
-      data = ConCache.get_or_store(:cameras, "#{requested_user.username}_#{include_shared?}", fn() ->
-        cameras =
-          Camera.for(requested_user, include_shared?)
-          |> Enum.sort_by(fn(camera) -> String.downcase(camera.name) end)
-        Phoenix.View.render(CameraView, "index.json", %{cameras: cameras, user: requester})
+      cameras = ConCache.get_or_store(:cameras, "#{requested_user.username}_#{include_shared?}", fn() ->
+        Camera.for(requested_user, include_shared?)
+        |> Enum.sort_by(fn(camera) -> String.downcase(camera.name) end)
       end)
-
-      json(conn, data)
+      render(conn, "index.#{version}.json", %{cameras: cameras, user: requester})
     else
       render_error(conn, 404, "Not found.")
     end
@@ -119,6 +116,7 @@ defmodule EvercamMediaWeb.CameraController do
   end
 
   def show(conn, params) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera =
       params["id"]
@@ -126,7 +124,7 @@ defmodule EvercamMediaWeb.CameraController do
       |> Camera.get_full
 
     if Permission.Camera.can_list?(current_user, camera) do
-      render(conn, "show.json", %{camera: camera, user: current_user})
+      render(conn, "show.#{version}.json", %{camera: camera, user: current_user})
     else
       render_error(conn, 404, "Not found.")
     end
@@ -148,6 +146,7 @@ defmodule EvercamMediaWeb.CameraController do
   end
 
   def transfer(conn, %{"id" => exid, "user_id" => user_id}) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
     user = User.by_username_or_email(user_id)
@@ -163,7 +162,7 @@ defmodule EvercamMediaWeb.CameraController do
       rights = CameraShare.rights_list("full") |> Enum.join(",")
       CameraShare.create_share(camera, old_owner, user, rights, "")
       update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
-      render(conn, "show.json", %{camera: camera, user: current_user})
+      render(conn, "show.#{version}.json", %{camera: camera, user: current_user})
     end
   end
 
@@ -201,6 +200,7 @@ defmodule EvercamMediaWeb.CameraController do
   end
 
   def update(conn, %{"id" => exid} = params) do
+    %{assigns: %{version: version}} = conn
     caller = conn.assigns[:current_user]
     old_camera = Camera.get_full(exid)
 
@@ -209,7 +209,7 @@ defmodule EvercamMediaWeb.CameraController do
     do
       camera_changeset = camera_update_changeset(old_camera, params, caller.email)
       with true <- camera_changeset.changes == %{} do
-        render(conn, "show.json", %{camera: old_camera, user: caller})
+        render(conn, "show.#{version}.json", %{camera: old_camera, user: caller})
       else
         false ->
           case Repo.update(camera_changeset) do
@@ -224,7 +224,7 @@ defmodule EvercamMediaWeb.CameraController do
               CameraActivity.log_activity(caller, camera, "camera edited", extra)
               update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
               update_camera_to_zoho(false, camera, caller.username)
-              render(conn, "show.json", %{camera: camera, user: caller})
+              render(conn, "show.#{version}.json", %{camera: camera, user: caller})
             {:error, changeset} ->
               render_error(conn, 400, Util.parse_changeset(changeset))
           end
@@ -336,6 +336,7 @@ defmodule EvercamMediaWeb.CameraController do
   end
 
   def create(conn, params) do
+    %{assigns: %{version: version}} = conn
     caller = conn.assigns[:current_user]
     with :ok <- is_authorized(conn, caller)
     do
@@ -363,7 +364,7 @@ defmodule EvercamMediaWeb.CameraController do
           add_camera_to_zoho(false, full_camera, caller.username)
           conn
           |> put_status(:created)
-          |> render("show.json", %{camera: full_camera, user: caller})
+          |> render("show.#{version}.json", %{camera: full_camera, user: caller})
         {:error, changeset} ->
           Logger.info "[camera-create] [#{inspect params}] [#{inspect Util.parse_changeset(changeset)}]"
           render_error(conn, 400, Util.parse_changeset(changeset))

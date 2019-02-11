@@ -21,7 +21,7 @@ defmodule Snapmail do
     field :timezone, :string, default: "Etc/UTC"
     field :is_paused, :boolean, default: false
     field :is_public, :boolean, default: false
-    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
+    timestamps(type: :utc_datetime_usec, default: Calendar.DateTime.now_utc)
   end
 
   def all do

@@ -1,7 +1,6 @@
 defmodule EvercamMediaWeb.PublicController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMediaWeb.PublicView
 
   @default_distance 1000
   @default_offset 0
@@ -18,7 +17,7 @@ defmodule EvercamMediaWeb.PublicController do
       |> Camera.get_query_with_associations
 
     conn
-    |> render(PublicView, "geojson.json", %{cameras: cameras})
+    |> render("geojson.json", %{cameras: cameras})
   end
 
   swagger_path :index do
@@ -35,6 +34,7 @@ defmodule EvercamMediaWeb.PublicController do
   end
 
   def index(conn, params) do
+    %{assigns: %{version: version}} = conn
     coordinates = parse_near_to(params["is_near_to"])
     within_distance = parse_distance(params["within_distance"])
     limit = parse_limit(params["limit"])
@@ -54,7 +54,7 @@ defmodule EvercamMediaWeb.PublicController do
     cameras = Camera.get_query_with_associations(public_cameras_query, limit, offset)
 
     conn
-    |> render(PublicView, "index.json", %{cameras: cameras, total_pages: total_pages, count: count})
+    |> render("index.#{version}.json", %{cameras: cameras, total_pages: total_pages, count: count})
   end
 
   defp parse_near_to(nil), do: {0, 0}

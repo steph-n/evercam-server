@@ -53,7 +53,7 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSchedule do
     {h, _} = Integer.parse(hours)
     {m, _} = Integer.parse(minutes)
     erl_date_time = {{year, month, day}, {h, m, 0}}
-    case Calendar.DateTime.from_erl(erl_date_time, "UTC") |> elem(1) |> Calendar.DateTime.shift_zone(timezone) do
+    case Calendar.DateTime.from_erl(erl_date_time, timezone) do
       {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
       {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
       _ -> raise "Timezone conversion error"

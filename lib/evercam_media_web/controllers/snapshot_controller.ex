@@ -57,16 +57,19 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def create(conn, %{"id" => camera_exid} = params) do
+    %{assigns: %{version: version}} = conn
     params = Map.merge(@optional_params, params)
     user = conn.assigns[:current_user]
     camera = Camera.get_full(camera_exid)
+    timezone = Camera.get_timezone(camera)
+
     with true <- Permission.Camera.can_snapshot?(user, camera)
     do
       case fetch_latest_snapshot(camera, params) do
         {200, response} ->
           data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
           conn
-          |> json(%{created_at: response[:timestamp], notes: response[:notes], data: data})
+          |> json(%{created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), notes: response[:notes], data: data})
         {code, response} ->
           conn
           |> put_status(code)
@@ -166,7 +169,8 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def thumbnail(conn, %{"id" => camera_exid}) do
-    case snapshot_thumbnail(camera_exid, conn.assigns[:current_user], true) do
+    camera = Camera.get_full(camera_exid)
+    case snapshot_thumbnail(camera, conn.assigns[:current_user], true) do
       {200, response} ->
         conn
         |> put_resp_header("content-type", "image/jpeg")
@@ -195,12 +199,19 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def latest(conn, %{"id" => camera_exid} = _params) do
-    case snapshot_thumbnail(camera_exid, conn.assigns[:current_user], false) do
+    %{assigns: %{version: version}} = conn
+    camera = Camera.get_full(camera_exid)
+    timezone = Camera.get_timezone(camera)
+    case snapshot_thumbnail(camera, conn.assigns[:current_user], false) do
       {200, response} ->
         data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
-
         conn
-        |> json(%{data: data, created_at: response[:timestamp], status: "ok"})
+        |> json(%{data: data, created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), status: "ok"})
+      {404, response} ->
+        data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
+        conn
+        |> put_status(404)
+        |> json(%{data: data})
       {code, response} ->
         conn
         |> put_status(code)
@@ -224,12 +235,15 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def oldest(conn, %{"id" => camera_exid} = _params) do
-    case old_snapshot(camera_exid, conn.assigns[:current_user]) do
+    %{assigns: %{version: version}} = conn
+    camera = Camera.get_full(camera_exid)
+    timezone = Camera.get_timezone(camera)
+    case old_snapshot(camera, conn.assigns[:current_user]) do
       {200, response} ->
         data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
 
         conn
-        |> json(%{data: data, status: "ok", created_at: response[:created_at]})
+        |> json(%{data: data, status: "ok", created_at: get_snapshot_timestamp(version, response[:created_at], timezone)})
       {code, response} ->
         conn
         |> put_status(code)
@@ -254,16 +268,13 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def nearest(conn, %{"id" => camera_exid, "timestamp" => timestamp} = _params) do
+    %{assigns: %{version: version}} = conn
     camera = Camera.get_full(camera_exid)
     timezone = Camera.get_timezone(camera)
-    timestamp =
-      timestamp
-      |> convert_timestamp
-      |> convert_to_utc(timezone)
 
     with true <- Permission.Camera.can_list?(conn.assigns[:current_user], camera) do
       conn
-      |> json(%{snapshots: Storage.nearest(camera_exid, timestamp)})
+      |> json(%{snapshots: Storage.nearest(camera_exid, convert_timestamp(timestamp), version, timezone)})
     else
       false -> render_error(conn, 403, "Forbidden.")
     end
@@ -289,13 +300,14 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def index(conn, %{"id" => camera_exid, "from" => from, "to" => to, "limit" => "3600", "page" => _page}) do
+    %{assigns: %{version: version}} = conn
     camera = Camera.get_full(camera_exid)
-    offset = Camera.get_offset(camera)
-    from = convert_to_camera_timestamp(from, offset)
-    to = convert_to_camera_timestamp(to, offset)
+    timezone = Camera.get_timezone(camera)
+    from = convert_timestamp(from)
+    to = convert_timestamp(to)
 
     with true <- Permission.Camera.can_list?(conn.assigns[:current_user], camera) do
-      snapshots = Storage.seaweedfs_load_range(camera_exid, from, to)
+      snapshots = Storage.seaweedfs_load_range(camera_exid, from, to, version, timezone)
 
       conn
       |> json(%{snapshots: snapshots})
@@ -331,8 +343,10 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def show(conn, %{"id" => camera_exid, "timestamp" => timestamp} = params) do
+    %{assigns: %{version: version}} = conn
     timestamp = convert_timestamp(timestamp)
     camera = Camera.get_full(camera_exid)
+    timezone = Camera.get_timezone(camera)
 
     with true <- Permission.Camera.can_list?(conn.assigns[:current_user], camera),
         {:ok, image, notes} <- Storage.load(camera_exid, timestamp, params["notes"]) do
@@ -344,7 +358,7 @@ defmodule EvercamMediaWeb.SnapshotController do
           |> text(image)
         _ ->
           data = "data:image/jpeg;base64,#{Base.encode64(image)}"
-          json(conn, %{snapshots: [%{created_at: timestamp, notes: notes, data: data}]})
+          json(conn, %{snapshots: [%{created_at: get_snapshot_timestamp(version, timestamp, timezone), notes: notes, data: data}]})
       end
     else
       false -> render_error(conn, 403, "Forbidden.")
@@ -413,6 +427,7 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def timelapse_snapshots_info(conn, %{"id" => camera_exid, "year" => year, "month" => month, "day" => day}) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(camera_exid)
 
@@ -431,14 +446,14 @@ defmodule EvercamMediaWeb.SnapshotController do
       snapshots =
         cond do
           "#{fyear}#{fmonth}#{fday}" == "#{tyear}#{tmonth}#{tday}" ->
-            S3.snapshots_info(camera_exid, fyear, fmonth, fday)
+            S3.snapshots_info(camera_exid, fyear, fmonth, fday, version)
           true ->
             fro_snapshots =
-              S3.snapshots_info(camera_exid, fyear, fmonth, fday)
+              S3.snapshots_info(camera_exid, fyear, fmonth, fday, version)
               |> Enum.reject(fn(snapshot) -> check_snap_date(:after, snapshot.created_at, from) == false end)
 
             to_snapshots =
-              S3.snapshots_info(camera_exid, tyear, tmonth, tday)
+              S3.snapshots_info(camera_exid, tyear, tmonth, tday, version)
               |> Enum.reject(fn(snapshot) -> check_snap_date(:before, snapshot.created_at, to) == false end)
             fro_snapshots ++ to_snapshots
         end
@@ -448,15 +463,17 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def timelapse_show(conn, %{"id" => camera_exid, "timestamp" => timestamp}) do
+    %{assigns: %{version: version}} = conn
     camera = Camera.get_full(camera_exid)
     timestamp = convert_timestamp(timestamp)
+    timezone = Camera.get_timezone(camera)
 
     with true <- Permission.Camera.can_list?(conn.assigns[:current_user], camera),
          {:ok, image} <- S3.load(camera_exid, timestamp) do
       data = "data:image/jpeg;base64,#{Base.encode64(image)}"
 
       conn
-      |> json(%{snapshots: [%{created_at: timestamp, data: data}]})
+      |> json(%{snapshots: [%{created_at: get_snapshot_timestamp(version, timestamp, timezone), data: data}]})
     else
       false -> render_error(conn, 403, "Forbidden.")
       {:error, code, message} -> render_error(conn, code, message)
@@ -556,6 +573,7 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def hour(conn, %{"id" => camera_exid, "year" => year, "month" => month, "day" => day, "hour" => hour}) do
+    %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(camera_exid)
 
@@ -566,7 +584,7 @@ defmodule EvercamMediaWeb.SnapshotController do
       timezone = Camera.get_timezone(camera)
       hour = String.pad_leading(hour, 2, "0")
       hour_datetime = construct_timestamp(year, month, day, "#{hour}:00:00", timezone)
-      snapshots = Storage.hour(camera_exid, hour_datetime)
+      snapshots = Storage.hour(camera_exid, hour_datetime, version, timezone)
 
       conn
       |> json(%{snapshots: snapshots})
@@ -600,10 +618,9 @@ defmodule EvercamMediaWeb.SnapshotController do
   ## Fetch functions  ##
   ######################
 
-  defp old_snapshot(camera_exid, user) do
-    camera = Camera.get_full(camera_exid)
+  defp old_snapshot(camera, user) do
     with true <- Permission.Camera.can_snapshot?(user, camera),
-         {:ok, image, timestamp} <- Storage.get_or_save_oldest_snapshot(camera_exid)
+         {:ok, image, timestamp} <- Storage.get_or_save_oldest_snapshot(camera.exid)
     do
       {200, %{image: image, created_at: timestamp}}
     else
@@ -642,11 +659,10 @@ defmodule EvercamMediaWeb.SnapshotController do
     |> handle_test_response
   end
 
-  def snapshot_thumbnail(camera_exid, user, update_thumbnail?) do
-    camera = Camera.get_full(camera_exid)
+  def snapshot_thumbnail(camera, user, update_thumbnail?) do
     if update_thumbnail?, do: spawn(fn -> update_thumbnail(camera) end)
     with true <- Permission.Camera.can_snapshot?(user, camera),
-         {:ok, timestamp, image} <- Storage.thumbnail_load(camera_exid)
+         {:ok, timestamp, image} <- Storage.thumbnail_load(camera.exid)
     do
       {200, %{timestamp: timestamp, image: image}}
     else
@@ -781,16 +797,6 @@ defmodule EvercamMediaWeb.SnapshotController do
     |> Calendar.DateTime.shift_zone!("Etc/UTC")
   end
 
-  defp convert_to_camera_timestamp(timestamp, offset) do
-    timestamp
-    |> String.to_integer
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.Strftime.strftime!("%Y-%m-%dT%H:%M:%S#{offset}")
-    |> Calendar.DateTime.Parse.rfc3339_utc
-    |> elem(1)
-    |> Calendar.DateTime.Format.unix
-  end
-
   defp update_camera_status_online(camera_exid) when camera_exid in [nil, ""], do: :noop
   defp update_camera_status_online(camera_exid) do
     camera = Camera.get_full(camera_exid)
@@ -818,14 +824,8 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
 
-  defp convert_to_utc(unix_timestamp, timezone) do
-    unix_timestamp
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.DateTime.to_erl
-    |> Calendar.DateTime.from_erl!(timezone)
-    |> Calendar.DateTime.shift_zone!("Etc/UTC")
-    |> Calendar.DateTime.Format.unix
-  end
+  defp get_snapshot_timestamp(:v1, unix_timestamp, _), do: unix_timestamp
+  defp get_snapshot_timestamp(:v2, unix_timestamp, timezone), do: Util.convert_unix_to_iso(unix_timestamp, timezone)
 
   defp is_same_hour?(from, to) do
     from_hour = get_hour_from_date(from)

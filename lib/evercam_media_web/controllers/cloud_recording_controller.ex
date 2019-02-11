@@ -182,6 +182,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   end
 
   def hikvision_nvr(conn, %{"id" => exid, "starttime" => starttime, "endtime" => endtime}) do
+    %{assigns: %{version: version}} = conn
     camera = Camera.by_exid_with_associations(exid)
 
     with :ok <- ensure_camera_exists(camera, exid, conn)
@@ -191,7 +192,11 @@ defmodule EvercamMediaWeb.CloudRecordingController do
       cam_username = Camera.username(camera)
       cam_password = Camera.password(camera)
       channel = VendorModel.get_channel(camera, camera.vendor_model.channel)
-      case EvercamMedia.HikvisionNVR.publish_stream_from_rtsp(camera.exid, ip, port, cam_username, cam_password, channel, convert_timestamp(starttime), convert_timestamp(endtime)) do
+      timezone = Camera.get_timezone(camera)
+      from_date = convert_timestamp(version, starttime, timezone)
+      end_date = convert_timestamp(version, endtime, timezone)
+
+      case EvercamMedia.HikvisionNVR.publish_stream_from_rtsp(camera.exid, ip, port, cam_username, cam_password, channel, from_date, end_date) do
         {:ok} -> json(conn, %{message: "Streaming started."})
         {:stop} -> render_error(conn, 406, "System creating clip")
         {:error} -> render_error(conn, 404, "No recordings found")
@@ -244,6 +249,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   end
 
   def get_recording_times(conn, %{"id" => exid, "starttime" => starttime, "endtime" => endtime}) do
+    %{assigns: %{version: version}} = conn
     camera = Camera.by_exid_with_associations(exid)
 
     with :ok <- ensure_camera_exists(camera, exid, conn)
@@ -253,7 +259,10 @@ defmodule EvercamMediaWeb.CloudRecordingController do
       cam_username = Camera.username(camera)
       cam_password = Camera.password(camera)
       channel = VendorModel.get_channel(camera, camera.vendor_model.channel)
-      case EvercamMedia.HikvisionNVR.get_stream_urls(camera.exid, ip, port, cam_username, cam_password, channel, convert_timestamp_to_rfc(starttime), convert_timestamp_to_rfc(endtime)) do
+      timezone = Camera.get_timezone(camera)
+      from_date = convert_timestamp_to_rfc(version, starttime, timezone)
+      to_date = convert_timestamp_to_rfc(version, endtime, timezone)
+      case EvercamMedia.HikvisionNVR.get_stream_urls(camera.exid, ip, port, cam_username, cam_password, channel, from_date, to_date) do
         {:ok, body} ->
           starttime_list = EvercamMedia.XMLParser.parse_xml(body, '/CMSearchResult/matchList/searchMatchItem/timeSpan/startTime')
           endtime_list = EvercamMedia.XMLParser.parse_xml(body, '/CMSearchResult/matchList/searchMatchItem/timeSpan/endTime')
@@ -264,8 +273,8 @@ defmodule EvercamMediaWeb.CloudRecordingController do
               times_list =
                 String.contains?(meta_data, "motion")
                 |> get_times_list(starttime_list, endtime_list)
-                |> get_off_times_list(convert_timestamp_to_rfc(endtime))
-                |> get_off_times_start(convert_timestamp_to_rfc(starttime))
+                |> get_off_times_list(convert_timestamp_to_rfc(version, endtime, timezone))
+                |> get_off_times_start(convert_timestamp_to_rfc(version, starttime, timezone))
               json(conn, %{times_list: times_list})
             true ->
               render_error(conn, 404, "No recordings found")
@@ -364,18 +373,26 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     hours
   end
 
-  defp convert_timestamp_to_rfc(timestamp) do
+  defp convert_timestamp_to_rfc(:v1, timestamp, _) do
     timestamp
     |> String.to_integer
     |> Calendar.DateTime.Parse.unix!
     |> Calendar.Strftime.strftime!("%Y-%m-%dT%H:%M:%SZ")
   end
+  defp convert_timestamp_to_rfc(:v2, timestamp, timezone) do
+    {:ok, datetime} = Calendar.DateTime.Parse.rfc3339(timestamp, timezone)
+    Calendar.Strftime.strftime!(datetime, "%Y-%m-%dT%H:%M:%SZ")
+  end
 
-  defp convert_timestamp(timestamp) do
+  defp convert_timestamp(:v1, timestamp, _) do
     timestamp
     |> String.to_integer
     |> Calendar.DateTime.Parse.unix!
     |> Calendar.Strftime.strftime!("%Y%m%dT%H%M%SZ")
+  end
+  defp convert_timestamp(:v2, timestamp, timezone) do
+    {:ok, datetime} = Calendar.DateTime.Parse.rfc3339(timestamp, timezone)
+    Calendar.Strftime.strftime!(datetime, "%Y%m%dT%H%M%SZ")
   end
 
   defp convert_timestap_from_rfc(timestamp) do

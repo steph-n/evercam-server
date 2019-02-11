@@ -79,7 +79,7 @@ defmodule EvercamMedia.TimelapseRecording.S3 do
     end
   end
 
-  def snapshots_info(camera_exid, year, month, day) do
+  def snapshots_info(camera_exid, year, month, day, version \\ :v1) do
     month = String.pad_leading("#{month}", 2, "0")
     day = String.pad_leading("#{day}", 2, "0")
     prefix = "#{camera_exid}/snapshots/#{year}/#{month}/#{day}/"
@@ -98,7 +98,7 @@ defmodule EvercamMedia.TimelapseRecording.S3 do
             |> String.replace(".jpg", "")
             |> Timex.parse!("%Y/%m/%d/%H_%M_%S", :strftime)
             |> Timex.to_unix
-            %{key: key, created_at: created_at}
+            %{key: key, created_at: get_iso_date(version, created_at)}
         end)
     end
   end
@@ -157,5 +157,12 @@ defmodule EvercamMedia.TimelapseRecording.S3 do
     timestamp
     |> Calendar.DateTime.Parse.unix!
     |> Calendar.Strftime.strftime!("#{state}-%Y-%m-%d-%H_%M_%S.jpg")
+  end
+
+  defp get_iso_date(:v1, timestamp), do: timestamp
+  defp get_iso_date(:v2, timestamp) do
+    timestamp
+    |> Calendar.DateTime.Parse.unix!
+    |> Calendar.DateTime.Format.iso8601
   end
 end

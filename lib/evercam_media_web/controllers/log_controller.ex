@@ -75,6 +75,7 @@ defmodule EvercamMediaWeb.LogController do
   end
 
   defp show_logs(params, camera, conn) do
+    %{assigns: %{version: version}} = conn
     from = parse_from(params["from"])
     to = parse_to(params["to"])
     limit = parse_limit(params["limit"])
@@ -92,7 +93,7 @@ defmodule EvercamMediaWeb.LogController do
     total_pages = Float.floor(logs_count / limit)
     logs = Enum.slice(all_logs, page * limit, limit)
 
-    render(conn, "show.json", %{total_pages: total_pages, camera_exid: camera.exid, camera_name: camera.name, logs: logs})
+    render(conn, "show.#{version}.json", %{total_pages: total_pages, camera: camera, logs: logs})
   end
 
   defp camera_exists(camera_exid) when camera_exid in [nil, ""] do
@@ -111,7 +112,6 @@ defmodule EvercamMediaWeb.LogController do
   defp parse_from(from) when from in [nil, ""] do
     Calendar.DateTime.Parse.rfc3339_utc("2014-01-01T14:00:00Z")
     |> elem(1)
-    |> Calendar.DateTime.to_erl
   end
   defp parse_from(from), do: from |> Calendar.DateTime.Parse.unix!
 

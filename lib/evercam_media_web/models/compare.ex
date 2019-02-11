@@ -21,7 +21,7 @@ defmodule Compare do
     field :public, :boolean
     field :create_animation, :boolean
     field :status, :integer, default: 0
-    timestamps(type: :utc_datetime, default: Calendar.DateTime.now_utc)
+    timestamps(type: :utc_datetime_usec, default: Calendar.DateTime.now_utc)
   end
 
   def get_by_camera(camera_id) do

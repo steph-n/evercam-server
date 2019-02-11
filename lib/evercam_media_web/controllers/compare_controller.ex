@@ -377,11 +377,15 @@ defmodule EvercamMediaWeb.CompareController do
 
   defp convert_to_datetime(value) when value in [nil, ""], do: value
   defp convert_to_datetime(value) do
-    value
-    |> String.to_integer
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.DateTime.to_erl
-    |> Calendar.DateTime.from_erl!("Etc/UTC")
+    case Calendar.DateTime.Parse.rfc3339_utc(value) do
+      {:ok, datetime} -> datetime
+      {:bad_format, nil} ->
+        value
+        |> String.to_integer
+        |> Calendar.DateTime.Parse.unix!
+        |> Calendar.DateTime.to_erl
+        |> Calendar.DateTime.from_erl!("Etc/UTC")
+    end
   end
 
   defp authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")

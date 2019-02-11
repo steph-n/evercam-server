@@ -25,12 +25,12 @@ defmodule User do
     field :api_id, :string
     field :api_key, :string
     field :reset_token, :string
-    field :token_expires_at, :utc_datetime
+    field :token_expires_at, :utc_datetime_usec
     field :stripe_customer_id, :string
-    field :confirmed_at, :utc_datetime
-    field :last_login_at, :utc_datetime
+    field :confirmed_at, :utc_datetime_usec
+    field :last_login_at, :utc_datetime_usec
     field :payment_method, :integer
-    timestamps(inserted_at: :created_at, type: :utc_datetime, default: Calendar.DateTime.now_utc)
+    timestamps(inserted_at: :created_at, type: :utc_datetime_usec, default: Calendar.DateTime.now_utc)
   end
 
   def invalidate_auth(api_id, api_key) do

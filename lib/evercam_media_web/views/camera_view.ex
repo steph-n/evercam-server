@@ -2,19 +2,35 @@ defmodule EvercamMediaWeb.CameraView do
   use EvercamMediaWeb, :view
   alias EvercamMedia.Util
 
-  def render("index.json", %{cameras: cameras, user: user}) do
-    %{cameras: render_many(cameras, __MODULE__, "camera.json", user: user)}
+  def render("index.v1.json", %{cameras: cameras, user: user}) do
+    %{cameras: render_many(cameras, __MODULE__, "camera.v1.json", user: user)}
   end
 
-  def render("show.json", %{camera: camera, user: user}) do
-    %{cameras: render_many([camera], __MODULE__, "camera.json", user: user)}
+  def render("index.v2.json", %{cameras: cameras, user: user}) do
+    %{cameras: render_many(cameras, __MODULE__, "camera.v2.json", user: user)}
   end
 
-  def render("camera.json", %{camera: camera, user: user}) do
+  def render("show.v1.json", %{camera: camera, user: user}) do
+    %{cameras: render_many([camera], __MODULE__, "camera.v1.json", user: user)}
+  end
+
+  def render("show.v2.json", %{camera: camera, user: user}) do
+    %{cameras: render_many([camera], __MODULE__, "camera.v2.json", user: user)}
+  end
+
+  def render("camera.v1.json", %{camera: camera, user: user}) do
     if Permission.Camera.can_view?(user, camera) do
       base_camera_attributes(camera, user) |> Map.merge(privileged_camera_attributes(camera))
     else
       base_camera_attributes(camera, user)
+    end
+  end
+
+  def render("camera.v2.json", %{camera: camera, user: user}) do
+    if Permission.Camera.can_view?(user, camera) do
+      base_camera_attributes_v2(camera, user) |> Map.merge(privileged_camera_attributes(camera))
+    else
+      base_camera_attributes_v2(camera, user)
     end
   end
 
@@ -32,6 +48,36 @@ defmodule EvercamMediaWeb.CameraView do
       updated_at: Util.ecto_datetime_to_unix(camera.updated_at),
       last_polled_at: Util.ecto_datetime_to_unix(camera.last_polled_at),
       last_online_at: Util.ecto_datetime_to_unix(camera.last_online_at),
+      is_online_email_owner_notification: is_send_notification?(camera.alert_emails, user),
+      is_online: camera.is_online,
+      is_public: camera.is_public,
+      offline_reason: Util.get_offline_reason(camera.offline_reason),
+      discoverable: camera.discoverable,
+      timezone: Camera.get_timezone(camera),
+      location: Camera.get_location(camera),
+      rights: Camera.get_rights(camera, user),
+      proxy_url: %{
+        hls: Camera.get_hls_url(camera, User.get_fullname(user)),
+        rtmp: Camera.get_rtmp_url(camera, User.get_fullname(user)),
+      },
+      thumbnail_url: thumbnail_url(camera),
+    }
+  end
+
+  defp base_camera_attributes_v2(camera, user) do
+    %{
+      id: camera.exid,
+      name: camera.name,
+      owned: Camera.is_owner?(user, camera),
+      owner: camera.owner.username,
+      vendor_id: Camera.get_vendor_attr(camera, :exid),
+      vendor_name: Camera.get_vendor_attr(camera, :name),
+      model_id: Camera.get_model_attr(camera, :exid),
+      model_name: Camera.get_model_attr(camera, :name),
+      created_at: Util.datetime_to_iso8601(camera.created_at, Camera.get_timezone(camera)),
+      updated_at: Util.datetime_to_iso8601(camera.updated_at, Camera.get_timezone(camera)),
+      last_polled_at: Util.datetime_to_iso8601(camera.last_polled_at, Camera.get_timezone(camera)),
+      last_online_at: Util.datetime_to_iso8601(camera.last_online_at, Camera.get_timezone(camera)),
       is_online_email_owner_notification: is_send_notification?(camera.alert_emails, user),
       is_online: camera.is_online,
       is_public: camera.is_public,
