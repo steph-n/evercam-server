@@ -10,8 +10,6 @@ defmodule EvercamMediaWeb.SnapshotController do
   alias EvercamMedia.Util
   alias EvercamMedia.Snapshot.WorkerSupervisor
 
-  @optional_params %{"notes" => nil}
-
   swagger_path :live do
     get "/cameras/{id}/live/snapshot"
     summary "Returns the latest jpeg image from live camera."
@@ -56,7 +54,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 504, "Camera does not respond with a jpeg"
   end
 
-  def create(conn, %{"id" => camera_exid} = params) do
+  def create(conn, %{"id" => camera_exid}) do
     %{assigns: %{version: version}} = conn
     user = conn.assigns[:current_user]
     camera = Camera.get_full(camera_exid)

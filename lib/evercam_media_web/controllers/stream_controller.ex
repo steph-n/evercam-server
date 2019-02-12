@@ -92,6 +92,9 @@ defmodule EvercamMediaWeb.StreamController do
       stream(rtsp_url, token, camera, ip, fullname, command)
       {200, ""}
     rescue
+      MatchError ->
+        Logger.error "[stream_error] [#{token}] [Failed to parse token]"
+        {400, "Invalid token. Please update RTMP/HLS URL."}
       error ->
         Logger.error "[stream_error] [#{token}] [#{inspect(error)}]"
         case error.message do
