@@ -20,6 +20,7 @@ defmodule MetaData do
     MetaData
     |> where(camera_id: ^camera_id)
     |> where(action: ^action)
+    |> limit(1)
     |> Repo.one
   end
 
