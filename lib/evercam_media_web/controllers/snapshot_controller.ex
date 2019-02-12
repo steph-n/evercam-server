@@ -58,18 +58,17 @@ defmodule EvercamMediaWeb.SnapshotController do
 
   def create(conn, %{"id" => camera_exid} = params) do
     %{assigns: %{version: version}} = conn
-    params = Map.merge(@optional_params, params)
     user = conn.assigns[:current_user]
     camera = Camera.get_full(camera_exid)
     timezone = Camera.get_timezone(camera)
 
     with true <- Permission.Camera.can_snapshot?(user, camera)
     do
-      case fetch_latest_snapshot(camera, params) do
+      case fetch_latest_snapshot(camera) do
         {200, response} ->
           data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
           conn
-          |> json(%{created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), notes: response[:notes], data: data})
+          |> json(%{created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), notes: "", data: data})
         {code, response} ->
           conn
           |> put_status(code)
@@ -198,7 +197,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 404, "Camera didn't respond with a base64 image "
   end
 
-  def latest(conn, %{"id" => camera_exid} = _params) do
+  def latest(conn, %{"id" => camera_exid}) do
     %{assigns: %{version: version}} = conn
     camera = Camera.get_full(camera_exid)
     timezone = Camera.get_timezone(camera)
@@ -234,7 +233,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 404, "Camera does not respond with a base64 image "
   end
 
-  def oldest(conn, %{"id" => camera_exid} = _params) do
+  def oldest(conn, %{"id" => camera_exid}) do
     %{assigns: %{version: version}} = conn
     camera = Camera.get_full(camera_exid)
     timezone = Camera.get_timezone(camera)
@@ -267,7 +266,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 403, "Forbidden camera access"
   end
 
-  def nearest(conn, %{"id" => camera_exid, "timestamp" => timestamp} = _params) do
+  def nearest(conn, %{"id" => camera_exid, "timestamp" => timestamp}) do
     %{assigns: %{version: version}} = conn
     camera = Camera.get_full(camera_exid)
     timezone = Camera.get_timezone(camera)
@@ -680,13 +679,13 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
 
-  defp fetch_latest_snapshot(camera, params) do
+  defp fetch_latest_snapshot(camera) do
     to = Calendar.DateTime.now!("UTC")
     from = to |> Calendar.DateTime.advance!(-3) |> Calendar.DateTime.Format.unix
 
     case Storage.seaweedfs_load_range(camera.exid, from, Calendar.DateTime.Format.unix(to)) do
       [] ->
-        function = fn -> construct_args(camera, true, params["notes"]) |> Map.put(:description, "Create snapshot") |> fetch_snapshot end
+        function = fn -> construct_args(camera, true, "Evercam Proxy") |> Map.put(:description, "Create snapshot") |> fetch_snapshot end
         exec_with_timeout(function, 25)
       snapshot_list ->
         snapshot = List.last(snapshot_list)

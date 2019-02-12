@@ -37,7 +37,7 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
 
   # Temporary solution for extractor to sync
-  def seaweedfs_save_sync(camera_exid, timestamp, image, notes, metadata \\ %{motion_level: nil}) do
+  def seaweedfs_save_sync(camera_exid, timestamp, image, notes) do
     seaweedfs = timestamp |> Calendar.DateTime.Parse.unix! |> point_to_seaweed
     hackney = [pool: :seaweedfs_upload_pool]
     app_name = notes_to_app_name(notes)
@@ -46,12 +46,11 @@ defmodule EvercamMedia.Snapshot.Storage do
     file_path = directory_path <> file_name
     case HTTPoison.post("#{seaweedfs}#{file_path}", {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
       {:ok, response} -> response
-      {:error, error} -> Logger.info "[seaweedfs_save] [#{camera_exid}] [#{inspect error}]"
+      {:error, error} -> Logger.info "[seaweedfs_save_sync] [#{camera_exid}] [#{inspect error}]"
     end
-    metadata_save(directory_path, file_name, metadata)
   end
 
-  def seaweedfs_save(camera_exid, timestamp, image, notes, metadata \\ %{motion_level: nil}) do
+  def seaweedfs_save(camera_exid, timestamp, image, notes) do
     hackney = [pool: :seaweedfs_upload_pool]
     app_name = notes_to_app_name(notes)
     directory_path = construct_directory_path(camera_exid, timestamp, app_name, "")
@@ -60,44 +59,6 @@ defmodule EvercamMedia.Snapshot.Storage do
     case HTTPoison.post("#{@seaweedfs_new}#{file_path}", {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
       {:ok, response} -> response
       {:error, error} -> Logger.info "[seaweedfs_save] [#{camera_exid}] [#{inspect error}]"
-    end
-    metadata_save(directory_path, file_name, metadata)
-  end
-
-  defp metadata_save(_directory_path, _file_name, %{motion_level: 0}), do: :noop
-  defp metadata_save(_directory_path, _file_name, %{motion_level: nil}), do: :noop
-  defp metadata_save(directory_path, file_name, metadata) do
-    hackney = [pool: :seaweedfs_upload_pool]
-    file_path = directory_path <> "metadata.json"
-    url = @seaweedfs_new <> file_path
-
-    data =
-      case HTTPoison.get(url, [], hackney: hackney) do
-        {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-          body
-          |> Poison.decode!
-          |> Map.put_new(file_name, metadata)
-          |> Poison.encode!
-        {:ok, %HTTPoison.Response{status_code: 404}} ->
-          Poison.encode!(%{file_name => metadata})
-        error ->
-          raise "Metadata upload at '#{file_path}' failed with: #{inspect error}"
-      end
-    case HTTPoison.post(url, {:multipart, [{file_path, data, []}]}, [], hackney: hackney) do
-      {:ok, response} -> response
-      {:error, error} -> Logger.info "[metadata_save] [#{file_path}] [#{inspect error}]"
-    end
-  end
-
-  defp metadata_load(url) do
-    hackney = [pool: :seaweedfs_download_pool]
-    case HTTPoison.get(url, [], hackney: hackney) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Poison.decode!(body)
-      {:ok, %HTTPoison.Response{status_code: 404}} ->
-        %{}
-      error ->
-        raise "Metadata download from '#{url}' failed with: #{inspect error}"
     end
   end
 
@@ -254,15 +215,12 @@ defmodule EvercamMedia.Snapshot.Storage do
     end)
     |> Enum.reject(fn({_app_name, files}) -> files == [] end)
     |> Enum.flat_map(fn({app_name, files}) ->
-      hour_metadata = metadata_load("#{url_base}/#{app_name}/#{hour_datetime}/metadata.json")
 
       files
       |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
       |> Enum.map(fn(file_name) ->
-        metadata = Util.deep_get(hour_metadata, [file_name, "motion_level"], nil)
-
         Map.get(dir_paths, app_name)
-        |> construct_snapshot_record(file_name, app_name, metadata, version, timezone)
+        |> construct_snapshot_record(file_name, app_name, 0, version, timezone)
       end)
     end)
   end
@@ -285,40 +243,27 @@ defmodule EvercamMedia.Snapshot.Storage do
       |> point_to_seaweed
 
     directory_path = construct_directory_path(camera_exid, from, app_name, "")
-    hour_metadata = metadata_load("#{storage_url}#{directory_path}metadata.json")
-
     files = seaweedfs_files(storage_url)
     name = seaweedfs_name(storage_url)
 
     request_from_seaweedfs("#{storage_url}#{directory_path}?limit=3600", files, name)
     |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
     |> Enum.map(fn(file_name) ->
-      metadata = Util.deep_get(hour_metadata, [file_name, "motion_level"], nil)
-      construct_snapshot_record(directory_path, file_name, app_name, metadata, version, timezone)
+      construct_snapshot_record(directory_path, file_name, app_name, 0, version, timezone)
     end)
   end
 
-  defp get_camera_apps_list(camera_exid, request_date \\ nil)
-  defp get_camera_apps_list(camera_exid, nil) do
-    request_from_seaweedfs("#{@seaweedfs_new}/#{camera_exid}/snapshots/", "Entries", "FullPath") |> reject_extension_dirs
+  defp get_camera_apps_list(_, request_date \\ nil)
+  defp get_camera_apps_list(_, nil) do
+    ["recordings", "archives"]
   end
-  defp get_camera_apps_list(camera_exid, request_date) do
+  defp get_camera_apps_list(_, request_date) do
     case point_to_seaweed(request_date) do
       base_url when base_url == @seaweedfs_1 ->
         ["timelapse", "recordings", "archives"]
-      base_url when base_url == @seaweedfs ->
-        request_from_seaweedfs("#{@seaweedfs}/#{camera_exid}/snapshots/", "Directories", "Name") |> reject_snapmail
-      base_url when base_url == @seaweedfs_new ->
-        request_from_seaweedfs("#{@seaweedfs_new}/#{camera_exid}/snapshots/", "Entries", "FullPath") |> reject_extension_dirs
+      _ ->
+        ["recordings", "archives"]
     end
-  end
-
-  defp reject_extension_dirs(list) do
-    Enum.filter(list, &(Path.extname(&1) == ""))
-  end
-
-  defp reject_snapmail(list) do
-    List.delete(list, "snapmail")
   end
 
   defp request_from_seaweedfs(url, type, attribute) do
@@ -756,6 +701,7 @@ defmodule EvercamMedia.Snapshot.Storage do
 
   def load(camera_exid, timestamp, notes) when notes in [nil, ""] do
     with {:error, _error} <- load(camera_exid, timestamp, "Evercam Proxy"),
+         {:error, _error} <- load(camera_exid, timestamp, "Archives"),
          {:error, _error} <- load(camera_exid, timestamp, "Evercam Timelapse"),
          {:error, _error} <- load(camera_exid, timestamp, "Evercam SnapMail"),
          {:error, error} <- load(camera_exid, timestamp, "Evercam Thumbnail") do
@@ -888,18 +834,16 @@ defmodule EvercamMedia.Snapshot.Storage do
     |> format_file_name
   end
 
-  defp construct_snapshot_record(directory_path, file_name, app_name, motion_level, :v1, _) do
+  defp construct_snapshot_record(directory_path, file_name, _, _, :v1, _) do
     %{
       created_at: parse_file_timestamp(directory_path, file_name),
-      notes: app_name_to_notes(app_name),
-      motion_level: motion_level
+      notes: ""
     }
   end
-  defp construct_snapshot_record(directory_path, file_name, app_name, motion_level, :v2, timezone) do
+  defp construct_snapshot_record(directory_path, file_name, _, _, :v2, timezone) do
     %{
       created_at: parse_file_timestamp_v2(directory_path, file_name, timezone),
-      notes: app_name_to_notes(app_name),
-      motion_level: motion_level
+      notes: ""
     }
   end
 
@@ -979,16 +923,6 @@ defmodule EvercamMedia.Snapshot.Storage do
       dir_path = construct_directory_path(camera_exid, timestamp, app_name, "")
       Map.put(map, app_name, dir_path)
     end)
-  end
-
-  defp app_name_to_notes(name) do
-    case name do
-      "recordings" -> "Evercam Proxy"
-      "thumbnail" -> "Evercam Thumbnail"
-      "timelapse" -> "Evercam Timelapse"
-      "snapmail" -> "Evercam SnapMail"
-      _ -> "User Created"
-    end
   end
 
   defp notes_to_app_name(notes) do
