@@ -224,6 +224,40 @@ end
       get "/cameras/:id/recordings/snapshots/:year/:month/:day/:hour", SnapshotController, :hour
       options "/cameras/:id/recordings/snapshots/:year/:month/:day/:hour", SnapshotController, :nothing
     end
+
+    scope "/" do
+      pipe_through :onvif
+
+      get "/cameras/:id/ptz/status", ONVIFPTZController, :status
+      options "/cameras/:id/ptz/status", ONVIFPTZController, :nothing
+      get "/cameras/:id/ptz/presets", ONVIFPTZController, :presets
+      options "/cameras/:id/ptz/presets", ONVIFPTZController, :nothing
+      get "/cameras/:id/ptz/nodes", ONVIFPTZController, :nodes
+      options "/cameras/:id/ptz/nodes", ONVIFPTZController, :nothing
+      get "/cameras/:id/ptz/configurations", ONVIFPTZController, :configurations
+      options "/cameras/:id/ptz/configurations", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/home", ONVIFPTZController, :home
+      options "/cameras/:id/ptz/home", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/home/set", ONVIFPTZController, :sethome
+      options "/cameras/:id/ptz/home/set", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/presets/:preset_token/set", ONVIFPTZController, :setpreset
+      options "/cameras/:id/ptz/presets/:preset_token/set", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/presets/create", ONVIFPTZController, :createpreset
+      options "/cameras/:id/ptz/presets/create", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/presets/go/:preset_token", ONVIFPTZController, :gotopreset
+      options "/cameras/:id/ptz/presets/go/:preset_token", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/continuous/start/:direction", ONVIFPTZController, :continuousmove
+      options "/cameras/:id/ptz/continuous/start/:direction", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/continuous/zoom/:mode", ONVIFPTZController, :continuouszoom
+      options "/cameras/:id/ptz/continuous/zoom/:mode", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/continuous/stop", ONVIFPTZController, :stop
+      options "/cameras/:id/ptz/continuous/stop", ONVIFPTZController, :nothing
+      post "/cameras/:id/ptz/relative", ONVIFPTZController, :relativemove
+      options "/cameras/:id/ptz/relative", ONVIFPTZController, :nothing
+
+      get "/onvif/v20/:service/:operation", ONVIFController, :invoke
+      options "/onvif/v20/:service/:operation", ONVIFController, :nothing
+    end
   end
 
   scope "/v1", EvercamMediaWeb do
