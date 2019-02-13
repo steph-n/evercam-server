@@ -707,7 +707,7 @@ defmodule EvercamMedia.Snapshot.Storage do
          {:error, error} <- load(camera_exid, timestamp, "Evercam Thumbnail") do
       {:error, error}
     else
-      {:ok, image, notes} -> {:ok, image, notes}
+      {:ok, image, notes} -> {:ok, image, ""}
     end
   end
   def load(camera_exid, timestamp, "Evercam SnapMail" = notes) do
