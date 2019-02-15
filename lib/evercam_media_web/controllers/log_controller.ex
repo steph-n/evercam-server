@@ -4,6 +4,7 @@ defmodule EvercamMediaWeb.LogController do
   import EvercamMedia.Validation.Log
   import Ecto.Query
   import String, only: [to_integer: 1]
+  alias EvercamMedia.Util
 
   @default_limit 50
 
@@ -76,8 +77,8 @@ defmodule EvercamMediaWeb.LogController do
 
   defp show_logs(params, camera, conn) do
     %{assigns: %{version: version}} = conn
-    from = parse_from(params["from"])
-    to = parse_to(params["to"])
+    from = parse_from(version, params["from"])
+    to = parse_to(version, params["to"])
     limit = parse_limit(params["limit"])
     page = parse_page(params["page"])
     types = parse_types(params["types"])
@@ -106,14 +107,13 @@ defmodule EvercamMediaWeb.LogController do
     end
   end
 
-  defp parse_to(to) when to in [nil, ""], do: Calendar.DateTime.now_utc
-  defp parse_to(to), do: to |> Calendar.DateTime.Parse.unix!
+  defp parse_to(_, to) when to in [nil, ""], do: Calendar.DateTime.now_utc
+  defp parse_to(:v1, to), do: to |> Calendar.DateTime.Parse.unix!
+  defp parse_to(:v2, to), do: to |> Util.datetime_from_iso
 
-  defp parse_from(from) when from in [nil, ""] do
-    Calendar.DateTime.Parse.rfc3339_utc("2014-01-01T14:00:00Z")
-    |> elem(1)
-  end
-  defp parse_from(from), do: from |> Calendar.DateTime.Parse.unix!
+  defp parse_from(_, from) when from in [nil, ""], do: Util.datetime_from_iso("2014-01-01T14:00:00Z")
+  defp parse_from(:v1, from), do: from |> Calendar.DateTime.Parse.unix!
+  defp parse_from(:v2, from), do: from |> Util.datetime_from_iso
 
   defp parse_limit(limit) when limit in [nil, ""], do: @default_limit
   defp parse_limit(limit), do: if to_integer(limit) < 1, do: @default_limit, else: to_integer(limit)
