@@ -181,6 +181,7 @@ end
       get "/cameras/:id/nvr/recordings/stop", CloudRecordingController, :stop
       get "/cameras/:id/nvr/stream", CloudRecordingController, :hikvision_nvr
       get "/cameras/:id/nvr/videos", CloudRecordingController, :get_recording_times
+      options "/cameras/:id/nvr/videos", CloudRecordingController, :nothing
 
       # NVR route
       get "/cameras/:id/nvr/stream/info", NVRController, :get_info
