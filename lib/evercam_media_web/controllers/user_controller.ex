@@ -394,8 +394,8 @@ defmodule EvercamMediaWeb.UserController do
   def user_activities(conn, params) do
     %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]
-    from = parse_from(params["from"])
-    to = parse_to(params["to"])
+    from = parse_from(version, params["from"])
+    to = parse_to(version, params["to"])
     types = parse_types(params["types"])
 
     with :ok <- authorized(conn, current_user)
@@ -566,14 +566,13 @@ defmodule EvercamMediaWeb.UserController do
     Enum.each(share_requests, fn(share_request) -> create_share_for_request(share_request, user, conn) end)
   end
 
-  defp parse_to(to) when to in [nil, ""], do: Calendar.DateTime.now_utc
-  defp parse_to(to), do: to |> Calendar.DateTime.Parse.unix!
+  defp parse_to(_, to) when to in [nil, ""], do: Calendar.DateTime.now_utc
+  defp parse_to(:v1, to), do: to |> Calendar.DateTime.Parse.unix!
+  defp parse_to(:v2, to), do: to |> Util.datetime_from_iso
 
-  defp parse_from(from) when from in [nil, ""] do
-    Calendar.DateTime.Parse.rfc3339_utc("2014-01-01T14:00:00Z")
-    |> elem(1)
-  end
-  defp parse_from(from), do: from |> Calendar.DateTime.Parse.unix!
+  defp parse_from(_, from) when from in [nil, ""], do: Util.datetime_from_iso("2014-01-01T14:00:00Z")
+  defp parse_from(:v1, from), do: from |> Calendar.DateTime.Parse.unix!
+  defp parse_from(:v2, from), do: from |> Util.datetime_from_iso
 
   defp parse_types(types) when types in [nil, ""], do: nil
   defp parse_types(types), do: types |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
