@@ -11,34 +11,63 @@ defmodule EvercamMediaWeb.VendorModelController do
         title "Model"
         description ""
         properties do
-          id :integer, ""
-          vendor_id :integer, "", format: "text"
-          name :string, "", format: "text"
-          config :string, "", format: "json"
-          exid :string, "", format: "text"
-          jpg_url :string, "", format: "text"
-          h264_url :string, "", format: "text"
-          mjpg_url :string, "", format: "text"
-          shape :string, "", format: "text"
-          resolution :string, "", format: "text"
-          official_url :string, "", format: "text"
-          more_info :string, "", format: "text"
-          poe :boolean, "", default: false
-          wifi :boolean, "", default: false
-          onvif :boolean, "", default: false
-          psia :boolean, "", default: false
-          ptz :boolean, "", default: false
-          infrared :boolean, "", default: false
-          varifocal :boolean, "", default: false
+          wifi :boolean, ""
+          vendor_id :string, ""
+          varifocal :boolean, ""
+          username :string, ""
+          upnp :boolean, ""
+          shape :string, ""
           sd_card :boolean, "", default: false
-          upnp :boolean, "", default: false
-          audio_io :boolean, "", default: false
+          resolution :string, ""
+          ptz :boolean, "", default: false
+          psia :boolean, "", default: false
+          poe :boolean, "", default: false
+          password :string, ""
+          onvif :boolean, "", default: false
+          official_url :string, ""
+          name :string, ""
+          mpeg4_url :string, ""
+          more_info :string, ""
+          mobile_url :string, ""
+          mjpg_url :string, ""
+          lowres_url :string, ""
+          jpg_url :string, ""
+          infrared :boolean, "", default: false
+          images (Schema.new do
+            properties do
+              thumbnail :string, ""
+              original :string, ""
+              icon :string, ""
+            end
+          end)
+          id :string, ""
+          h264_url :string, ""
           discontinued :boolean, "", default: false
-          username :string, "", format: "text"
-          password :string, "", format: "text"
-          channel :integer, ""
-          created_at :string, "", format: "timestamp"
-          updated_at :string, "", format: "timestamp"
+          defaults (Schema.new do
+            properties do
+              snapshots (Schema.new do
+                properties do
+                  mpeg4 :string, ""
+                  mobile :string, ""
+                  mjpg :string, ""
+                  jpg :string, ""
+                  h264 :string, ""
+                end
+              end)
+              auth (Schema.new do
+                properties do
+                  basic (Schema.new do
+                    properties do
+                      username :string, ""
+                      password :string, ""
+                    end
+                  end)
+                end
+              end)
+            end
+          end)
+          audio_url :string, ""
+          audio_io :boolean, "", default: false
         end
       end
     }

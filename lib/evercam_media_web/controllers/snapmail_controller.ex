@@ -9,19 +9,21 @@ defmodule EvercamMediaWeb.SnapmailController do
         title "Snapmail"
         description ""
         properties do
-          id :integer, ""
-          exid :string, "", format: "character(255)"
-          subject :string, "", format: "text"
-          recipients :string, "", format: "text"
-          message :string, "", format: "text"
-          notify_days :string, "", format: "character(255)"
-          notify_time :string, "", format: "character(255)"
+          title :string, ""
+          timezone :string, ""
+          requester_name :string, ""
+          requester_email :string, ""
+          requested_by :string, ""
+          recipients :string, ""
+          notify_time :string, ""
+          notify_days :string, "", example: "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday"
+          message :string, ""
           is_public :boolean, "", default: false
-          user_id :integer, ""
-          timezone :string, "",format: "text"
           is_paused :boolean, "", default: false
-          inserted_at :string, "", format: "timestamp"
-          updated_at :string, "", format: "timestamp"
+          id :string, ""
+          created_at :string, "", format: "ISO8601", example: "2019-02-15T13:00:04+00:00"
+          camera_names :string, ""
+          camera_ids :string, ""
         end
       end
     }
@@ -211,7 +213,7 @@ defmodule EvercamMediaWeb.SnapmailController do
     end
   end
 
-  swagger_path :delete do
+  swagger_path :delete_snapmail do
     delete "/snapmails/{id}"
     summary "Delete the snapmail"
     parameters do
@@ -225,7 +227,7 @@ defmodule EvercamMediaWeb.SnapmailController do
     response 404, "Snapmail not found"
   end
 
-  def delete(conn, %{"id" => snapmail_exid}) do
+  def delete_snapmail(conn, %{"id" => snapmail_exid}) do
     current_user = conn.assigns[:current_user]
 
     with :ok <- authorized(conn, current_user),

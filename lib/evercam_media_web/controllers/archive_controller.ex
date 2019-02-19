@@ -15,20 +15,24 @@ defmodule EvercamMediaWeb.ArchiveController do
         title "Archive"
         description ""
         properties do
-          id :integer, ""
-          camera_id :integer, ""
-          exid :string, "", format: "text"
-          title :string, "", format: "text"
-          from_date :string, "", format: "timestamp"
-          to_date :string, "", format: "timestamp"
-          status :integer, ""
-          requested_by :integer, ""
-          embed_time :boolean, ""
+          type :string, ""
+          to_date :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          title :string, ""
+          thumbnail_url :string, ""
+          status :string, ""
+          requester_name :string, ""
+          requester_email :string, ""
+          requested_by :string, ""
           public :boolean, ""
+          media_url :string, ""
+          id :string, ""
+          from_date :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
           frames :integer, ""
-          url :string, "", format: "character(255)"
-          file_name :string, "", format: "character(255)"
-          created_at :string, "", format: "timestamp"
+          file_name :string, ""
+          embed_time :boolean, ""
+          embed_code :string, ""
+          created_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          camera_id :string, ""
         end
       end
     }
@@ -159,8 +163,8 @@ defmodule EvercamMediaWeb.ArchiveController do
     parameters do
       id :path, :string, "Unique identifier for camera.", required: true
       title :query, :string, "Name of the clip.", required: true
-      from_date :query, :string, "Unix timestamp", required: true
-      to_date :query, :string, "Unix timestamp", required: true
+      from_date :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)", required: true
+      to_date :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)", required: true
       is_nvr_archive :query, :boolean, ""
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
@@ -272,7 +276,7 @@ defmodule EvercamMediaWeb.ArchiveController do
     end
   end
 
-  swagger_path :delete do
+  swagger_path :delete_archive do
     delete "/cameras/{id}/archives/{archive_id}"
     summary "Delete the archives for given camera."
     parameters do
@@ -287,7 +291,7 @@ defmodule EvercamMediaWeb.ArchiveController do
     response 404, "Camera does not exist"
   end
 
-  def delete(conn, %{"id" => exid, "archive_id" => archive_id} = params) do
+  def delete_archive(conn, %{"id" => exid, "archive_id" => archive_id} = params) do
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
 

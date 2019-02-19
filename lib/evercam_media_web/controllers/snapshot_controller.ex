@@ -282,8 +282,8 @@ defmodule EvercamMediaWeb.SnapshotController do
     summary "Returns the list of all snapshots currently stored for this camera."
     parameters do
       id :path, :string, "Unique identifier for the camera.", required: true
-      from :query, :string, "Unix timestamp", required: true
-      to :query, :string, "Unix timestamp", required: true
+      from :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)", required: true
+      to :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)", required: true
       limit :query, :integer, "", required: true, default: 3600
       page :query, :integer, "", required: true, default: 1
       api_id :query, :string, "The Evercam API id for the requester."
@@ -318,16 +318,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     summary "Returns the jpeg image of given timestamp."
     parameters do
       id :path, :string, "Unique identifier for the camera.", required: true
-      timestamp :path, :string, "**Can be either unix or ISO. e.g (1479780886 or 2016-11-22T02:14:46.000Z)**", required: true
-      notes :query,
-            :string, "
-            - Evercam Proxy = Recording
-            - Evercam Thumbnail = Thumbnail
-            - Evercam Timelapse = Timelapse
-            - Evercam SnapMail = SnapMail
-            - Others = Archives",
-            required: true,
-            enum: ["Evercam Proxy", "Evercam Thumbnail", "Evercam Timelapse", "Evercam SnapMail", "Others"]
+      timestamp :path, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)", required: true
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
       view :query, :boolean, "", required: true

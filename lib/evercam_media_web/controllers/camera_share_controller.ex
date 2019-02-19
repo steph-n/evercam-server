@@ -10,14 +10,16 @@ defmodule EvercamMediaWeb.CameraShareController do
         title "Share"
         description ""
         properties do
+          user_id :string, ""
+          sharer_name :string, ""
+          sharer_id :string, ""
+          sharer_email :string, ""
+          rights :string, "", example: "snapshot,list,share,view,edit"
+          kind :string, "", example: "public"
           id :integer, ""
-          camera_id :integer, ""
-          user_id :integer, ""
-          sharer_id :integer, ""
-          kind :string, "", format: "character(50)"
-          message :string, "", format: "text"
-          created_at :string, "", format: "timestamp"
-          updated_at :string, "", format: "timestamp"
+          fullname :string, ""
+          email :string, ""
+          camera_id :string, ""
         end
       end
     }
@@ -200,7 +202,7 @@ defmodule EvercamMediaWeb.CameraShareController do
     end
   end
 
-  swagger_path :delete do
+  swagger_path :delete_share do
     delete "/cameras/{id}/shares"
     summary "Delete the camera access."
     parameters do
@@ -214,7 +216,7 @@ defmodule EvercamMediaWeb.CameraShareController do
     response 401, "Invalid API keys or Unauthorized"
     response 404, "Camera does not exist or Share not found"
   end
-  def delete(conn, %{"id" => exid, "email" => email} = params) do
+  def delete_share(conn, %{"id" => exid, "email" => email} = params) do
     caller = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
     sharee = User.by_username_or_email(email)

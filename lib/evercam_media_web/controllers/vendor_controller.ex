@@ -8,12 +8,10 @@ defmodule EvercamMediaWeb.VendorController do
         title "Vendor"
         description ""
         properties do
-          id :integer, ""
-          exid :string, "", format: "text"
-          name :string, "", format: "text"
-          known_macs :string, "", format: "text"
-          created_at :string, "", format: "timestamp"
-          updated_at :string, "", format: "timestamp"
+          name :string, ""
+          logo :string, ""
+          known_macs :list, "", example: ["8C:AE:89", "00:0D:F0", "00:A1:B0"]
+          id :string, ""
         end
       end
     }

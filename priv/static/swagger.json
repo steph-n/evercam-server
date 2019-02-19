@@ -836,7 +836,7 @@
             "description": "The Evercam API key for the requester."
           }
         ],
-        "operationId": "EvercamMediaWeb.CameraController.delete",
+        "operationId": "EvercamMediaWeb.CameraController.delete_camera",
         "description": ""
       }
     },
@@ -1192,7 +1192,7 @@
             "description": "The Evercam API key for the requester."
           }
         ],
-        "operationId": "EvercamMediaWeb.SnapmailController.delete",
+        "operationId": "EvercamMediaWeb.SnapmailController.delete_snapmail",
         "description": ""
       }
     },
@@ -1796,14 +1796,14 @@
             "required": false,
             "name": "starttime",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "string",
             "required": false,
             "name": "endtime",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "string",
@@ -2086,7 +2086,7 @@
             "description": "The Evercam API key for the requester."
           }
         ],
-        "operationId": "EvercamMediaWeb.CameraShareController.delete",
+        "operationId": "EvercamMediaWeb.CameraShareController.delete_share",
         "description": ""
       }
     },
@@ -2179,14 +2179,14 @@
             "required": true,
             "name": "from",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "string",
             "required": true,
             "name": "to",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "integer",
@@ -2396,7 +2396,7 @@
             "required": true,
             "name": "before_date",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "string",
@@ -2410,7 +2410,7 @@
             "required": true,
             "name": "after_date",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "string",
@@ -2895,7 +2895,7 @@
             "description": "The Evercam API key for the requester."
           }
         ],
-        "operationId": "EvercamMediaWeb.CompareController.delete",
+        "operationId": "EvercamMediaWeb.CompareController.delete_compare",
         "description": ""
       }
     },
@@ -3051,7 +3051,7 @@
             "description": "The Evercam API key for the requester."
           }
         ],
-        "operationId": "EvercamMediaWeb.UserController.get",
+        "operationId": "EvercamMediaWeb.UserController.get_user",
         "description": ""
       },
       "delete": {
@@ -3093,7 +3093,7 @@
             "description": "The Evercam API key for the requester."
           }
         ],
-        "operationId": "EvercamMediaWeb.UserController.delete",
+        "operationId": "EvercamMediaWeb.UserController.delete_user",
         "description": ""
       }
     },
@@ -3181,21 +3181,7 @@
             "required": true,
             "name": "timestamp",
             "in": "path",
-            "description": "**Can be either unix or ISO. e.g (1479780886 or 2016-11-22T02:14:46.000Z)**"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "notes",
-            "in": "query",
-            "enum": [
-              "Evercam Proxy",
-              "Evercam Thumbnail",
-              "Evercam Timelapse",
-              "Evercam SnapMail",
-              "Others"
-            ],
-            "description": "\n            - Evercam Proxy = Recording\n            - Evercam Thumbnail = Thumbnail\n            - Evercam Timelapse = Timelapse\n            - Evercam SnapMail = SnapMail\n            - Others = Archives"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "string",
@@ -3676,6 +3662,57 @@
         "description": ""
       }
     },
+    "/users/session/activities": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Returns the logs of given user.",
+        "responses": {
+          "404": {
+            "description": "User does not exist"
+          },
+          "401": {
+            "description": "Invalid API keys or Unauthorized"
+          },
+          "200": {
+            "description": "Success"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "api_id",
+            "in": "query",
+            "description": "The Evercam API id for the requester."
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "api_key",
+            "in": "query",
+            "description": "The Evercam API key for the requester."
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "from",
+            "in": "query",
+            "description": "ISO8601 (2019-01-18T09:00:00.000+00:00)"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "to",
+            "in": "query",
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
+          }
+        ],
+        "operationId": "EvercamMediaWeb.UserController.user_activities",
+        "description": ""
+      }
+    },
     "/snapmails/{id}/unsubscribe/{email}": {
       "patch": {
         "tags": [
@@ -4133,7 +4170,7 @@
             "description": "The Evercam API key for the requester."
           }
         ],
-        "operationId": "EvercamMediaWeb.ArchiveController.delete",
+        "operationId": "EvercamMediaWeb.ArchiveController.delete_archive",
         "description": ""
       }
     },
@@ -4229,14 +4266,14 @@
             "required": true,
             "name": "from_date",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "string",
             "required": true,
             "name": "to_date",
             "in": "query",
-            "description": "Unix timestamp"
+            "description": "ISO8601 (2019-02-18T09:00:00.000+00:00)"
           },
           {
             "type": "boolean",
@@ -4303,50 +4340,6 @@
           }
         ],
         "operationId": "EvercamMediaWeb.ArchiveController.index",
-        "description": ""
-      }
-    },
-    "/users/{id}/activities": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Returns the logs of given user.",
-        "responses": {
-          "404": {
-            "description": "User does not exist"
-          },
-          "401": {
-            "description": "Invalid API keys or Unauthorized"
-          },
-          "200": {
-            "description": "Success"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "Username/email of the user."
-          },
-          {
-            "type": "string",
-            "required": false,
-            "name": "api_id",
-            "in": "query",
-            "description": "The Evercam API id for the requester."
-          },
-          {
-            "type": "string",
-            "required": false,
-            "name": "api_key",
-            "in": "query",
-            "description": "The Evercam API key for the requester."
-          }
-        ],
-        "operationId": "EvercamMediaWeb.UserController.user_activities",
         "description": ""
       }
     },
@@ -4545,39 +4538,31 @@
     "version": "1.0",
     "title": "Evercam Server"
   },
-  "host": "media.evercam.io/v1",
+  "host": "media.evercam.io/v2",
   "definitions": {
     "Vendor": {
       "type": "object",
       "title": "Vendor",
       "properties": {
-        "updated_at": {
-          "type": "string",
-          "format": "timestamp",
-          "description": ""
-        },
         "name": {
           "type": "string",
-          "format": "text",
+          "description": ""
+        },
+        "logo": {
+          "type": "string",
           "description": ""
         },
         "known_macs": {
-          "type": "string",
-          "format": "text",
+          "type": "list",
+          "example": [
+            "8C:AE:89",
+            "00:0D:F0",
+            "00:A1:B0"
+          ],
           "description": ""
         },
         "id": {
-          "type": "integer",
-          "description": ""
-        },
-        "exid": {
           "type": "string",
-          "format": "text",
-          "description": ""
-        },
-        "created_at": {
-          "type": "string",
-          "format": "timestamp",
           "description": ""
         }
       },
@@ -4587,101 +4572,68 @@
       "type": "object",
       "title": "User",
       "properties": {
-        "vat_number": {
-          "type": "string",
-          "format": "text",
-          "description": ""
-        },
         "username": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "updated_at": {
           "type": "string",
-          "format": "timestamp",
-          "description": ""
-        },
-        "token_expires_at": {
-          "type": "string",
-          "format": "timestamp",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
           "description": ""
         },
         "telegram_username": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "stripe_customer_id": {
           "type": "string",
-          "format": "text",
-          "description": ""
-        },
-        "reset_token": {
-          "type": "string",
-          "format": "text",
-          "description": ""
-        },
-        "payment_method": {
-          "type": "integer",
-          "description": ""
-        },
-        "password": {
-          "type": "string",
-          "format": "text",
           "description": ""
         },
         "lastname": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
-        "is_admin": {
-          "type": "boolean",
-          "description": "",
-          "default": false
-        },
-        "insight_id": {
+        "last_login_at": {
           "type": "string",
-          "format": "text",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
+          "description": ""
+        },
+        "intercom_hmac_ios": {
+          "type": "string",
+          "description": ""
+        },
+        "intercom_hmac_android": {
+          "type": "string",
           "description": ""
         },
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
         "firstname": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "email": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "created_at": {
           "type": "string",
-          "format": "timestamp",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
           "description": ""
         },
-        "country_id": {
-          "type": "integer",
-          "description": ""
-        },
-        "billing_id": {
+        "country": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
-        "api_key": {
+        "confirmed_at": {
           "type": "string",
-          "format": "text",
-          "description": ""
-        },
-        "api_id": {
-          "type": "string",
-          "format": "text",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
           "description": ""
         }
       },
@@ -4691,43 +4643,41 @@
       "type": "object",
       "title": "Snapmail",
       "properties": {
-        "user_id": {
-          "type": "integer",
-          "description": ""
-        },
-        "updated_at": {
+        "title": {
           "type": "string",
-          "format": "timestamp",
           "description": ""
         },
         "timezone": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
-        "subject": {
+        "requester_name": {
           "type": "string",
-          "format": "text",
+          "description": ""
+        },
+        "requester_email": {
+          "type": "string",
+          "description": ""
+        },
+        "requested_by": {
+          "type": "string",
           "description": ""
         },
         "recipients": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "notify_time": {
           "type": "string",
-          "format": "character(255)",
           "description": ""
         },
         "notify_days": {
           "type": "string",
-          "format": "character(255)",
+          "example": "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday",
           "description": ""
         },
         "message": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "is_public": {
@@ -4740,18 +4690,22 @@
           "description": "",
           "default": false
         },
-        "inserted_at": {
-          "type": "string",
-          "format": "timestamp",
-          "description": ""
-        },
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
-        "exid": {
+        "created_at": {
           "type": "string",
-          "format": "character(255)",
+          "format": "ISO8601",
+          "example": "2019-02-15T13:00:04+00:00",
+          "description": ""
+        },
+        "camera_names": {
+          "type": "string",
+          "description": ""
+        },
+        "camera_ids": {
+          "type": "string",
           "description": ""
         }
       },
@@ -4762,39 +4716,45 @@
       "title": "Share",
       "properties": {
         "user_id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
-        "updated_at": {
+        "sharer_name": {
           "type": "string",
-          "format": "timestamp",
           "description": ""
         },
         "sharer_id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
-        "message": {
+        "sharer_email": {
           "type": "string",
-          "format": "text",
+          "description": ""
+        },
+        "rights": {
+          "type": "string",
+          "example": "snapshot,list,share,view,edit",
           "description": ""
         },
         "kind": {
           "type": "string",
-          "format": "character(50)",
+          "example": "public",
           "description": ""
         },
         "id": {
           "type": "integer",
           "description": ""
         },
-        "created_at": {
+        "fullname": {
           "type": "string",
-          "format": "timestamp",
+          "description": ""
+        },
+        "email": {
+          "type": "string",
           "description": ""
         },
         "camera_id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         }
       },
@@ -4806,37 +4766,26 @@
       "properties": {
         "wifi": {
           "type": "boolean",
-          "description": "",
-          "default": false
+          "description": ""
         },
         "vendor_id": {
-          "type": "integer",
-          "format": "text",
+          "type": "string",
           "description": ""
         },
         "varifocal": {
           "type": "boolean",
-          "description": "",
-          "default": false
+          "description": ""
         },
         "username": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "upnp": {
           "type": "boolean",
-          "description": "",
-          "default": false
-        },
-        "updated_at": {
-          "type": "string",
-          "format": "timestamp",
           "description": ""
         },
         "shape": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "sd_card": {
@@ -4846,7 +4795,6 @@
         },
         "resolution": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "ptz": {
@@ -4866,7 +4814,6 @@
         },
         "password": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "onvif": {
@@ -4876,27 +4823,34 @@
         },
         "official_url": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "name": {
           "type": "string",
-          "format": "text",
+          "description": ""
+        },
+        "mpeg4_url": {
+          "type": "string",
           "description": ""
         },
         "more_info": {
           "type": "string",
-          "format": "text",
+          "description": ""
+        },
+        "mobile_url": {
+          "type": "string",
           "description": ""
         },
         "mjpg_url": {
           "type": "string",
-          "format": "text",
+          "description": ""
+        },
+        "lowres_url": {
+          "type": "string",
           "description": ""
         },
         "jpg_url": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
         "infrared": {
@@ -4904,18 +4858,29 @@
           "description": "",
           "default": false
         },
+        "images": {
+          "type": "object",
+          "properties": {
+            "thumbnail": {
+              "type": "string",
+              "description": ""
+            },
+            "original": {
+              "type": "string",
+              "description": ""
+            },
+            "icon": {
+              "type": "string",
+              "description": ""
+            }
+          }
+        },
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
         "h264_url": {
           "type": "string",
-          "format": "text",
-          "description": ""
-        },
-        "exid": {
-          "type": "string",
-          "format": "text",
           "description": ""
         },
         "discontinued": {
@@ -4923,18 +4888,56 @@
           "description": "",
           "default": false
         },
-        "created_at": {
-          "type": "string",
-          "format": "timestamp",
-          "description": ""
+        "defaults": {
+          "type": "object",
+          "properties": {
+            "snapshots": {
+              "type": "object",
+              "properties": {
+                "mpeg4": {
+                  "type": "string",
+                  "description": ""
+                },
+                "mobile": {
+                  "type": "string",
+                  "description": ""
+                },
+                "mjpg": {
+                  "type": "string",
+                  "description": ""
+                },
+                "jpg": {
+                  "type": "string",
+                  "description": ""
+                },
+                "h264": {
+                  "type": "string",
+                  "description": ""
+                }
+              }
+            },
+            "auth": {
+              "type": "object",
+              "properties": {
+                "basic": {
+                  "type": "object",
+                  "properties": {
+                    "username": {
+                      "type": "string",
+                      "description": ""
+                    },
+                    "password": {
+                      "type": "string",
+                      "description": ""
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
-        "config": {
+        "audio_url": {
           "type": "string",
-          "format": "json",
-          "description": ""
-        },
-        "channel": {
-          "type": "integer",
           "description": ""
         },
         "audio_io": {
@@ -4949,60 +4952,83 @@
       "type": "object",
       "title": "Compare",
       "properties": {
-        "updated_at": {
+        "type": {
           "type": "string",
-          "format": "timestamp",
+          "description": ""
+        },
+        "to_date": {
+          "type": "string",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
+          "description": ""
+        },
+        "title": {
+          "type": "string",
+          "description": ""
+        },
+        "thumbnail_url": {
+          "type": "string",
           "description": ""
         },
         "status": {
-          "type": "integer",
+          "type": "string",
+          "description": ""
+        },
+        "requester_name": {
+          "type": "string",
+          "description": ""
+        },
+        "requester_email": {
+          "type": "string",
           "description": ""
         },
         "requested_by": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
-        "name": {
-          "type": "string",
-          "format": "character(255)",
-          "description": ""
+        "public": {
+          "type": "boolean",
+          "description": "",
+          "default": true
         },
-        "inserted_at": {
+        "media_url": {
           "type": "string",
-          "format": "timestamp",
           "description": ""
         },
         "id": {
+          "type": "string",
+          "description": ""
+        },
+        "from_date": {
+          "type": "string",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
+          "description": ""
+        },
+        "frames": {
           "type": "integer",
           "description": ""
         },
-        "exid": {
+        "file_name": {
           "type": "string",
-          "format": "character(255)",
+          "description": ""
+        },
+        "embed_time": {
+          "type": "boolean",
           "description": ""
         },
         "embed_code": {
           "type": "string",
-          "format": "character(255)",
           "description": ""
         },
-        "create_animation": {
-          "type": "boolean",
-          "description": "",
-          "default": false
+        "created_at": {
+          "type": "string",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
+          "description": ""
         },
         "camera_id": {
-          "type": "integer",
-          "description": ""
-        },
-        "before_date": {
           "type": "string",
-          "format": "timestamp",
-          "description": ""
-        },
-        "after_date": {
-          "type": "string",
-          "format": "timestamp",
           "description": ""
         }
       },
@@ -5012,33 +5038,101 @@
       "type": "object",
       "title": "Camera",
       "properties": {
+        "vendor_name": {
+          "type": "string",
+          "description": ""
+        },
+        "vendor_id": {
+          "type": "string",
+          "description": ""
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
+          "description": ""
+        },
         "timezone": {
           "type": "string",
-          "format": "text",
-          "example": "Europe/Dublin",
+          "description": ""
+        },
+        "timelapse_recordings": {
+          "type": "string",
           "description": ""
         },
         "thumbnail_url": {
           "type": "string",
-          "format": "text",
           "description": ""
         },
-        "owner_id": {
-          "type": "integer",
+        "rights": {
+          "type": "string",
+          "example": "snapshot,list,edit,delete,view,grant~snapshot,grant~view,grant~edit,grant~delete,grant~list",
+          "description": ""
+        },
+        "proxy_url": {
+          "type": "object",
+          "properties": {
+            "rtmp": {
+              "type": "string",
+              "description": ""
+            },
+            "hls": {
+              "type": "string",
+              "description": ""
+            }
+          }
+        },
+        "owner": {
+          "type": "boolean",
+          "description": ""
+        },
+        "owned": {
+          "type": "string",
+          "description": ""
+        },
+        "offline_reason": {
+          "type": "string",
+          "description": ""
+        },
+        "name": {
+          "type": "string",
+          "description": ""
+        },
+        "model_name": {
+          "type": "string",
           "description": ""
         },
         "model_id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
         "mac_address": {
           "type": "string",
-          "format": "macaddr",
           "description": ""
         },
         "location": {
+          "type": "object",
+          "properties": {
+            "lng": {
+              "type": "float",
+              "description": ""
+            },
+            "lat": {
+              "type": "float",
+              "description": ""
+            }
+          }
+        },
+        "last_polled_at": {
           "type": "string",
-          "format": "geography(Point,4326)",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
+          "description": ""
+        },
+        "last_online_at": {
+          "type": "string",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
           "description": ""
         },
         "is_public": {
@@ -5049,32 +5143,178 @@
           "type": "boolean",
           "description": ""
         },
-        "is_online": {
-          "type": "boolean",
-          "description": ""
+        "internal": {
+          "type": "object",
+          "properties": {
+            "rtsp": {
+              "type": "object",
+              "properties": {
+                "port": {
+                  "type": "string",
+                  "description": ""
+                },
+                "mpeg": {
+                  "type": "string",
+                  "description": ""
+                },
+                "h264": {
+                  "type": "string",
+                  "description": ""
+                },
+                "audio": {
+                  "type": "string",
+                  "description": ""
+                }
+              }
+            },
+            "http": {
+              "type": "object",
+              "properties": {
+                "port": {
+                  "type": "string",
+                  "description": ""
+                },
+                "mjpg": {
+                  "type": "string",
+                  "description": ""
+                },
+                "h264": {
+                  "type": "string",
+                  "description": ""
+                },
+                "camera": {
+                  "type": "string",
+                  "description": ""
+                }
+              }
+            },
+            "host": {
+              "type": "string",
+              "description": ""
+            }
+          }
         },
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
-        "exid": {
-          "type": "string",
-          "format": "text",
-          "description": ""
+        "external": {
+          "type": "object",
+          "properties": {
+            "rtsp": {
+              "type": "object",
+              "properties": {
+                "port": {
+                  "type": "string",
+                  "description": ""
+                },
+                "mpeg": {
+                  "type": "string",
+                  "description": ""
+                },
+                "h264": {
+                  "type": "string",
+                  "description": ""
+                },
+                "audio": {
+                  "type": "string",
+                  "description": ""
+                }
+              }
+            },
+            "http": {
+              "type": "object",
+              "properties": {
+                "port": {
+                  "type": "string",
+                  "description": ""
+                },
+                "mjpg": {
+                  "type": "string",
+                  "description": ""
+                },
+                "h264": {
+                  "type": "string",
+                  "description": ""
+                },
+                "camera": {
+                  "type": "string",
+                  "description": ""
+                }
+              }
+            },
+            "host": {
+              "type": "string",
+              "description": ""
+            }
+          }
         },
         "discoverable": {
           "type": "boolean",
-          "description": "",
-          "default": false
-        },
-        "config": {
-          "type": "string",
-          "format": "json",
           "description": ""
         },
-        "alert_emails": {
+        "created_at": {
           "type": "string",
-          "format": "text",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
+          "description": ""
+        },
+        "cloud_recordings": {
+          "type": "object",
+          "properties": {
+            "storage_duration": {
+              "type": "integer",
+              "description": ""
+            },
+            "status": {
+              "type": "string",
+              "description": ""
+            },
+            "schedule": {
+              "type": "object",
+              "properties": {
+                "wednesday": {
+                  "type": "array",
+                  "description": "00:00-23:59"
+                },
+                "tuesday": {
+                  "type": "array",
+                  "description": "00:00-23:59"
+                },
+                "thursday": {
+                  "type": "array",
+                  "description": "00:00-23:59"
+                },
+                "sunday": {
+                  "type": "array",
+                  "description": "00:00-23:59"
+                },
+                "saturday": {
+                  "type": "array",
+                  "description": "00:00-23:59"
+                },
+                "monday": {
+                  "type": "array",
+                  "description": "00:00-23:59"
+                },
+                "friday": {
+                  "type": "array",
+                  "description": "00:00-23:59"
+                }
+              }
+            },
+            "frequency": {
+              "type": "integer",
+              "description": ""
+            }
+          }
+        },
+        "cam_username": {
+          "type": "boolean",
+          "description": ""
+        },
+        "cam_password": {
+          "type": "boolean",
           "description": ""
         }
       },
@@ -5084,40 +5324,56 @@
       "type": "object",
       "title": "Archive",
       "properties": {
-        "url": {
+        "type": {
           "type": "string",
-          "format": "character(255)",
           "description": ""
         },
         "to_date": {
           "type": "string",
-          "format": "timestamp",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
           "description": ""
         },
         "title": {
           "type": "string",
-          "format": "text",
+          "description": ""
+        },
+        "thumbnail_url": {
+          "type": "string",
           "description": ""
         },
         "status": {
-          "type": "integer",
+          "type": "string",
+          "description": ""
+        },
+        "requester_name": {
+          "type": "string",
+          "description": ""
+        },
+        "requester_email": {
+          "type": "string",
           "description": ""
         },
         "requested_by": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
         "public": {
           "type": "boolean",
           "description": ""
         },
+        "media_url": {
+          "type": "string",
+          "description": ""
+        },
         "id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         },
         "from_date": {
           "type": "string",
-          "format": "timestamp",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
           "description": ""
         },
         "frames": {
@@ -5126,25 +5382,24 @@
         },
         "file_name": {
           "type": "string",
-          "format": "character(255)",
-          "description": ""
-        },
-        "exid": {
-          "type": "string",
-          "format": "text",
           "description": ""
         },
         "embed_time": {
           "type": "boolean",
           "description": ""
         },
+        "embed_code": {
+          "type": "string",
+          "description": ""
+        },
         "created_at": {
           "type": "string",
-          "format": "timestamp",
+          "format": "ISO8601",
+          "example": "2019-02-18T09:00:00.000+00:00",
           "description": ""
         },
         "camera_id": {
-          "type": "integer",
+          "type": "string",
           "description": ""
         }
       },

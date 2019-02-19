@@ -237,8 +237,8 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     summary "Returns the recording time chunks in an hour."
     parameters do
       id :path, :string, "Unique identifier for camera.", required: true
-      starttime :query, :string, "Unix timestamp"
-      endtime :query, :string, "Unix timestamp"
+      starttime :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)"
+      endtime :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)"
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
     end

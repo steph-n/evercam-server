@@ -27,11 +27,11 @@ defmodule EvercamMediaWeb.Router do
         version: "1.0",
         title: "Evercam Server"
       },
-      host: "media.evercam.io/v1"
+      host: "media.evercam.io/v2"
     }
   end
 
-  scope "/v1/swagger" do
+  scope "/v2/swagger" do
   forward "/", PhoenixSwagger.Plug.SwaggerUI,
     otp_app: :evercam_media,
     swagger_file: "swagger.json",
@@ -83,7 +83,7 @@ end
       pipe_through :auth
 
       # User Route
-      get "/users/:id", UserController, :get
+      get "/users/:id", UserController, :get_user
       get "/users/:id/credentials", UserController, :credentials
       get "/users/telegram/:id/credentials", UserController, :credentialstelegram
       post "/users/:id/password/reset", UserController, :password_reset_token
@@ -92,7 +92,7 @@ end
       options "/users/:id/password", UserController, :nothing
       patch "/users/:id", UserController, :update
       options "/users/:id", UserController, :nothing
-      delete "/users/:id", UserController, :delete
+      delete "/users/:id", UserController, :delete_user
       get "/users/session/activities", UserController, :user_activities
 
       # Cameras route
@@ -104,7 +104,7 @@ end
       patch "/cameras/:id", CameraController, :update
       options "/cameras/:id", CameraController, :nothing
       put "/cameras/:id", CameraController, :transfer
-      delete "/cameras/:id", CameraController, :delete
+      delete "/cameras/:id", CameraController, :delete_camera
       post "/cameras", CameraController, :create
 
       # Archive route
@@ -113,7 +113,7 @@ end
       get "/cameras/:id/archives/:archive_id", ArchiveController, :show
       get "/cameras/:id/archives/:archive_id/play", ArchiveController, :play
       get "/cameras/:id/archives/:archive_id/thumbnail", ArchiveController, :thumbnail
-      delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete
+      delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete_archive
       post "/cameras/:id/archives", ArchiveController, :create
       options "/cameras/:id/archives", ArchiveController, :nothing
       put "/cameras/:id/archives/:archive_id", ArchiveController, :retry
@@ -136,7 +136,7 @@ end
       options "/snapmails/:id", SnapmailController, :nothing
       patch "/snapmails/:id/unsubscribe/:email", SnapmailController, :unsubscribe
       options "/snapmails/:id/unsubscribe/:email", SnapmailController, :nothing
-      delete "/snapmails/:id", SnapmailController, :delete
+      delete "/snapmails/:id", SnapmailController, :delete_snapmail
 
       # Cloud recordings route
       get "/cameras/:id/apps/cloud-recording", CloudRecordingController, :show
@@ -149,7 +149,7 @@ end
       post "/cameras/:id/shares", CameraShareController, :create
       options "/cameras/:id/shares", CameraShareController, :nothing
       patch "/cameras/:id/shares", CameraShareController, :update
-      delete "/cameras/:id/shares", CameraShareController, :delete
+      delete "/cameras/:id/shares", CameraShareController, :delete_share
       get "/cameras/:id/shares/requests", CameraShareRequestController, :show
       patch "/cameras/:id/shares/requests", CameraShareRequestController, :update
       delete "/cameras/:id/shares/requests", CameraShareRequestController, :cancel
@@ -163,7 +163,7 @@ end
       options "/cameras/:id/compares", CompareController, :nothing
       patch "/cameras/:id/compares/:compare_id", CompareController, :update
       options "/cameras/:id/compares/:compare_id", CompareController, :nothing
-      delete "/cameras/:id/compares/:compare_id", CompareController, :delete
+      delete "/cameras/:id/compares/:compare_id", CompareController, :delete_compare
 
       # Timelapses route
       ### Not moved to ISO due to not using
@@ -224,6 +224,9 @@ end
       options "/cameras/:id/recordings/snapshots/:year/:month/:day/hours", SnapshotController, :nothing
       get "/cameras/:id/recordings/snapshots/:year/:month/:day/:hour", SnapshotController, :hour
       options "/cameras/:id/recordings/snapshots/:year/:month/:day/:hour", SnapshotController, :nothing
+
+      post "/sdk/nvr/reboot", SDKController, :nvr_reboot
+      options "/sdk/nvr/reboot", SDKController, :nothing
     end
 
     scope "/" do
@@ -285,7 +288,7 @@ end
     scope "/" do
       pipe_through :auth
 
-      get "/users/:id", UserController, :get
+      get "/users/:id", UserController, :get_user
       get "/users/:id/credentials", UserController, :credentials
       get "/users/telegram/:id/credentials", UserController, :credentialstelegram
       post "/users/:id/password/reset", UserController, :password_reset_token
@@ -294,7 +297,7 @@ end
       options "/users/:id/password", UserController, :nothing
       patch "/users/:id", UserController, :update
       options "/users/:id", UserController, :nothing
-      delete "/users/:id", UserController, :delete
+      delete "/users/:id", UserController, :delete_user
       get "/users/session/activities", UserController, :user_activities
 
       get "/cameras", CameraController, :index
@@ -305,7 +308,7 @@ end
       patch "/cameras/:id", CameraController, :update
       options "/cameras/:id", CameraController, :nothing
       put "/cameras/:id", CameraController, :transfer
-      delete "/cameras/:id", CameraController, :delete
+      delete "/cameras/:id", CameraController, :delete_camera
       post "/cameras", CameraController, :create
 
       get "/cameras/:id/thumbnail", SnapshotController, :thumbnail
@@ -355,7 +358,7 @@ end
       post "/cameras/:id/shares", CameraShareController, :create
       options "/cameras/:id/shares", CameraShareController, :nothing
       patch "/cameras/:id/shares", CameraShareController, :update
-      delete "/cameras/:id/shares", CameraShareController, :delete
+      delete "/cameras/:id/shares", CameraShareController, :delete_share
       get "/cameras/:id/shares/requests", CameraShareRequestController, :show
       patch "/cameras/:id/shares/requests", CameraShareRequestController, :update
       delete "/cameras/:id/shares/requests", CameraShareRequestController, :cancel
@@ -367,7 +370,7 @@ end
       get "/cameras/:id/archives/:archive_id", ArchiveController, :show
       get "/cameras/:id/archives/:archive_id/play", ArchiveController, :play
       get "/cameras/:id/archives/:archive_id/thumbnail", ArchiveController, :thumbnail
-      delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete
+      delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete_archive
       post "/cameras/:id/archives", ArchiveController, :create
       options "/cameras/:id/archives", ArchiveController, :nothing
       put "/cameras/:id/archives/:archive_id", ArchiveController, :retry
@@ -382,7 +385,7 @@ end
       options "/snapmails/:id", SnapmailController, :nothing
       patch "/snapmails/:id/unsubscribe/:email", SnapmailController, :unsubscribe
       options "/snapmails/:id/unsubscribe/:email", SnapmailController, :nothing
-      delete "/snapmails/:id", SnapmailController, :delete
+      delete "/snapmails/:id", SnapmailController, :delete_snapmail
 
       get "/timelapses", TimelapseController, :user_all
       get "/cameras/:id/timelapses", TimelapseController, :all
@@ -412,7 +415,7 @@ end
       options "/cameras/:id/compares", CompareController, :nothing
       patch "/cameras/:id/compares/:compare_id", CompareController, :update
       options "/cameras/:id/compares/:compare_id", CompareController, :nothing
-      delete "/cameras/:id/compares/:compare_id", CompareController, :delete
+      delete "/cameras/:id/compares/:compare_id", CompareController, :delete_compare
 
       post "/sdk/nvr/reboot", SDKController, :nvr_reboot
       options "/sdk/nvr/reboot", SDKController, :nothing

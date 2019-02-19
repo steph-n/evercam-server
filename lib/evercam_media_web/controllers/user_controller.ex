@@ -13,32 +13,26 @@ defmodule EvercamMediaWeb.UserController do
         title "User"
         description ""
         properties do
-          id :integer, ""
-          firstname :string, "", format: "text"
-          lastname :string, "", format: "text"
-          username :string, "", format: "text"
-          telegram_username :string, "", format: "text"
-          password :string, "", format: "text"
-          country_id :integer, ""
-          email :string, "", format: "text"
-          reset_token :string, "", format: "text"
-          token_expires_at :string, "", format: "timestamp"
-          api_id :string, "", format: "text"
-          api_key :string, "", format: "text"
-          is_admin :boolean, "", default: false
-          stripe_customer_id :string, "", format: "text"
-          billing_id :string, "", format: "text"
-          vat_number :string, "", format: "text"
-          payment_method :integer, ""
-          insight_id :string, "", format: "text"
-          created_at :string, "", format: "timestamp"
-          updated_at :string, "", format: "timestamp"
+          username :string, ""
+          updated_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          telegram_username :string, ""
+          stripe_customer_id :string, ""
+          lastname :string, ""
+          last_login_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          intercom_hmac_ios :string, ""
+          intercom_hmac_android :string, ""
+          id :string, ""
+          firstname :string, ""
+          email :string, ""
+          created_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          country :string, ""
+          confirmed_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
         end
       end
     }
   end
 
-  swagger_path :get do
+  swagger_path :get_user do
     get "/users/{id}"
     summary "Returns the single user's profile details."
     parameters do
@@ -52,7 +46,7 @@ defmodule EvercamMediaWeb.UserController do
     response 404, "User does not exist"
   end
 
-  def get(conn, params) do
+  def get_user(conn, params) do
     %{assigns: %{version: version}} = conn
     caller = conn.assigns[:current_user]
     user =
@@ -348,7 +342,7 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
 
-  swagger_path :delete do
+  swagger_path :delete_user do
     delete "/users/{id}"
     summary "Delete your account, any cameras you own and all stored media."
     parameters do
@@ -362,7 +356,7 @@ defmodule EvercamMediaWeb.UserController do
     response 404, "User does not exist"
   end
 
-  def delete(conn, %{"id" => username}) do
+  def delete_user(conn, %{"id" => username}) do
     current_user = conn.assigns[:current_user]
     user =
       username
@@ -378,12 +372,13 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   swagger_path :user_activities do
-    get "/users/{id}/activities"
+    get "/users/session/activities"
     summary "Returns the logs of given user."
     parameters do
-      id :path, :string, "Username/email of the user.", required: true
-      api_id :query, :string, "The Evercam API id for the requester."
-      api_key :query, :string, "The Evercam API key for the requester."
+      api_id :query, :string, "The Evercam API id for the requester.", required: true
+      api_key :query, :string, "The Evercam API key for the requester.", required: true
+      from :query, :string, "ISO8601 (2019-01-18T09:00:00.000+00:00)"
+      to :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)"
     end
     tag "Users"
     response 200, "Success"

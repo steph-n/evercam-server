@@ -10,18 +10,25 @@ defmodule EvercamMediaWeb.CompareController do
         title "Compare"
         description ""
         properties do
-          id :integer, ""
-          exid :string, "", format: "character(255)"
-          name :string, "", format: "character(255)"
-          before_date :string, "", format: "timestamp"
-          after_date :string, "", format: "timestamp"
+          type :string, ""
+          to_date :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          title :string, ""
+          thumbnail_url :string, ""
+          status :string, ""
+          requester_name :string, ""
+          requester_email :string, ""
+          requested_by :string, ""
+          public :boolean, "", default: true
+          media_url :string, ""
+          id :string, ""
+          from_date :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          frames :integer, ""
+          file_name :string, ""
           embed_code :string, "", format: "character(255)"
-          camera_id :integer, ""
-          create_animation :boolean, "", default: false
-          status :integer, ""
-          requested_by :integer, ""
-          inserted_at :string, "", format: "timestamp"
-          updated_at :string, "", format: "timestamp"
+          embed_time :boolean, ""
+          embed_code :string, ""
+          created_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          camera_id :string, ""
         end
       end
     }
@@ -114,9 +121,9 @@ defmodule EvercamMediaWeb.CompareController do
       id :path, :string, "Unique identifier for the camera.", required: true
       exid :query, :string, "Unique identifier for the compare.", required: true
       name :query, :string, "", required: true
-      before_date :query, :string, "Unix timestamp", required: true
+      before_date :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)", required: true
       before_image :query, :string, "Before image in base64 format.", required: true
-      after_date :query, :string, "Unix timestamp", required: true
+      after_date :query, :string, "ISO8601 (2019-02-18T09:00:00.000+00:00)", required: true
       after_image :query, :string, "After image in base64 format.", required: true
       embed :query, :string, "", required: true
       create_animation :query, :boolean, "", required: true
@@ -169,7 +176,7 @@ defmodule EvercamMediaWeb.CompareController do
     end
   end
 
-  swagger_path :delete do
+  swagger_path :delete_compare do
     delete "/cameras/{id}/compares/{compare_id}"
     summary "Delete the compare."
     parameters do
@@ -184,7 +191,7 @@ defmodule EvercamMediaWeb.CompareController do
     response 404, "Camera does not exist or Compare archive not found."
   end
 
-  def delete(conn, %{"id" => camera_exid, "compare_id" => compare_id} = params) do
+  def delete_compare(conn, %{"id" => camera_exid, "compare_id" => compare_id} = params) do
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(camera_exid)
 

@@ -17,20 +17,101 @@ defmodule EvercamMediaWeb.CameraController do
         title "Camera"
         description ""
         properties do
-          id :integer, ""
-          exid :string, "", format: "text"
-          owner_id :integer, ""
+          vendor_name :string, ""
+          vendor_id :string, ""
+          updated_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          timezone :string, ""
+          timelapse_recordings :string, ""
+          thumbnail_url :string, ""
+          rights :string, "", example: "snapshot,list,edit,delete,view,grant~snapshot,grant~view,grant~edit,grant~delete,grant~list"
+          proxy_url (Schema.new do
+            properties do
+              rtmp :string, ""
+              hls :string, ""
+            end
+          end)
+          owner :boolean, ""
+          owned :string, ""
+          offline_reason :string, ""
+          name :string, ""
+          model_name :string, ""
+          model_id :string, ""
+          mac_address :string, ""
+          location (Schema.new do
+            properties do
+              lng :float, ""
+              lat :float, ""
+            end
+          end)
+          last_polled_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          last_online_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
           is_public :boolean, ""
-          config :string, "", format: "json"
-          is_online :boolean, ""
-          timezone :string, "", format: "text", example: "Europe/Dublin"
-          location :string, "", format: "geography(Point,4326)"
-          mac_address :string, "", format: "macaddr"
-          model_id :integer, ""
-          discoverable :boolean, "", default: false
-          thumbnail_url :string, "", format: "text"
           is_online_email_owner_notification :boolean, ""
-          alert_emails :string, "", format: "text"
+          internal (Schema.new do
+            properties do
+              rtsp (Schema.new do
+                properties do
+                  port :string, ""
+                  mpeg :string, ""
+                  h264 :string, ""
+                  audio :string, ""
+                end
+              end)
+              http (Schema.new do
+                properties do
+                  port :string, ""
+                  mjpg :string, ""
+                  h264 :string, ""
+                  camera :string, ""
+                end
+              end)
+              host :string, ""
+            end
+          end)
+          id :string, ""
+          external (Schema.new do
+            properties do
+              rtsp (Schema.new do
+                properties do
+                  port :string, ""
+                  mpeg :string, ""
+                  h264 :string, ""
+                  audio :string, ""
+                end
+              end)
+              http (Schema.new do
+                properties do
+                  port :string, ""
+                  mjpg :string, ""
+                  h264 :string, ""
+                  camera :string, ""
+                end
+              end)
+              host :string, ""
+            end
+          end)
+          discoverable :boolean, ""
+          created_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
+          cloud_recordings (Schema.new do
+            properties do
+              storage_duration :integer, ""
+              status :string, ""
+              schedule (Schema.new do
+                properties do
+                  wednesday :array, "", description: "00:00-23:59"
+                  tuesday :array, "", description: "00:00-23:59"
+                  thursday :array, "", description: "00:00-23:59"
+                  sunday :array, "", description: "00:00-23:59"
+                  saturday :array, "", description: "00:00-23:59"
+                  monday :array, "", description: "00:00-23:59"
+                  friday :array, "", description: "00:00-23:59"
+                end
+              end)
+              frequency :integer, ""
+            end
+          end)
+          cam_username :boolean, ""
+          cam_password :boolean, ""
         end
       end
     }
@@ -256,7 +337,7 @@ defmodule EvercamMediaWeb.CameraController do
     }
   end
 
-  swagger_path :delete do
+  swagger_path :delete_camera do
     delete "/cameras/{id}"
     summary "Deletes a camera from Evercam along with any stored media."
     parameters do
@@ -270,7 +351,7 @@ defmodule EvercamMediaWeb.CameraController do
     response 404, "Camera does not exist or Unauthorized"
   end
 
-  def delete(conn, %{"id" => exid} = params) do
+  def delete_camera(conn, %{"id" => exid} = params) do
     caller = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
 
