@@ -75,7 +75,7 @@ defmodule EvercamMedia.Util do
     EvercamMediaWeb.Endpoint.broadcast(
       "cameras:#{camera_exid}",
       "snapshot-taken",
-      %{image: Base.encode64(image), timestamp: timestamp})
+      %{image: Base.encode64(image), timestamp: convert_unix_to_iso(timestamp, "UTC")})
   end
 
   def broadcast_camera_status(camera_exid, status, username) do
