@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddOfflineReasonField do
+defmodule Evercam.Repo.Migrations.AddOfflineReasonField do
   use Ecto.Migration
 
   def change do

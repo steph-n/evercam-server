@@ -4,7 +4,7 @@ defmodule EvercamMediaWeb.NVRController do
   alias EvercamMediaWeb.SnapshotExtractorView
   alias EvercamMediaWeb.ErrorView
   alias EvercamMedia.HikvisionNVR
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 

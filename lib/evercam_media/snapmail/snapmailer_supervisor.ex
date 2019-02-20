@@ -5,6 +5,7 @@ defmodule EvercamMedia.Snapmail.SnapmailerSupervisor do
 
   use Supervisor
   require Logger
+  alias EvercamMedia.Util
   alias EvercamMedia.Snapmail.Snapmailer
 
   def start_link() do
@@ -94,7 +95,7 @@ defmodule EvercamMedia.Snapmail.SnapmailerSupervisor do
         camera_exid: camera.exid,
         name: camera.name,
         url: Camera.snapshot_url(camera),
-        auth: Camera.auth(camera),
+        auth: Util.auth(camera),
         timezone: Camera.get_timezone(camera),
         vendor_exid: Camera.get_vendor_attr(camera, :exid)
       }

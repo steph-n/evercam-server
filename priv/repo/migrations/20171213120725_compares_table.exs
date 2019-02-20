@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.ComparesTable do
+defmodule Evercam.Repo.Migrations.ComparesTable do
   use Ecto.Migration
 
   def up do

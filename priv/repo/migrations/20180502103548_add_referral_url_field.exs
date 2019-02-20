@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddReferralUrlField do
+defmodule Evercam.Repo.Migrations.AddReferralUrlField do
   use Ecto.Migration
 
   def change do

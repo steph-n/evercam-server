@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddRequesterField do
+defmodule Evercam.Repo.Migrations.AddRequesterField do
   use Ecto.Migration
 
   def change do

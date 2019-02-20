@@ -1,7 +1,7 @@
 defmodule EvercamMedia.AddCameraLogs do
   import CameraActivity, only: [changeset: 2, get_last_on_off_log: 2]
-  alias EvercamMedia.Repo
-  alias EvercamMedia.SnapshotRepo
+  alias Evercam.Repo
+  alias Evercam.SnapshotRepo
   require Logger
 
   def run do

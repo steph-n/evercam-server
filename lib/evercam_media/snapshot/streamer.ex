@@ -49,7 +49,7 @@ defmodule EvercamMedia.Snapshot.Streamer do
       length(subscribers(camera_exid)) == 0 ->
         Logger.debug "[#{camera_exid}] Shutting down streamer, no subscribers"
         StreamerSupervisor.stop_streamer(camera_exid)
-      Camera.recording?(camera) ->
+      Util.camera_recording?(camera) ->
         Logger.debug "[#{camera_exid}] Shutting down streamer, already streaming"
         StreamerSupervisor.stop_streamer(camera_exid)
       true ->

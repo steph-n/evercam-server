@@ -1,7 +1,7 @@
 defmodule EvercamMedia.UpdateModelUrls do
   require Logger
   alias EvercamMedia.Util
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
 
   def update_urls do
     VendorModel.get_all

@@ -57,8 +57,8 @@ defmodule EvercamMediaWeb.CameraView do
       location: Camera.get_location(camera),
       rights: Camera.get_rights(camera, user),
       proxy_url: %{
-        hls: Camera.get_hls_url(camera, User.get_fullname(user)),
-        rtmp: Camera.get_rtmp_url(camera, User.get_fullname(user)),
+        hls: Util.get_hls_url(camera, User.get_fullname(user)),
+        rtmp: Util.get_rtmp_url(camera, User.get_fullname(user)),
       },
       thumbnail_url: thumbnail_url(camera),
     }
@@ -87,8 +87,8 @@ defmodule EvercamMediaWeb.CameraView do
       location: Camera.get_location(camera),
       rights: Camera.get_rights(camera, user),
       proxy_url: %{
-        hls: Camera.get_hls_url(camera, User.get_fullname(user)),
-        rtmp: Camera.get_rtmp_url(camera, User.get_fullname(user)),
+        hls: Util.get_hls_url(camera, User.get_fullname(user)),
+        rtmp: Util.get_rtmp_url(camera, User.get_fullname(user)),
       },
       thumbnail_url: thumbnail_url(camera),
     }

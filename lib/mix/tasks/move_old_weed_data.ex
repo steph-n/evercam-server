@@ -2,7 +2,7 @@ defmodule EvercamMedia.MoveOldWeedData do
   @moduledoc """
   This task will be used to move Old all camera recordings before 01-11-2018 to new storage server
   """
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   import Ecto.Query
   require Logger
 

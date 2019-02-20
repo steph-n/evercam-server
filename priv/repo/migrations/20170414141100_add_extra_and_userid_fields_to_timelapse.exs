@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddExtraAndUseridFieldsToTimelapses do
+defmodule Evercam.Repo.Migrations.AddExtraAndUseridFieldsToTimelapses do
   use Ecto.Migration
 
   def change do

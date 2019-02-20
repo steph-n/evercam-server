@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.CreateMetaData do
+defmodule Evercam.Repo.Migrations.CreateMetaData do
   use Ecto.Migration
 
   def up do

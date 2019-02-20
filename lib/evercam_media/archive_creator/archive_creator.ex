@@ -5,7 +5,7 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
 
   use GenStage
   require Logger
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   alias EvercamMedia.Snapshot.Storage
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)

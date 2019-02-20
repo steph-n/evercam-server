@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddIsPausedTimezoneToSnapmails do
+defmodule Evercam.Repo.Migrations.AddIsPausedTimezoneToSnapmails do
   use Ecto.Migration
 
   def change do

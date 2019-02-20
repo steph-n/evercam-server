@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddStatusFieldInCompares do
+defmodule Evercam.Repo.Migrations.AddStatusFieldInCompares do
   use Ecto.Migration
 
   def change do

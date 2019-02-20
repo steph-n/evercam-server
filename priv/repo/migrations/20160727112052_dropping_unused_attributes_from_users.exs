@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.DroppingUnusedAttributesFromUsers do
+defmodule Evercam.Repo.Migrations.DroppingUnusedAttributesFromUsers do
   use Ecto.Migration
 
   def change do

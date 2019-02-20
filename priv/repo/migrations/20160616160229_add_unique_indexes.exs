@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddUniqueIndexes do
+defmodule Evercam.Repo.Migrations.AddUniqueIndexes do
   use Ecto.Migration
 
   def change do

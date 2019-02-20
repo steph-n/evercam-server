@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.DropExpiresAtFromAccessTokens do
+defmodule Evercam.Repo.Migrations.DropExpiresAtFromAccessTokens do
   use Ecto.Migration
 
   def change do

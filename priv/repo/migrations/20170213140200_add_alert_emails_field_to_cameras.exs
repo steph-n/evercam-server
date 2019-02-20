@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddAlertEmailsFieldToCameras do
+defmodule Evercam.Repo.Migrations.AddAlertEmailsFieldToCameras do
   use Ecto.Migration
 
   def change do

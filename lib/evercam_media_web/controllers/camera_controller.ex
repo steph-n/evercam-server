@@ -1,7 +1,7 @@
 defmodule EvercamMediaWeb.CameraController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   alias EvercamMedia.Snapshot.Storage
   alias EvercamMedia.Snapshot.WorkerSupervisor
   alias EvercamMedia.TimelapseRecording.TimelapseRecordingSupervisor
@@ -302,7 +302,7 @@ defmodule EvercamMediaWeb.CameraController do
                 cam_settings: add_settings_key(old_camera, camera, camera_changeset.changes)
               }
               |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-              CameraActivity.log_activity(caller, camera, "camera edited", extra)
+              Util.log_activity(caller, camera, "camera edited", extra)
               update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
               update_camera_to_zoho(false, camera, caller.username)
               render(conn, "show.#{version}.json", %{camera: camera, user: caller})
@@ -375,7 +375,7 @@ defmodule EvercamMediaWeb.CameraController do
           agent: get_user_agent(conn, params["agent"])
         }
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-        CameraActivity.log_activity(caller, %{ id: 0, exid: camera.exid }, "camera deleted", extra)
+        Util.log_activity(caller, %{ id: 0, exid: camera.exid }, "camera deleted", extra)
       end)
       spawn(fn -> delete_snapshot_worker(camera) end)
       spawn(fn -> delete_camera_worker(camera) end)
@@ -439,7 +439,7 @@ defmodule EvercamMediaWeb.CameraController do
             agent: get_user_agent(conn, params["agent"])
           }
           |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-          CameraActivity.log_activity(caller, camera, "camera created", extra)
+          Util.log_activity(caller, camera, "camera created", extra)
           Camera.invalidate_user(caller)
           send_email_notification(Application.get_env(:evercam_media, :run_spawn), caller, full_camera)
           add_camera_to_zoho(false, full_camera, caller.username)

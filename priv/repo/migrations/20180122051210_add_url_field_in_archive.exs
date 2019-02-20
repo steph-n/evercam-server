@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddUrlFieldInArchive do
+defmodule Evercam.Repo.Migrations.AddUrlFieldInArchive do
   use Ecto.Migration
 
   def change do

@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddTelegramUsernameToUsers do
+defmodule Evercam.Repo.Migrations.AddTelegramUsernameToUsers do
   use Ecto.Migration
 
   def change do

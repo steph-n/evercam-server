@@ -5,7 +5,7 @@ defmodule EvercamMedia.ShareRequestReminder do
   for all those requests which are older than 7 days.
   """
 
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   require Logger
 
   def check_share_requests do

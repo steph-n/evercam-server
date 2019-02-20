@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddErrorMessageFieldToArchive do
+defmodule Evercam.Repo.Migrations.AddErrorMessageFieldToArchive do
   use Ecto.Migration
 
   def change do

@@ -1,6 +1,6 @@
 defmodule EvercamMedia.SyncEvercamToZoho do
   alias EvercamMedia.Zoho
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   import Ecto.Query
   require Logger
 

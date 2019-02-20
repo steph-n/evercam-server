@@ -2,6 +2,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
   alias EvercamMedia.Snapshot.WorkerSupervisor
+  alias EvercamMedia.Util
   import EvercamMedia.Validation.CloudRecording
 
   swagger_path :show do
@@ -80,7 +81,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
             }
           }
           |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-          CameraActivity.log_activity(current_user, camera, "cloud recordings #{action_log}", extra)
+          Util.log_activity(current_user, camera, "cloud recordings #{action_log}", extra)
           send_email_on_cr_change(Application.get_env(:evercam_media, :run_spawn), current_user, camera, cloud_recording, old_cloud_recording, user_request_ip(conn, params["requester_ip"]))
           render(conn, "cloud_recording.json", %{cloud_recording: cloud_recording})
         {:error, changeset} ->

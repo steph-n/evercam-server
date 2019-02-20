@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.DropInsightAuthKeyFromUsers do
+defmodule Evercam.Repo.Migrations.DropInsightAuthKeyFromUsers do
   use Ecto.Migration
 
   def change do

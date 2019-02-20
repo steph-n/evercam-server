@@ -167,7 +167,7 @@ defmodule EvercamMediaWeb.CompareController do
             agent: get_user_agent(conn, params["agent"])
           }
           |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-          CameraActivity.log_activity(current_user, camera, "compare created", extra)
+          Util.log_activity(current_user, camera, "compare created", extra)
           start_export(Application.get_env(:evercam_media, :run_spawn), camera_exid, compare.exid, params)
           render(conn |> put_status(:created), "show.json", %{compare: created_compare})
         {:error, changeset} ->
@@ -205,7 +205,7 @@ defmodule EvercamMediaWeb.CompareController do
         agent: get_user_agent(conn, params["agent"])
       }
       |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-      CameraActivity.log_activity(current_user, camera, "compare deleted", extra)
+      Util.log_activity(current_user, camera, "compare deleted", extra)
       delete_files(compare, camera_exid)
       json(conn, %{})
     end

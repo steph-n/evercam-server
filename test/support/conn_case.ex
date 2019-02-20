@@ -21,7 +21,7 @@ defmodule EvercamMediaWeb.ConnCase do
       use Phoenix.ConnTest
 
       # Alias the data repository and import query/model functions
-      alias EvercamMedia.Repo
+      alias Evercam.Repo
       alias EvercamMedia.Message
       alias EvercamMedia.Endpoint
       # import Ecto.Model
@@ -37,8 +37,8 @@ defmodule EvercamMediaWeb.ConnCase do
 
   setup tags do
     # Wrap this case in a transaction
-    Ecto.Adapters.SQL.Sandbox.checkout(EvercamMedia.Repo)
-    Ecto.Adapters.SQL.Sandbox.checkout(EvercamMedia.SnapshotRepo)
+    Ecto.Adapters.SQL.Sandbox.checkout(Evercam.Repo)
+    Ecto.Adapters.SQL.Sandbox.checkout(Evercam.SnapshotRepo)
     EvercamMedia.TestHelpers.invalidate_caches
     if tags[:onvif], do: seed_onvif_tests()
 
@@ -46,10 +46,10 @@ defmodule EvercamMediaWeb.ConnCase do
   end
 
   def seed_onvif_tests do
-    country = EvercamMedia.Repo.insert! %Country{iso3166_a2: "ad", name: "Andorra"}
-    user = EvercamMedia.Repo.insert! %User{username: "dev", password: "dev", firstname: "Awesome", lastname: "Dev", email: "dev@localhost", country_id: country.id}
-    EvercamMedia.Repo.insert! %Camera{name: "Test Mobile Mast", exid: "mobile-mast-test", owner_id: user.id, is_online_email_owner_notification: false, is_public: false, config: %{snapshots: %{jpg: "/Streaming/Channels/1/picture"}, internal_rtsp_port: "", internal_http_port: "", internal_host: "", external_rtsp_port: 9100, external_http_port: 8100, external_host: "149.13.244.32", auth: %{basic: %{username: System.get_env["ONVIF_USER"],password: System.get_env["ONVIF_PASS"]}}}}
-    EvercamMedia.Repo.insert! %Camera{name: "EXVCR Camera", exid: "recorded-response", owner_id: user.id, is_online_email_owner_notification: false, is_public: false, config: %{snapshots: %{jpg: "/Streaming/Channels/1/picture"}, internal_rtsp_port: "", internal_http_port: "", internal_host: "", external_rtsp_port: 9100, external_http_port: 12345, external_host: "recorded_response", auth: %{basic: %{username: System.get_env["ONVIF_USER"],password: System.get_env["ONVIF_PASS"]}}}}
+    country = Evercam.Repo.insert! %Country{iso3166_a2: "ad", name: "Andorra"}
+    user = Evercam.Repo.insert! %User{username: "dev", password: "dev", firstname: "Awesome", lastname: "Dev", email: "dev@localhost", country_id: country.id}
+    Evercam.Repo.insert! %Camera{name: "Test Mobile Mast", exid: "mobile-mast-test", owner_id: user.id, is_online_email_owner_notification: false, is_public: false, config: %{snapshots: %{jpg: "/Streaming/Channels/1/picture"}, internal_rtsp_port: "", internal_http_port: "", internal_host: "", external_rtsp_port: 9100, external_http_port: 8100, external_host: "149.13.244.32", auth: %{basic: %{username: System.get_env["ONVIF_USER"],password: System.get_env["ONVIF_PASS"]}}}}
+    Evercam.Repo.insert! %Camera{name: "EXVCR Camera", exid: "recorded-response", owner_id: user.id, is_online_email_owner_notification: false, is_public: false, config: %{snapshots: %{jpg: "/Streaming/Channels/1/picture"}, internal_rtsp_port: "", internal_http_port: "", internal_host: "", external_rtsp_port: 9100, external_http_port: 12345, external_host: "recorded_response", auth: %{basic: %{username: System.get_env["ONVIF_USER"],password: System.get_env["ONVIF_PASS"]}}}}
   end
 
   def parse_onvif_error_type(response) do

@@ -2,7 +2,7 @@ defmodule EvercamMediaWeb.UserController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
   alias EvercamMediaWeb.LogView
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   alias EvercamMedia.Util
   alias EvercamMedia.Intercom
   require Logger
@@ -228,7 +228,7 @@ defmodule EvercamMediaWeb.UserController do
           extra =
             %{agent: get_user_agent(conn, params["agent"])}
             |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-          CameraActivity.log_activity(updated_user, %{id: 0, exid: ""}, "requested for password reset", extra)
+          Util.log_activity(updated_user, %{id: 0, exid: ""}, "requested for password reset", extra)
           EvercamMedia.UserMailer.password_reset_request(updated_user)
           conn |> put_status(200) |> json(%{message: "We’ve sent you an email with instructions for changing your password."})
         {:error, changeset} ->
@@ -250,7 +250,7 @@ defmodule EvercamMediaWeb.UserController do
           extra =
             %{agent: get_user_agent(conn, params["agent"])}
             |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-          CameraActivity.log_activity(updated_user, %{id: 0, exid: ""}, "password changed", extra)
+          Util.log_activity(updated_user, %{id: 0, exid: ""}, "password changed", extra)
           conn |> put_status(200) |> json(%{message: "Password changed successfully."})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
@@ -463,7 +463,7 @@ defmodule EvercamMediaWeb.UserController do
         user_settings: %{ old: set_settings(caller), new: set_settings(updated_user) }
       }
       |> Map.merge(get_requester_Country(ip, country, country_code))
-      CameraActivity.log_activity(caller, camera, "user edited", extra)
+      Util.log_activity(caller, camera, "user edited", extra)
     end)
   end
 
@@ -520,7 +520,7 @@ defmodule EvercamMediaWeb.UserController do
       extra =
         %{ agent: get_user_agent(conn, params["agent"]) }
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-      CameraActivity.log_activity(user, %{ id: 0, exid: "" }, "login", extra)
+      Util.log_activity(user, %{ id: 0, exid: "" }, "login", extra)
     end)
   end
   defp update_last_login_and_log(_mode, _conn, _user, _params), do: :noop
@@ -531,7 +531,7 @@ defmodule EvercamMediaWeb.UserController do
   defp share_default_camera(user) do
     evercam_user = User.by_username("evercam")
     remembrance_camera = Camera.get_remembrance_camera
-    rights = CameraShare.get_rights("public", evercam_user, remembrance_camera)
+    rights = Util.camera_share_get_rights("public", evercam_user, remembrance_camera)
     message = "Default camera shared with newly created user."
 
     CameraShare.create_share(remembrance_camera, user, evercam_user, rights, message, "public")

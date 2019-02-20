@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddTypeFieldInArchives do
+defmodule Evercam.Repo.Migrations.AddTypeFieldInArchives do
   use Ecto.Migration
 
   def change do

@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddInsightFieldsToUsers do
+defmodule Evercam.Repo.Migrations.AddInsightFieldsToUsers do
   use Ecto.Migration
 
   def change do

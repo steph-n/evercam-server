@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.AddIsPublicFieldInCompares do
+defmodule Evercam.Repo.Migrations.AddIsPublicFieldInCompares do
   use Ecto.Migration
 
   def change do

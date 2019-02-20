@@ -16,8 +16,8 @@ defmodule EvercamMedia.Snapshot.DBHandler do
   """
   use GenStage
   require Logger
-  alias EvercamMedia.Repo
-  alias EvercamMedia.SnapshotRepo
+  alias Evercam.Repo
+  alias Evercam.SnapshotRepo
   alias EvercamMedia.Util
   alias EvercamMedia.Snapshot.Error
   alias EvercamMedia.Snapshot.WorkerSupervisor

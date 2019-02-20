@@ -24,8 +24,8 @@ defmodule EvercamMediaWeb.PublicView do
           timezone: Camera.get_timezone(camera),
           location: Camera.get_location(camera),
           proxy_url: %{
-            hls: Camera.get_hls_url(camera),
-            rtmp: Camera.get_rtmp_url(camera),
+            hls: Util.get_hls_url(camera),
+            rtmp: Util.get_rtmp_url(camera),
           },
           thumbnail_url: thumbnail_url(camera)
         }
@@ -57,8 +57,8 @@ defmodule EvercamMediaWeb.PublicView do
           timezone: Camera.get_timezone(camera),
           location: Camera.get_location(camera),
           proxy_url: %{
-            hls: Camera.get_hls_url(camera),
-            rtmp: Camera.get_rtmp_url(camera),
+            hls: Util.get_hls_url(camera),
+            rtmp: Util.get_rtmp_url(camera),
           },
           thumbnail_url: thumbnail_url(camera)
         }

@@ -1,7 +1,7 @@
 defmodule EvercamMedia.Timelapse.ImportTimelapses do
   require Logger
   alias EvercamMedia.Snapshot.Storage
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   alias EvercamMedia.Util
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)

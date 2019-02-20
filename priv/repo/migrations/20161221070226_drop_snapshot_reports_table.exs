@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.DropSnapshotReportsTable do
+defmodule Evercam.Repo.Migrations.DropSnapshotReportsTable do
   use Ecto.Migration
 
   def change do

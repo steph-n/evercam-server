@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.CreateSnapmail do
+defmodule Evercam.Repo.Migrations.CreateSnapmail do
   use Ecto.Migration
 
   def up do

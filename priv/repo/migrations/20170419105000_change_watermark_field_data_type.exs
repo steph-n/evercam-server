@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.ChangeWatermarkFieldDataType do
+defmodule Evercam.Repo.Migrations.ChangeWatermarkFieldDataType do
   use Ecto.Migration
 
   def change do

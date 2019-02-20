@@ -4,7 +4,7 @@ defmodule EvercamMedia.ReleaseMigration do
 
     path = Application.app_dir(:evercam_media, "priv/repo/migrations")
 
-    Ecto.Migrator.run(EvercamMedia.Repo, path, :up, all: true)
+    Ecto.Migrator.run(Evercam.Repo, path, :up, all: true)
 
     :init.stop()
   end

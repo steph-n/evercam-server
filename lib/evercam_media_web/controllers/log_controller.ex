@@ -45,7 +45,7 @@ defmodule EvercamMediaWeb.LogController do
         agent: params["agent"]
       }
       |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-      CameraActivity.log_activity(current_user, camera, params["action"], extra)
+      Util.log_activity(current_user, camera, params["action"], extra)
       conn |> json(%{})
     end
   end

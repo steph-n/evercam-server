@@ -1,5 +1,5 @@
 defmodule EvercamMedia.SendSnapmailNotification do
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   alias EvercamMedia.UserMailer
   import Ecto.Query
 

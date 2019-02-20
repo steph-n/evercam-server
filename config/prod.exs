@@ -88,23 +88,19 @@ config :evercam_media, EvercamMedia.Mailer,
   api_key: System.get_env("MAILGUN_KEY"),
   domain: System.get_env("MAILGUN_DOMAIN")
 
-config :evercam_media, ecto_repos: [EvercamMedia.Repo]
-
-config :evercam_media, EvercamMedia.Repo,
-  types: EvercamMedia.PostgresTypes,
+config :evercam_models, Evercam.Repo,
+  types: Evercam.PostgresTypes,
   url: System.get_env("DATABASE_URL"),
   socket_options: [keepalive: true],
   timeout: 60_000,
-  pool_timeout: 60_000,
   pool_size: 80,
   lazy: false,
   ssl: true
 
-config :evercam_media, EvercamMedia.SnapshotRepo,
+config :evercam_models, Evercam.SnapshotRepo,
   url: System.get_env("SNAPSHOT_DATABASE_URL"),
   socket_options: [keepalive: true],
   timeout: 60_000,
-  pool_timeout: 60_000,
   pool_size: 100,
   lazy: false,
   ssl: true

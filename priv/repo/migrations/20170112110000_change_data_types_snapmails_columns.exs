@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.ChangeDataTypesSnapmails do
+defmodule Evercam.Repo.Migrations.ChangeDataTypesSnapmails do
   use Ecto.Migration
 
   def change do

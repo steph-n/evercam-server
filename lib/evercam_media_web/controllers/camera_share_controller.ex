@@ -3,6 +3,7 @@ defmodule EvercamMediaWeb.CameraShareController do
   use PhoenixSwagger
   alias EvercamMedia.Intercom
   alias EvercamMedia.Zoho
+  alias EvercamMedia.Util
 
   def swagger_definitions do
     %{
@@ -158,7 +159,7 @@ defmodule EvercamMediaWeb.CameraShareController do
         extra =
           %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
           |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-        CameraActivity.log_activity(caller, camera, "updated share", extra)
+        Util.log_activity(caller, camera, "updated share", extra)
         Camera.invalidate_user(sharee)
         Camera.invalidate_camera(camera)
         camera_share =
@@ -235,7 +236,7 @@ defmodule EvercamMediaWeb.CameraShareController do
       extra =
         %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
         |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-      CameraActivity.log_activity(caller, camera, "stopped sharing", extra)
+      Util.log_activity(caller, camera, "stopped sharing", extra)
       json(conn, %{})
     end
   end
@@ -251,7 +252,7 @@ defmodule EvercamMediaWeb.CameraShareController do
       end
       Camera.invalidate_user(sharee)
       Camera.invalidate_camera(camera)
-      CameraActivity.log_activity(caller, camera, "shared", Map.merge(extra, %{with: sharee.email}), next_datetime)
+      Util.log_activity(caller, camera, "shared", Map.merge(extra, %{with: sharee.email}), next_datetime)
       broadcast_share_to_users(camera)
     end)
   end
@@ -260,7 +261,7 @@ defmodule EvercamMediaWeb.CameraShareController do
   defp create_camera_share_request(true, caller, camera, camera_share_request, extra, next_datetime, ip, conn) do
     spawn(fn ->
       send_email_notification(caller, camera, camera_share_request.email, camera_share_request.message, camera_share_request.key)
-      CameraActivity.log_activity(caller, camera, "shared", Map.merge(extra, %{with: camera_share_request.email}), next_datetime)
+      Util.log_activity(caller, camera, "shared", Map.merge(extra, %{with: camera_share_request.email}), next_datetime)
       Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), get_user_model(camera_share_request.email), get_user_agent(conn), ip, "Shared-Non-Registered")
     end)
   end

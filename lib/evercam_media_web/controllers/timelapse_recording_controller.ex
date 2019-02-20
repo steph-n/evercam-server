@@ -3,6 +3,7 @@ defmodule EvercamMediaWeb.TimelapseRecordingController do
   alias EvercamMediaWeb.ErrorView
   alias EvercamMediaWeb.TimelapsedRecordingView
   alias EvercamMedia.TimelapseRecording.TimelapseRecordingSupervisor
+  alias EvercamMedia.Util
   import EvercamMedia.Validation.CloudRecording
 
   def show(conn, %{"id" => exid}) do
@@ -41,7 +42,7 @@ defmodule EvercamMediaWeb.TimelapseRecordingController do
           |> Process.whereis
           |> start_or_update_worker(camera)
 
-          CameraActivity.log_activity(current_user, camera, "timelapse recordings #{action_log}",
+          Util.log_activity(current_user, camera, "timelapse recordings #{action_log}",
             %{
               ip: user_request_ip(conn, params["requester_ip"]),
               tr_settings: %{

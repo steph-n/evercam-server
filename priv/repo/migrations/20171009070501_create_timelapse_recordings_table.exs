@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.CreateTimelapseRecordingsTable do
+defmodule Evercam.Repo.Migrations.CreateTimelapseRecordingsTable do
   use Ecto.Migration
 
   def up do

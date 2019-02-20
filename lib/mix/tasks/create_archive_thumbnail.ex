@@ -1,5 +1,5 @@
 defmodule EvercamMedia.CreateArchiveThumbnail do
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   alias EvercamMedia.Snapshot.Storage
   alias EvercamMedia.TimelapseRecording.S3
   import Ecto.Query

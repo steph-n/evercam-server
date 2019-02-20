@@ -3,7 +3,7 @@ defmodule EvercamMedia.CameraStatusAutomation do
   alias EvercamMedia.Util
   alias EvercamMedia.XMLParser
   alias EvercamMedia.HTTPClient
-  alias EvercamMedia.SnapshotRepo
+  alias Evercam.SnapshotRepo
   require Logger
 
   def check_camera_status(camera) do

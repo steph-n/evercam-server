@@ -1,6 +1,6 @@
 defmodule EvercamMedia.ComparesDirectoryChange do
   require Logger
-  alias EvercamMedia.Repo
+  alias Evercam.Repo
   alias EvercamMedia.Util
 
   @bucket "evercam-camera-assets"

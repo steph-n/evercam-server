@@ -1,4 +1,4 @@
-defmodule EvercamMedia.Repo.Migrations.DropCameraIdFromSnapmails do
+defmodule Evercam.Repo.Migrations.DropCameraIdFromSnapmails do
   use Ecto.Migration
 
   def change do
