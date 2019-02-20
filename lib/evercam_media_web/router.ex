@@ -27,7 +27,8 @@ defmodule EvercamMediaWeb.Router do
         version: "1.0",
         title: "Evercam Server"
       },
-      host: "media.evercam.io/v2"
+      host: "media.evercam.io",
+      basePath: "/v2"
     }
   end
 
