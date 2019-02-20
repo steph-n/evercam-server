@@ -5115,11 +5115,11 @@
           "properties": {
             "lng": {
               "type": "float",
-              "description": 0.0
+              "description": ""
             },
             "lat": {
               "type": "float",
-              "description": 0.0
+              "description": ""
             }
           }
         },

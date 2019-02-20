@@ -39,8 +39,8 @@ defmodule EvercamMediaWeb.CameraController do
           mac_address :string, ""
           location (Schema.new do
             properties do
-              lng :float, 0.0
-              lat :float, 0.0
+              lng :float, ""
+              lat :float, ""
             end
           end)
           last_polled_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
