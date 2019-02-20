@@ -22,6 +22,7 @@ defmodule EvercamMedia.Snapshot.CamClient do
             "samsung" -> HTTPClient.get(:digest_auth, args[:url], username, password)
             "hikvision" -> HTTPClient.get(:digest_auth, args[:url], username, password)
             "axis" -> HTTPClient.get(:digest_auth, args[:url], username, password)
+            "dahua" -> HTTPClient.get(:digest_auth, args[:url], username, password)
             "ubiquiti" -> HTTPClient.get(:cookie_auth, args[:url], username, password)
             _ -> HTTPClient.get(:basic_auth, args[:url], username, password)
           end
