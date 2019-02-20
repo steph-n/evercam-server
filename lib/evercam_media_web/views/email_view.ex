@@ -41,9 +41,9 @@ defmodule EvercamMediaWeb.EmailView do
       case !!camera_image.data do
         true ->
           "#{mail_html}<img class='last-snapmail-snapshot' id='#{camera_image.exid}' src='cid:#{camera_image.exid}.jpg' alt='Last Snapshot' style='width: 100%; display:block; margin:0 auto;'><br>
-          <p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'><b>#{camera_image.name}</b> (#{camera_image.exid}) - See the live view on Evercam by <a style='color:#428bca; text-decoration:none;' href='https://dash.evercam.io/v1/cameras/#{camera_image.exid}'>clicking here</a></p><br>"
+          <p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'><b>#{camera_image.name}</b> (#{camera_image.exid}) - See the live view on Evercam by <a style='color:#428bca; text-decoration:none;' href='https://dash.evercam.io/v2/cameras/#{camera_image.exid}'>clicking here</a></p><br>"
         _ ->
-          "#{mail_html}<p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'><span id='#{camera_image.exid}' class='failed-camera'>Could not retrieve live image from</span> <a target='_blank' href='https://dash.evercam.io/v1/cameras/#{camera_image.exid}'>#{camera_image.name}</a></p>"
+          "#{mail_html}<p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'><span id='#{camera_image.exid}' class='failed-camera'>Could not retrieve live image from</span> <a target='_blank' href='https://dash.evercam.io/v2/cameras/#{camera_image.exid}'>#{camera_image.name}</a></p>"
       end
     end)
   end

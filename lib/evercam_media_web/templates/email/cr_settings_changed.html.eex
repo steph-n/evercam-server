@@ -64,7 +64,7 @@
           <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
             <p class="lead" style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Hi Marco Herbst, </p>
-            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Cloud recording for camera <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v1/cameras/<%= @camera.exid %>"><%= @camera.name %></a> has been updated by <%= full_name(@current_user) %> [ip: <%= @user_request_ip %>].<br>See the changes below.
+            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Cloud recording for camera <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v2/cameras/<%= @camera.exid %>"><%= @camera.name %></a> has been updated by <%= full_name(@current_user) %> [ip: <%= @user_request_ip %>].<br>See the changes below.
             </p>
             <%= raw get_recordings_html(@old_cloud_recording, "Your past cloud recording settings") %>
             <br>

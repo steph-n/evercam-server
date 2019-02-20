@@ -4,7 +4,7 @@ Hello from Evercam,
 
 To access this clip, you will need to click on the link below.
 
-https://dash.evercam.io/v1/cameras/<%= @archive.camera.exid %>/archives
+https://dash.evercam.io/v2/cameras/<%= @archive.camera.exid %>/archives
 
 We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.
 

@@ -65,7 +65,7 @@
             <br>
 
             <p><center style="font-size:11px">
-              If you want to change your Snapmail settings, <a target='_blank' href="https://dash.evercam.io/v1/snapmails">click here</a>.<br />If you would prefer not to receive future emails for this Scheduled SnapMail @ <%= @notify_time %>, you may <a target='_blank' href="https://dash.evercam.io/v1/snapmails/<%= @id %>/unsubscribe?email=<%= @recipient%>">unsubscribe here</a>.
+              If you want to change your Snapmail settings, <a target='_blank' href="https://dash.evercam.io/v2/snapmails">click here</a>.<br />If you would prefer not to receive future emails for this Scheduled SnapMail @ <%= @notify_time %>, you may <a target='_blank' href="https://dash.evercam.io/v2/snapmails/<%= @id %>/unsubscribe?email=<%= @recipient%>">unsubscribe here</a>.
             </center></p>
 
           </td>

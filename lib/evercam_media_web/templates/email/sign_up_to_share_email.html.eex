@@ -56,13 +56,13 @@
             <%= raw get_shared_message(@user.firstname, @message) %>
 
             <p class="callout" style="line-height: 1.6;">
-              <a style="background-color: #fff;border: 1px solid #428bca;border-radius: 30px;color: #428bca;font-size: 14px;padding: 6px 10px;transition: all 0.2s linear 0s;text-decoration: none;" href="https://dash.evercam.io/v1/users/signup?key=<%= @key %>">Access Your Camera</a>
+              <a style="background-color: #fff;border: 1px solid #428bca;border-radius: 30px;color: #428bca;font-size: 14px;padding: 6px 10px;transition: all 0.2s linear 0s;text-decoration: none;" href="https://dash.evercam.io/v2/users/signup?key=<%= @key %>">Access Your Camera</a>
             </p>
             <%= raw image_tag(@thumbnail_available) %>
             <br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Your Evercam account will give you access to this camera and a whole world of possibilities for cameras!</p>
 
-            <P style="line-height: 1.6; margin: 0 0 10px; padding: 0;">To stop receiving these reminders, please <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v1/cameras/<%= @camera.exid %>/share/request?key=<%= @key %>&email=<%= @sharee %>">click here</a>. If you have any questions, please contact Vinnie Quinn on +353879871869.</p>
+            <P style="line-height: 1.6; margin: 0 0 10px; padding: 0;">To stop receiving these reminders, please <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v2/cameras/<%= @camera.exid %>/share/request?key=<%= @key %>&email=<%= @sharee %>">click here</a>. If you have any questions, please contact Vinnie Quinn on +353879871869.</p>
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.</p>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>

@@ -4,7 +4,7 @@ Your camera "<%= @camera.name %>" went offline.
 
 You can use the link below to access this camera.
 
-https://dash.evercam.io/v1/cameras/<%= @camera.exid %>
+https://dash.evercam.io/v2/cameras/<%= @camera.exid %>
 
 The Evercam Team
 support@evercam.io

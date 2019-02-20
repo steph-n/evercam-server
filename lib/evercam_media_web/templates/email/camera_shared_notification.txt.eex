@@ -6,7 +6,7 @@
 
 Access your camera
 
-https://dash.evercam.io/v1/cameras/<%= @camera.exid %>
+https://dash.evercam.io/v2/cameras/<%= @camera.exid %>
 
 We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.
 

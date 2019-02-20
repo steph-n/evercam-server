@@ -10,7 +10,7 @@ Hello from Evercam,
 
 To access this camera, you will need to click on the link below and create an account with Evercam.
 
-https://dash.evercam.io/v1/users/signup?key=<%= @key %>
+https://dash.evercam.io/v2/users/signup?key=<%= @key %>
 
 Your Evercam account will give you access to this camera and a whole world of possibilities for cameras!
 
