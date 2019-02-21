@@ -1,5 +1,3 @@
-sudo: required
-
 language: elixir
 
 elixir: 1.8.0
@@ -15,5 +13,5 @@ services:
 script:
   - MIX_ENV=test mix do ecto.create, ecto.load, test --exclude external:true
 
-sudo: true
+sudo: false
 dist: trusty
