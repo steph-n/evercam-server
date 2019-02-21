@@ -15,5 +15,5 @@ services:
 script:
   - MIX_ENV=test mix do ecto.create, ecto.load, test --exclude external:true
 
-sudo: false
+sudo: true
 dist: trusty
