@@ -12,8 +12,8 @@ defmodule EvercamMedia.ArchiveControllerTest do
       public: "truthy",
       camera_id: camera.id,
       requested_by: "#{user.username}",
-      from_date: "1475751645",
-      to_date: "1475753445",
+      from_date: "2019-02-05T08:00:00.000Z",
+      to_date: "2019-02-05T08:30:00.000Z",
       status: 0,
       type: "clip"
     }
@@ -21,45 +21,46 @@ defmodule EvercamMedia.ArchiveControllerTest do
     {:ok, user: user, camera: camera, archive: archive, params: params}
   end
 
-  test "GET /v1/cameras/:id/archives Camera not found", context do
+  test "GET /v2/cameras/:id/archives Camera not found", context do
     camera_exid = "focuscam"
-    response = build_conn() |> get("/v1/cameras/#{camera_exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+    response = build_conn() |> get("/v2/cameras/#{camera_exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
   end
 
-  test "GET /v1/cameras/:id/archives/:archive_id archive not found", context do
+  test "GET /v2/cameras/:id/archives/:archive_id archive not found", context do
     archive_id = "text-dexter"
-    response = build_conn() |> get("/v1/cameras/#{context[:camera].exid}/archives/#{archive_id}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+    response = build_conn() |> get("/v2/cameras/#{context[:camera].exid}/archives/#{archive_id}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Archive 'text-dexter' not found!"}}
   end
 
-  test "POST /v1/cameras/:id/archives when params aren't valid!", context do
+  test "POST /v2/cameras/:id/archives when params aren't valid!", context do
     response =
       build_conn()
-      |> post("/v1/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", context[:params])
+      |> post("/v2/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", context[:params])
 
     assert response.status == 400
     assert Poison.decode(response.resp_body) == {:ok, %{"message" => %{"public" => ["is invalid"]}}}
   end
 
-  test "POST /v1/cameras/:id/archives when params are valid!", context do
+  test "POST /v2/cameras/:id/archives when params are valid!", context do
     params = Map.merge(context[:params], %{public: "false"})
+    IO.inspect params
     response =
       build_conn()
-      |> post("/v1/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     assert response.status == 201
   end
 
-  test "POST /v1/cameras/:id/archives when clip duration greater than 60 minutes", context do
-    params = Map.merge(context[:params], %{public: "false", to_date: "1475755545", type: "clip"})
+  test "POST /v2/cameras/:id/archives when clip duration greater than 60 minutes", context do
+    params = Map.merge(context[:params], %{public: "false", to_date: "2019-02-05T09:30:00.000Z", type: "clip"})
     response =
       build_conn()
-      |> post("/v1/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     error_message =
       response.resp_body

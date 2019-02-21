@@ -14,25 +14,25 @@ defmodule EvercamMedia.ONVIFControllerDeviceServiceTest do
     {:ok, user: user}
   end
 
-  test "GET /v1/onvif/v20/device_service/GetDeviceInformation, returns meaningful info", context do
+  test "GET /v2/onvif/v20/device_service/GetDeviceInformation, returns meaningful info", context do
     use_cassette "get_device_information" do
-      conn = get build_conn(), "/v1/onvif/v20/device_service/GetDeviceInformation?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/device_service/GetDeviceInformation?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       camera_model = json_response(conn, 200) |> Map.get("Model")
       assert camera_model == "DS-2DF7286-A"
     end
   end
 
-  test "GET /v1/onvif/v20/device_service/GetNetworkInterfaces, returns meaningful info", context do
+  test "GET /v2/onvif/v20/device_service/GetNetworkInterfaces, returns meaningful info", context do
     use_cassette "get_network_interfaces" do
-      conn = get build_conn(), "/v1/onvif/v20/device_service/GetNetworkInterfaces?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/device_service/GetNetworkInterfaces?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       enabled =  json_response(conn, 200) |> Map.get("NetworkInterfaces") |> Map.get("Enabled")
       assert enabled == "true"
     end
   end
 
-  test "GET /v1/onvif/v20/device_service/GetCapabilities, returns meaningful info", context do
+  test "GET /v2/onvif/v20/device_service/GetCapabilities, returns meaningful info", context do
     use_cassette "get_capabilities" do
-      conn = get build_conn(), "/v1/onvif/v20/device_service/GetCapabilities?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/device_service/GetCapabilities?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       device_xaddr = json_response(conn, 200) |> Map.get("Capabilities") |> Map.get("Device") |> Map.get("XAddr")
       assert device_xaddr == "http://192.168.1.100:8100/onvif/device_service"
     end

@@ -16,9 +16,9 @@ defmodule EvercamMedia.ONVIFControllerErrorsTest do
   end
 
   @tag :capture_log
-  test "GET /v1/onvif/v20/DeviceIO/GetUnknownAction", context do
+  test "GET /v2/onvif/v20/DeviceIO/GetUnknownAction", context do
     use_cassette "error_unknown_action" do
-      conn = get build_conn(), "/v1/onvif/v20/DeviceIO/GetUnknownAction?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/DeviceIO/GetUnknownAction?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       error_type = json_response(conn, 500) |> parse_onvif_error_type
       assert error_type == "ter:ActionNotSupported"
     end
@@ -27,7 +27,7 @@ defmodule EvercamMedia.ONVIFControllerErrorsTest do
   @tag :capture_log
   test "bad credentials", context do
     use_cassette "error_bad_credentials" do
-      conn = get build_conn(), "/v1/onvif/v20/device_service/GetNetworkInterfaces?url=http://recorded_response&auth=admin:foo&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/device_service/GetNetworkInterfaces?url=http://recorded_response&auth=admin:foo&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       error_type = json_response(conn, 400) |> parse_onvif_error_type
       assert error_type == "ter:NotAuthorized"
     end
@@ -36,7 +36,7 @@ defmodule EvercamMedia.ONVIFControllerErrorsTest do
   @tag :capture_log
   test "Service not available", context do
     use_cassette "error_service_not_available" do
-      conn = get build_conn(), "/v1/onvif/v20/Display/GetServiceCapabilities?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/Display/GetServiceCapabilities?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       error_type = json_response(conn, 500) |> parse_onvif_error_type
       assert error_type == "ter:ActionNotSupported"
     end
@@ -45,7 +45,7 @@ defmodule EvercamMedia.ONVIFControllerErrorsTest do
   @tag :capture_log
   test "bad parameter", context do
     use_cassette "error_bad_parameter" do
-      conn = get build_conn(), "/v1/onvif/v20/Media/GetSnapshotUri?#{@access_params}&ProfileToken=Foo&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/Media/GetSnapshotUri?#{@access_params}&ProfileToken=Foo&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       error_type = json_response(conn, 500) |> parse_onvif_error_type
       assert error_type == "ter:InvalidArgVal"
     end
@@ -54,7 +54,7 @@ defmodule EvercamMedia.ONVIFControllerErrorsTest do
   @tag :capture_log
   test "request timeout", context do
     use_cassette "error_request_timeout" do
-      conn = get build_conn(), "/v1/onvif/v20/device_service/GetNetworkInterfaces?url=http://192.10.20.30:8100&auth=foo:bar&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/device_service/GetNetworkInterfaces?url=http://192.10.20.30:8100&auth=foo:bar&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       [timeout_message] = json_response(conn, 500)
       assert timeout_message == "req_timedout"
     end
@@ -63,7 +63,7 @@ defmodule EvercamMedia.ONVIFControllerErrorsTest do
   @tag :capture_log
   test "bad url", context do
     use_cassette "error_bad_url" do
-      conn = get build_conn(), "/v1/onvif/v20/device_service/GetNetworkInterfaces?url=abcde&auth=foo:bar&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/device_service/GetNetworkInterfaces?url=abcde&auth=foo:bar&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       [_ , ["error", error]] = json_response(conn, 500)
       assert error == "nxdomain"
     end

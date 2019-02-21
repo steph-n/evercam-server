@@ -14,17 +14,17 @@ defmodule EvercamMedia.ONVIFControllerDeviceIOTest do
     {:ok, user: user}
   end
 
-  test "GET /v1/onvif/v20/DeviceIO/GetAudioOutputs", context do
+  test "GET /v2/onvif/v20/DeviceIO/GetAudioOutputs", context do
     use_cassette "get_audio_outputs" do
-      conn = get build_conn(), "/v1/onvif/v20/DeviceIO/GetAudioOutputs?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/DeviceIO/GetAudioOutputs?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       token = json_response(conn, 200) |> Map.get("AudioOutputs") |> Map.get("token")
       assert token == "AudioOutputToken"
     end
   end
 
-  test "GET /v1/onvif/v20/DeviceIO/GetAudioOutputConfiguration", context do
+  test "GET /v2/onvif/v20/DeviceIO/GetAudioOutputConfiguration", context do
     use_cassette "get_audio_output_configuration" do
-      conn = get build_conn(), "/v1/onvif/v20/DeviceIO/GetAudioOutputConfiguration?#{@access_params}&AudioOutputToken=AudioOutputToken&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/DeviceIO/GetAudioOutputConfiguration?#{@access_params}&AudioOutputToken=AudioOutputToken&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       send_primacy = json_response(conn, 200) |> Map.get("AudioOutputConfiguration") |> Map.get("SendPrimacy")
       assert send_primacy == "www.onvif.org/ver20/HalfDuplex/Server"
     end

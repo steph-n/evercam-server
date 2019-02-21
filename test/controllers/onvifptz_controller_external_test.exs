@@ -11,25 +11,25 @@ defmodule EvercamMedia.ONVIFPTZControllerExternalTest do
     {:ok, user: user}
   end
 
-  test "POST /v1/cameras/:id/ptz/relative?left=0&right=10&up=0&down=10&zoom=0 moves right and down", context do
+  test "POST /v2/cameras/:id/ptz/relative?left=0&right=10&up=0&down=10&zoom=0 moves right and down", context do
     # get home first
-    conn = post build_conn(), "/v1/cameras/mobile-mast-test/ptz/home?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+    conn = post build_conn(), "/v2/cameras/mobile-mast-test/ptz/home?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
     assert json_response(conn, 201) == "ok"
     # give time to the camera to move
     :timer.sleep(3000)
-    conn = get build_conn(), "/v1/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+    conn = get build_conn(), "/v2/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
     response = json_response(conn, 200)
     x_before = extract_position(response, "x")
     y_before = extract_position(response, "y")
     conn = post(
       build_conn(),
-      "/v1/cameras/mobile-mast-test/ptz/relative?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}",
+      "/v2/cameras/mobile-mast-test/ptz/relative?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}",
       %{"left" => "0", "right" => "10", "up" => "0", "down" => "10", "zoom" => "0"}
     )
     assert json_response(conn, 201) == "ok"
     # give time to the camera to move
     :timer.sleep(3000)
-    conn = get build_conn(), "/v1/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+    conn = get build_conn(), "/v2/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
     response = json_response(conn, 200)
     x_after = extract_position(response, "x")
     y_after = extract_position(response, "y")
@@ -37,25 +37,25 @@ defmodule EvercamMedia.ONVIFPTZControllerExternalTest do
     assert (y_after - y_before) * 100 |> round == -20
   end
 
-  test "POST /v1/cameras/:id/ptz/relative?left=10&right=0&up=10&down=0&zoom=0 moves left and up", context do
+  test "POST /v2/cameras/:id/ptz/relative?left=10&right=0&up=10&down=0&zoom=0 moves left and up", context do
     # get home first
-    conn = post build_conn(), "/v1/cameras/mobile-mast-test/ptz/home?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+    conn = post build_conn(), "/v2/cameras/mobile-mast-test/ptz/home?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
     assert json_response(conn, 201) == "ok"
     # give time to the camera to move
     :timer.sleep(3000)
-    conn = get build_conn(), "/v1/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+    conn = get build_conn(), "/v2/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
     response = json_response(conn, 200)
     x_before = extract_position(response, "x")
     y_before = extract_position(response, "y")
     conn = post(
       build_conn(),
-      "/v1/cameras/mobile-mast-test/ptz/relative?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}",
+      "/v2/cameras/mobile-mast-test/ptz/relative?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}",
       %{"left" => "10", "right" => "0", "up" => "10", "down" => "0", "zoom" => "0"}
     )
     assert json_response(conn, 201) == "ok"
     # give time to the camera to move
     :timer.sleep(3000)
-    conn = get build_conn(), "/v1/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+    conn = get build_conn(), "/v2/cameras/mobile-mast-test/ptz/status?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
     response = json_response(conn, 200)
     x_after = extract_position(response, "x")
     y_after = extract_position(response, "y")

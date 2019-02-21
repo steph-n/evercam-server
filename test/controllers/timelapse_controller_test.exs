@@ -18,25 +18,25 @@ defmodule EvercamMedia.TimelapseControllerTest do
   test "GET /cameras/:id/timelapses, when passed camera_id not exist", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin1/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin1/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 403
     assert Poison.decode!(response.resp_body)["message"] == "Forbidden."
   end
 
-  test "GET /v1/cameras/:id/timelapses, when passed invalid keys", _context do
+  test "GET /v2/cameras/:id/timelapses, when passed invalid keys", _context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/timelapses")
+      |> get("/v2/cameras/austin/timelapses")
 
     assert response.status == 401
     assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
-  test "GET /v1/cameras/:id/timelapses, with valid params", context do
+  test "GET /v2/cameras/:id/timelapses, with valid params", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     _timelapses =
       response.resp_body
@@ -47,19 +47,19 @@ defmodule EvercamMedia.TimelapseControllerTest do
     assert response.status() == 200
   end
 
-  test "GET /v1/timelapses, when passed invalid keys", _context do
+  test "GET /v2/timelapses, when passed invalid keys", _context do
     response =
       build_conn()
-      |> get("/v1/timelapses")
+      |> get("/v2/timelapses")
 
     assert response.status == 401
     assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
-  test "GET /v1/timelapses, with valid params", context do
+  test "GET /v2/timelapses, with valid params", context do
     response =
       build_conn()
-      |> get("/v1/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     _timelapses =
       response.resp_body
@@ -73,7 +73,7 @@ defmodule EvercamMedia.TimelapseControllerTest do
   test "GET /cameras/:id/timelapses/:timelapse_id, when user do not have permission", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin1/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin1/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 403
     assert Poison.decode!(response.resp_body)["message"] == "Forbidden."
@@ -82,7 +82,7 @@ defmodule EvercamMedia.TimelapseControllerTest do
   test "GET /cameras/:id/timelapses/:timelapse_id, when passed camera_id not exist", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/timelapses/timel-exid1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/timelapses/timel-exid1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Timelapse not found."
@@ -91,7 +91,7 @@ defmodule EvercamMedia.TimelapseControllerTest do
   test "GET /cameras/:id/timelapses/:timelapse_id, with valid params", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     timelapse =
       response.resp_body
@@ -103,30 +103,30 @@ defmodule EvercamMedia.TimelapseControllerTest do
     assert timelapse["id"] == "timel-exid"
   end
 
-  test "POST /v1/cameras/:id/timelapses, when user do not have permission", _context do
+  test "POST /v2/cameras/:id/timelapses, when user do not have permission", _context do
     params = %{
       title: "New Timelapse"
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/timelapses", params)
+      |> post("/v2/cameras/austin/timelapses", params)
 
     assert response.status == 403
     assert Poison.decode!(response.resp_body)["message"] == "Forbidden."
   end
 
-  test "POST /v1/cameras/:id/timelapses, invalid params", context do
+  test "POST /v2/cameras/:id/timelapses, invalid params", context do
     params = %{
       title: "Timelapse 1st"
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     assert response.status == 400
   end
 
-  test "POST /v1/cameras/:id/timelapses, valid params", context do
+  test "POST /v2/cameras/:id/timelapses, valid params", context do
     params = %{
       title: "New Timelapse",
       frequency: 1,
@@ -136,7 +136,7 @@ defmodule EvercamMedia.TimelapseControllerTest do
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/timelapses?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     timelapse =
       response.resp_body
@@ -148,37 +148,37 @@ defmodule EvercamMedia.TimelapseControllerTest do
     assert timelapse["title"] == "New Timelapse"
   end
 
-  test "PATCH /v1/cameras/:id/timelapses/:timelapse_id, when user do not have permission", _context do
+  test "PATCH /v2/cameras/:id/timelapses/:timelapse_id, when user do not have permission", _context do
     params = %{
       title: "New Timelapse"
     }
     response =
       build_conn()
-      |> patch("/v1/cameras/austin/timelapses/timel-exid", params)
+      |> patch("/v2/cameras/austin/timelapses/timel-exid", params)
 
     assert response.status == 403
     assert Poison.decode!(response.resp_body)["message"] == "Forbidden."
   end
 
-  test "PATCH /v1/cameras/:id/timelapses/:timelapse_id, when timelapse not exist", context do
+  test "PATCH /v2/cameras/:id/timelapses/:timelapse_id, when timelapse not exist", context do
     params = %{
       title: "Timelapse 1st"
     }
     response =
       build_conn()
-      |> patch("/v1/cameras/austin/timelapses/timel-exid1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> patch("/v2/cameras/austin/timelapses/timel-exid1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Timelapse not found."
   end
 
-  test "PATCH /v1/cameras/:id/timelapses/:timelapse_id, valid params", context do
+  test "PATCH /v2/cameras/:id/timelapses/:timelapse_id, valid params", context do
     params = %{
       title: "Change Timelapse Title"
     }
     response =
       build_conn()
-      |> patch("/v1/cameras/austin/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> patch("/v2/cameras/austin/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     timelapse =
       response.resp_body
@@ -190,28 +190,28 @@ defmodule EvercamMedia.TimelapseControllerTest do
     assert timelapse["title"] == "Change Timelapse Title"
   end
 
-  test "DELETE /v1/cameras/:id/timelapses/:timelapse_id, when user do not have permission", _context do
+  test "DELETE /v2/cameras/:id/timelapses/:timelapse_id, when user do not have permission", _context do
     response =
       build_conn()
-      |> delete("/v1/cameras/austin/timelapses/timel-exid")
+      |> delete("/v2/cameras/austin/timelapses/timel-exid")
 
     assert response.status == 403
     assert Poison.decode!(response.resp_body)["message"] == "Forbidden."
   end
 
-  test "DELETE /v1/cameras/:id/timelapses/:timelapse_id, when timelapse not exist", context do
+  test "DELETE /v2/cameras/:id/timelapses/:timelapse_id, when timelapse not exist", context do
     response =
       build_conn()
-      |> delete("/v1/cameras/austin/timelapses/timel-exid1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> delete("/v2/cameras/austin/timelapses/timel-exid1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Timelapse not found."
   end
 
-  test "DELETE /v1/cameras/:id/timelapses/:timelapse_id, valid params", context do
+  test "DELETE /v2/cameras/:id/timelapses/:timelapse_id, valid params", context do
     response =
       build_conn()
-      |> delete("/v1/cameras/austin/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> delete("/v2/cameras/austin/timelapses/timel-exid?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
 
     assert response.status == 200

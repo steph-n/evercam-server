@@ -14,17 +14,17 @@ defmodule EvercamMedia.ONVIFControllerEventsTest do
     {:ok, user: user}
   end
 
-  test "GET /v1/onvif/v20/Events/GetServiceCapabilities, returns something", context do
+  test "GET /v2/onvif/v20/Events/GetServiceCapabilities, returns something", context do
     use_cassette "ev_get_service_capabilities" do
-      conn = get build_conn(), "/v1/onvif/v20/Events/GetServiceCapabilities?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/Events/GetServiceCapabilities?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       subscription_policy_support = json_response(conn, 200) |> Map.get("Capabilities") |> Map.get("WSSubscriptionPolicySupport")
       assert subscription_policy_support == "true"
     end
   end
 
-  test "GET /v1/onvif/v20/Events/GetEventProperties, returns something", context do
+  test "GET /v2/onvif/v20/Events/GetEventProperties, returns something", context do
     use_cassette "get_event_properties" do
-      conn = get build_conn(), "/v1/onvif/v20/Events/GetEventProperties?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
+      conn = get build_conn(), "/v2/onvif/v20/Events/GetEventProperties?#{@access_params}&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}"
       fixed_topic_set = json_response(conn, 200) |> Map.get("FixedTopicSet")
       assert fixed_topic_set == "true"
     end

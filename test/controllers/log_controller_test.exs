@@ -8,8 +8,8 @@ defmodule EvercamMedia.LogControllerTest do
 
     params = %{
       id: camera.exid,
-      from: "1464486180",
-      to: "1464831780",
+      from: "2019-01-05T08:00:00.000Z",
+      to: "2019-02-05T08:00:00.000Z",
       page: "1",
       limit: "4"
     }
@@ -17,37 +17,37 @@ defmodule EvercamMedia.LogControllerTest do
     {:ok, user: user, camera: camera, params: params}
   end
 
-  test "GET /v1/cameras/:id/logs Camera not found", context do
+  test "GET /v2/cameras/:id/logs Camera not found", context do
     camera_exid = "focuscam"
-    response = build_conn() |> get("/v1/cameras/#{camera_exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+    response = build_conn() |> get("/v2/cameras/#{camera_exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
   end
 
-  test "GET /v1/cameras/:id/logs Unauthorized" do
+  test "GET /v2/cameras/:id/logs Unauthorized" do
     camera_exid = "austin"
-    response = build_conn() |> get("/v1/cameras/#{camera_exid}/logs?")
+    response = build_conn() |> get("/v2/cameras/#{camera_exid}/logs?")
 
     assert response.status == 401
     assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Unauthorized."}}
   end
 
-  test "GET /v1/cameras/:id/logs when params are valid!", context do
+  test "GET /v2/cameras/:id/logs when params are valid!", context do
     response =
       build_conn()
-      |> get("/v1/cameras/#{context[:camera].exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", context[:params])
+      |> get("/v2/cameras/#{context[:camera].exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", context[:params])
 
     response_body = %{"camera_exid" => "austin", "camera_name" => "Austin", "logs" => [], "pages" => 0.0}
     assert response.status == 200
     assert Poison.decode(response.resp_body) == {:ok, response_body}
   end
 
-  test "GET /v1/cameras/:id/logs when from is greater than to!", context do
+  test "GET /v2/cameras/:id/logs when from is greater than to!", context do
     params = Map.merge(context[:params], %{from: "1464918180", to: "1464831780"})
     response =
       build_conn()
-      |> get("/v1/cameras/#{context[:camera].exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> get("/v2/cameras/#{context[:camera].exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
     assert response.status == 400
     assert Poison.decode(response.resp_body) == {:ok, %{"message" => "From can't be higher than to."}}
   end

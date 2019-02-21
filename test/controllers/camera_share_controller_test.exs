@@ -17,10 +17,10 @@ defmodule EvercamMedia.CameraShareControllerTest do
     {:ok, user: user, camera: camera, share: share}
   end
 
-  test "GET /v1/cameras/:id/shares, with valid params", context do
+  test "GET /v2/cameras/:id/shares, with valid params", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     shares =
       response.resp_body
@@ -32,41 +32,41 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert shares["camera_id"] == context[:camera].exid
   end
 
-  test "GET /v1/cameras/:id/shares, when passed user_id not exist", context do
+  test "GET /v2/cameras/:id/shares, when passed user_id not exist", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/shares?user_id=johndoexyz&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/shares?user_id=johndoexyz&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "User 'johndoexyz' does not exist."
   end
 
-  test "GET /v1/cameras/:id/shares, when camera does not exist", context do
+  test "GET /v2/cameras/:id/shares, when camera does not exist", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austinxyz/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austinxyz/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "The austinxyz camera does not exist."
   end
 
-  test "GET /v1/cameras/:id/shares, when required keys are missing" do
+  test "GET /v2/cameras/:id/shares, when required keys are missing" do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/shares")
+      |> get("/v2/cameras/austin/shares")
 
     assert response.status == 200
     assert Poison.decode!(response.resp_body)["shares"] == []
   end
 
-  test "POST /v1/cameras/:id/shares, return share when sharee exists", context do
+  test "POST /v2/cameras/:id/shares, return share when sharee exists", context do
     params = %{
       email: ["abcxyz"],
       rights: "snapshot,list"
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     share =
       response.resp_body
@@ -79,14 +79,14 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert Map.get(share, "sharer_id") == context[:user].username
   end
 
-  test "POST /v1/cameras/:id/shares, return share request when sharee not exists", context do
+  test "POST /v2/cameras/:id/shares, return share request when sharee not exists", context do
     params = %{
       email: ["user@new.com"],
       rights: "snapshot,list"
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     share =
       response.resp_body
@@ -100,14 +100,14 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert Map.get(share, "email") == email
   end
 
-  test "POST /v1/cameras/:id/shares, camera already shared", context do
+  test "POST /v2/cameras/:id/shares, camera already shared", context do
     params = %{
       email: ["smithmarc"],
       rights: "snapshot,list"
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     message =
       response.resp_body
@@ -119,14 +119,14 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert message == "The camera has already been shared with this user. (#{params[:email]})"
   end
 
-  test "POST /v1/cameras/:id/shares, share request already exists", context do
+  test "POST /v2/cameras/:id/shares, share request already exists", context do
     params = %{
       email: ["share_request@xyz.com"],
       rights: "snapshot,list"
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     message =
       response.resp_body
@@ -138,14 +138,14 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert message == "A share request already exists for the '#{params[:email]}' email address for this camera. (#{params[:email]})"
   end
 
-  test "POST /v1/cameras/:id/shares, invalid rights", context do
+  test "POST /v2/cameras/:id/shares, invalid rights", context do
     params = %{
       email: ["abcxyz"],
       rights: "abc,list"
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     message =
       response.resp_body
@@ -157,14 +157,14 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert message == "Invalid rights specified in request. (#{params[:email]})"
   end
 
-  test "PATCH /v1/cameras/:id/shares, return share when valid params", context do
+  test "PATCH /v2/cameras/:id/shares, return share when valid params", context do
     params = %{
       email: "smithmarc",
       rights: "snapshot,list,view,edit"
     }
     response =
       build_conn()
-      |> patch("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> patch("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     share =
       response.resp_body
@@ -177,14 +177,14 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert Map.get(share, "sharer_id") == context[:user].username
   end
 
-  test "PATCH /v1/cameras/:id/shares, when camera not exists.", context do
+  test "PATCH /v2/cameras/:id/shares, when camera not exists.", context do
     params = %{
       email: "smithmarc",
       rights: "snapshot,list"
     }
     response =
       build_conn()
-      |> patch("/v1/cameras/austin1/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> patch("/v2/cameras/austin1/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     message =
       response.resp_body
@@ -195,14 +195,14 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert message == "The austin1 camera does not exist."
   end
 
-  test "PATCH /v1/cameras/:id/shares, when invalid rights.", context do
+  test "PATCH /v2/cameras/:id/shares, when invalid rights.", context do
     params = %{
       email: "smithmarc",
       rights: "snapshot,list,test"
     }
     response =
       build_conn()
-      |> patch("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> patch("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     message =
       response.resp_body
@@ -214,28 +214,28 @@ defmodule EvercamMedia.CameraShareControllerTest do
     assert message == ["Invalid rights specified in request."]
   end
 
-  test "DELETE /v1/cameras/:id/shares, when valid params", context do
+  test "DELETE /v2/cameras/:id/shares, when valid params", context do
     response =
       build_conn()
-      |> delete("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", %{email: "smithmarc"})
+      |> delete("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", %{email: "smithmarc"})
 
     assert response.status == 200
     assert response.resp_body == "{}"
   end
 
-  test "DELETE /v1/cameras/:id/shares, when share not found", context do
+  test "DELETE /v2/cameras/:id/shares, when share not found", context do
     response =
       build_conn()
-      |> delete("/v1/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", %{email: "smithmarc1"})
+      |> delete("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", %{email: "smithmarc1"})
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Sharee 'smithmarc1' not found."
   end
 
-  test "DELETE /v1/cameras/:id/shares, when required permission", _context do
+  test "DELETE /v2/cameras/:id/shares, when required permission", _context do
     response =
       build_conn()
-      |> delete("/v1/cameras/austin/shares", %{email: "smithmarc"})
+      |> delete("/v2/cameras/austin/shares", %{email: "smithmarc"})
 
     assert response.status == 401
     assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
@@ -244,7 +244,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
   test "GET /v/cameras/evercam-remembrance-camera/shares, return empty array when exid is evercam-remembrance-camera", context do
     response =
       build_conn()
-      |> get("/v1/cameras/evercam-remembrance-camera/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/evercam-remembrance-camera/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     shares =
       response.resp_body

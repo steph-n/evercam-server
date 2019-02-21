@@ -16,28 +16,28 @@ defmodule EvercamMedia.CompareControllerTest do
     {:ok, user: user, camera: camera, compare: compare}
   end
 
-  test "GET /v1/cameras/:id/compares, when passed camera_id not exist", context do
+  test "GET /v2/cameras/:id/compares, when passed camera_id not exist", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin1/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin1/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
   end
 
-  test "GET /v1/cameras/:id/compares, when passed invalid keys", _context do
+  test "GET /v2/cameras/:id/compares, when passed invalid keys", _context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/compares")
+      |> get("/v2/cameras/austin/compares")
 
     assert response.status == 401
     assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
-  test "GET /v1/cameras/:id/compares, with valid params", context do
+  test "GET /v2/cameras/:id/compares, with valid params", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     _compares =
       response.resp_body
@@ -48,37 +48,37 @@ defmodule EvercamMedia.CompareControllerTest do
     assert response.status() == 200
   end
 
-  test "GET /v1/cameras/:id/compares/:compare_id, when passed camera_id not exist", context do
+  test "GET /v2/cameras/:id/compares/:compare_id, when passed camera_id not exist", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin1/compares/compar-gstd?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin1/compares/compar-gstd?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
   end
 
-  test "GET /v1/cameras/:id/compares/:compare_id, when passed compare_id not exist", context do
+  test "GET /v2/cameras/:id/compares/:compare_id, when passed compare_id not exist", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/compares/compar-gstd1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/compares/compar-gstd1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Compare archive 'compar-gstd1' not found!"
   end
 
-  test "GET /v1/cameras/:id/compares/:compare_id, when passed invalid keys", _context do
+  test "GET /v2/cameras/:id/compares/:compare_id, when passed invalid keys", _context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/compares/compar-gstd")
+      |> get("/v2/cameras/austin/compares/compar-gstd")
 
     assert response.status == 403
     assert Poison.decode!(response.resp_body)["message"] == "Forbidden."
   end
 
-  test "GET /v1/cameras/:id/compares/:compare_id, with valid params", context do
+  test "GET /v2/cameras/:id/compares/:compare_id, with valid params", context do
     response =
       build_conn()
-      |> get("/v1/cameras/austin/compares/compar-gstd?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/cameras/austin/compares/compar-gstd?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     compares =
       response.resp_body
@@ -90,7 +90,7 @@ defmodule EvercamMedia.CompareControllerTest do
     assert compares["id"] == "compar-gstd"
   end
 
-  test "POST /v1/cameras/:id/compares, when invalid or nil api keys", _context do
+  test "POST /v2/cameras/:id/compares, when invalid or nil api keys", _context do
     timestamp = Calendar.DateTime.now!("UTC") |> Calendar.DateTime.Format.unix
     params = %{
       name: "New Compare",
@@ -100,13 +100,13 @@ defmodule EvercamMedia.CompareControllerTest do
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/compares", params)
+      |> post("/v2/cameras/austin/compares", params)
 
     assert response.status == 401
     assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
-  test "POST /v1/cameras/:id/compares, when passed camera_id not exist", context do
+  test "POST /v2/cameras/:id/compares, when passed camera_id not exist", context do
     timestamp = Calendar.DateTime.now!("UTC") |> Calendar.DateTime.Format.unix
     params = %{
       name: "New Compare",
@@ -116,13 +116,13 @@ defmodule EvercamMedia.CompareControllerTest do
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin1/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin1/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
   end
 
-  test "POST /v1/cameras/:id/compares, invalid params", context do
+  test "POST /v2/cameras/:id/compares, invalid params", context do
     timestamp = Calendar.DateTime.now!("UTC") |> Calendar.DateTime.Format.unix
     params = %{
       name: "New Compare",
@@ -130,12 +130,12 @@ defmodule EvercamMedia.CompareControllerTest do
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     assert response.status == 400
   end
 
-  test "POST /v1/cameras/:id/compares, valid params", context do
+  test "POST /v2/cameras/:id/compares, valid params", context do
     timestamp = Calendar.DateTime.now!("UTC") |> Calendar.DateTime.Format.unix
     params = %{
       name: "New Compare",
@@ -149,7 +149,7 @@ defmodule EvercamMedia.CompareControllerTest do
     }
     response =
       build_conn()
-      |> post("/v1/cameras/austin/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/cameras/austin/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     compare =
       response.resp_body

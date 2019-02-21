@@ -5,7 +5,7 @@ defmodule EvercamMedia.AuthTest do
     country = Repo.insert!(%Country{name: "Whatever", iso3166_a2: "WHTEVR"})
     user = Repo.insert!(%User{firstname: "Jake", lastname: "Doe",
       email: "jake@doe.com", api_id: UUID.uuid4(:hex), api_key: UUID.uuid4(:hex),
-      username: "jake_doe", password: "whatever123", country_id: country.id, payment_method: 0})
+      username: "jake_doe", password: "whatever123", country_id: country.id, payment_method: 0, is_admin: false, sign_in_count: 0})
 
     {:ok, country: country, user: user}
   end

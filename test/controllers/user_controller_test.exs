@@ -22,30 +22,30 @@ defmodule EvercamMedia.UserControllerTest do
     {:ok, user: user, params: params, share_request: share_request}
   end
 
-  test "GET /v1/users/:id when user not found!", context do
+  test "GET /v2/users/:id when user not found!", context do
     username = "legend"
-    response = build_conn() |> get("/v1/users/#{username}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+    response = build_conn() |> get("/v2/users/#{username}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
     response_body = %{"message" => "User does not exist."}
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body) == response_body
   end
 
-  test "GET /v1/users/:id/credentials Get users credentials", context do
+  test "GET /v2/users/:id/credentials Get users credentials", context do
     password = "password123"
-    response = build_conn() |> get("/v1/users/#{context[:user].username}/credentials?password=#{password}")
+    response = build_conn() |> get("/v2/users/#{context[:user].username}/credentials?password=#{password}")
 
     assert response.status == 200
   end
 
-  test "POST /v1/users/ when country is invalid!" do
+  test "POST /v2/users/ when country is invalid!" do
     params = %{
       country: "pki",
       token: "tokenvalue"
     }
     response =
       build_conn()
-      |> post("/v1/users", params)
+      |> post("/v2/users", params)
 
     response_body = %{"message" => "Country isn't valid!"}
 
@@ -53,7 +53,7 @@ defmodule EvercamMedia.UserControllerTest do
     assert Poison.decode!(response.resp_body) == response_body
   end
 
-  test "PATCH /v1/users/ when email is not valid while update!", context do
+  test "PATCH /v2/users/ when email is not valid while update!", context do
     params = %{email: "test @test.com"}
 
     expected_error = %{email: ["Email format isn't valid!"]}
@@ -64,19 +64,19 @@ defmodule EvercamMedia.UserControllerTest do
     assert error == expected_error
   end
 
-  test "POST /v1/users when user created successfully!", context do
+  test "POST /v2/users when user created successfully!", context do
     response =
       build_conn()
-      |> post("/v1/users", context[:params])
+      |> post("/v2/users", context[:params])
 
     assert response.status == 201
   end
 
-  test "POST /v1/users when user is being created from share request key!", context do
+  test "POST /v2/users when user is being created from share request key!", context do
     params = Map.merge(context[:params], %{share_request_key: context[:share_request].key})
     response =
       build_conn()
-      |> post("/v1/users", params)
+      |> post("/v2/users", params)
 
     signed_up_user =
       response.resp_body
@@ -88,7 +88,7 @@ defmodule EvercamMedia.UserControllerTest do
     assert signed_up_user["confirmed_at"] != nil
   end
 
-  test "POST /v1/users/:username when user's password is not valid!" do
+  test "POST /v2/users/:username when user's password is not valid!" do
     user_params =
       %{
           username: "testuser",
@@ -101,7 +101,7 @@ defmodule EvercamMedia.UserControllerTest do
 
     response =
       build_conn()
-      |> post("/v1/users/", user_params)
+      |> post("/v2/users/", user_params)
 
     error =
       response.resp_body
@@ -112,11 +112,11 @@ defmodule EvercamMedia.UserControllerTest do
     assert response.status == 400
   end
 
-  test "PATCH /v1/users/:username when user updated successfully!", context do
+  test "PATCH /v2/users/:username when user updated successfully!", context do
     updated_params = %{email: "doe@john.com", firstname: "Doe", lastname: "John"}
     response =
       build_conn()
-      |> patch("/v1/users/#{context[:user].username}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
+      |> patch("/v2/users/#{context[:user].username}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
 
     updated_user =
       response.resp_body
@@ -130,10 +130,10 @@ defmodule EvercamMedia.UserControllerTest do
     assert updated_user["lastname"] == "John"
   end
 
-  test "POST /v1/users/exist/:input when user is present with the given email or username" do
+  test "POST /v2/users/exist/:input when user is present with the given email or username" do
     response =
       build_conn()
-      |> post("/v1/users/exist/johndoe")
+      |> post("/v2/users/exist/johndoe")
 
     user =
       response.resp_body
@@ -144,10 +144,10 @@ defmodule EvercamMedia.UserControllerTest do
     assert user == true
   end
 
-  test "POST /v1/users/exist/:input when user is not present with the given email or username" do
+  test "POST /v2/users/exist/:input when user is not present with the given email or username" do
     response =
       build_conn()
-      |> post("/v1/users/exist/jhonydoe")
+      |> post("/v2/users/exist/jhonydoe")
 
     user =
       response.resp_body

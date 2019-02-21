@@ -11,68 +11,68 @@ defmodule EvercamMedia.SnapmailControllerTest do
     {:ok, user: user, camera: camera, snapmail: snapmail}
   end
 
-  test "GET /v1/snapmails, all snapmails created", context do
+  test "GET /v2/snapmails, all snapmails created", context do
     response =
       build_conn()
-      |> get("/v1/snapmails?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}&camera_id=#{context[:camera].exid}")
+      |> get("/v2/snapmails?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}&camera_id=#{context[:camera].exid}")
 
     assert response.status == 200
   end
 
-  test "UPDATE /v1/snapmails/snapmail_id", context do
+  test "UPDATE /v2/snapmails/snapmail_id", context do
     updated_params = %{
       timezone: "Etc/UTC",
       notify_days: "Monday,Friday"
     }
     response =
       build_conn()
-      |> patch("/v1/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
+      |> patch("/v2/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
 
     assert Poison.decode!(response.resp_body)["snapmails"] |> List.first |> Map.get("timezone") == "Etc/UTC"
     assert Poison.decode!(response.resp_body)["snapmails"] |> List.first |> Map.get("notify_days") == "Monday,Friday"
     assert response.status == 200
   end
 
-  test "GET /v1/snapmails/snapmail_id when snapmail doesn't exist", context do
+  test "GET /v2/snapmails/snapmail_id when snapmail doesn't exist", context do
     response =
       build_conn()
-      |> get("/v1/snapmails/test_snapmail?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> get("/v2/snapmails/test_snapmail?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
     assert Poison.decode!(response.resp_body)["message"] == "Snapmail not found."
   end
 
-  test "DELETE /v1/snapmails, delete a snapmail", context do
+  test "DELETE /v2/snapmails, delete a snapmail", context do
     response =
       build_conn()
-      |> delete("/v1/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
+      |> delete("/v2/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 200
     assert Poison.decode!(response.resp_body) == %{}
   end
 
-  test "UPDATE /v1/snapmails, when notify_time is invalid", context do
+  test "UPDATE /v2/snapmails, when notify_time is invalid", context do
     updated_params = %{
       notify_time: "ett",
     }
     response =
       build_conn()
-      |> patch("/v1/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
+      |> patch("/v2/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
 
     assert Poison.decode!(response.resp_body)["message"] |> Map.get("notify_time") == ["Notify time is invalid"]
     assert response.status == 400
   end
 
-  test "GET /v1/snapmails, when api credentials are wrong", _context do
+  test "GET /v2/snapmails, when api credentials are wrong", _context do
     response =
       build_conn()
-      |> get("/v1/snapmails")
+      |> get("/v2/snapmails")
 
     assert response.status == 401
     assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
-  test "POST /v1/snapmails, valid params", context do
+  test "POST /v2/snapmails, valid params", context do
     params = %{
       camera_exids: "#{context[:camera].exid}",
       recipients: "john@doe.com",
@@ -83,7 +83,7 @@ defmodule EvercamMedia.SnapmailControllerTest do
     }
     response =
       build_conn()
-      |> post("/v1/snapmails?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
+      |> post("/v2/snapmails?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     timelapse =
       response.resp_body
