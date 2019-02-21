@@ -4200,7 +4200,7 @@
             "type": "string",
             "required": true,
             "name": "mode",
-            "in": "query",
+            "in": "path",
             "enum": [
               "in",
               "out"
@@ -4458,7 +4458,7 @@
             "type": "string",
             "required": true,
             "name": "direction",
-            "in": "query",
+            "in": "path",
             "enum": [
               "left",
               "right",
@@ -4538,7 +4538,7 @@
     "version": "1.0",
     "title": "Evercam Server"
   },
-  "host": "localhost:4000",
+  "host": "media.evercam.io",
   "definitions": {
     "Vendor": {
       "type": "object",

@@ -186,7 +186,7 @@ defmodule EvercamMediaWeb.ONVIFPTZController do
     summary "Move the camera to given direction."
     parameters do
       id :path, :string, "Unique identifier for camera.", required: true
-      direction :query, :string, "", enum: ["left", "right", "up", "down"], required: true
+      direction :path, :string, "", enum: ["left", "right", "up", "down"], required: true
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
     end
@@ -212,7 +212,7 @@ defmodule EvercamMediaWeb.ONVIFPTZController do
     summary "Zoom in/out of the camera."
     parameters do
       id :path, :string, "Unique identifier for camera.", required: true
-      mode :query, :string, "", enum: ["in", "out"], required: true
+      mode :path, :string, "", enum: ["in", "out"], required: true
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
     end
