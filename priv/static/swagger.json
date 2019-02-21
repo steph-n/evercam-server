@@ -4538,7 +4538,7 @@
     "version": "1.0",
     "title": "Evercam Server"
   },
-  "host": "media.evercam.io",
+  "host": "localhost:4000",
   "definitions": {
     "Vendor": {
       "type": "object",
@@ -4553,8 +4553,8 @@
           "description": ""
         },
         "known_macs": {
-          "type": "list",
-          "example": [
+          "type": "array",
+          "enum": [
             "8C:AE:89",
             "00:0D:F0",
             "00:A1:B0"
@@ -5114,11 +5114,11 @@
           "type": "object",
           "properties": {
             "lng": {
-              "type": "float",
+              "type": "integer",
               "description": ""
             },
             "lat": {
-              "type": "float",
+              "type": "integer",
               "description": ""
             }
           }

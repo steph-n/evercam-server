@@ -10,7 +10,7 @@ defmodule EvercamMediaWeb.VendorController do
         properties do
           name :string, ""
           logo :string, ""
-          known_macs :list, "", example: ["8C:AE:89", "00:0D:F0", "00:A1:B0"]
+          known_macs :array, "", enum: ["8C:AE:89", "00:0D:F0", "00:A1:B0"]
           id :string, ""
         end
       end
