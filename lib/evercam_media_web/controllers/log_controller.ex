@@ -42,7 +42,8 @@ defmodule EvercamMediaWeb.LogController do
          {:ok, camera} <- camera_exists(params["camera_exid"])
     do
       extra = %{
-        agent: params["agent"]
+        agent: params["agent"],
+        custom_message: params["custom_message"]
       }
       |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
       Util.log_activity(current_user, camera, params["action"], extra)
