@@ -88,7 +88,7 @@ defmodule EvercamMediaWeb.StreamController do
       [username, password, rtsp_url, fullname] = Util.decode(stream_token)
       camera = Camera.get_full(exid)
       check_auth(camera, username, password)
-      check_port(camera)
+      check_port(camera, camera.exid)
       stream(rtsp_url, token, camera, ip, fullname, command)
       {200, ""}
     rescue
@@ -105,7 +105,12 @@ defmodule EvercamMediaWeb.StreamController do
     end
   end
 
-  defp check_port(camera) do
+  defp check_port(camera, camera_exid) when camera_exid in ["dunke-wqnzu", "dunke-ibcwt", "dunke-bnivp", "dunke-gqiwe"] do
+    host = Camera.host(camera)
+    port = Camera.port(camera, "external", "rtsp")
+    Logger.error "[check_port] [#{camera_exid}] [Camera port status: #{!Util.port_open?(host, "#{port}")}]"
+  end
+  defp check_port(camera, _) do
     host = Camera.host(camera)
     port = Camera.port(camera, "external", "rtsp")
     if !Util.port_open?(host, "#{port}") do

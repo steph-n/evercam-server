@@ -48,7 +48,6 @@ defmodule EvercamMedia.ArchiveControllerTest do
 
   test "POST /v2/cameras/:id/archives when params are valid!", context do
     params = Map.merge(context[:params], %{public: "false"})
-    IO.inspect params
     response =
       build_conn()
       |> post("/v2/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
