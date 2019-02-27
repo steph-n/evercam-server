@@ -698,6 +698,7 @@ defmodule EvercamMediaWeb.CameraController do
       url: Camera.snapshot_url(camera),
       username: Camera.username(camera),
       password: Camera.password(camera),
+      auth: Camera.get_auth_type(camera),
       vendor_exid: Camera.get_vendor_attr(camera, :exid),
       timestamp: Calendar.DateTime.Format.unix(Calendar.DateTime.now_utc)
     }

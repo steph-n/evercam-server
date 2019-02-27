@@ -124,6 +124,7 @@ defmodule EvercamMedia.Snapshot.Streamer do
       timestamp: timestamp,
       url: Camera.snapshot_url(camera),
       vendor_exid: Camera.get_vendor_attr(camera, :exid),
+      auth: Camera.get_auth_type(camera),
       username: Camera.username(camera),
       password: Camera.password(camera)
     }

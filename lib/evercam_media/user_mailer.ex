@@ -279,7 +279,8 @@ defmodule EvercamMedia.UserMailer do
       url: Camera.snapshot_url(camera),
       username: Camera.username(camera),
       password: Camera.password(camera),
-      vendor_exid: Camera.get_vendor_attr(camera, :exid)
+      vendor_exid: Camera.get_vendor_attr(camera, :exid),
+      auth: Camera.get_auth_type(camera)
     }
   end
 

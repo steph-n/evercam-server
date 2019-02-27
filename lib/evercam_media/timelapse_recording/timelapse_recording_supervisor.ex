@@ -15,7 +15,6 @@ defmodule EvercamMedia.TimelapseRecording.TimelapseRecordingSupervisor do
   use Supervisor
   require Logger
   alias EvercamMedia.TimelapseRecording.TimelapseRecordingWorker
-  alias EvercamMedia.Util
 
   def start_link() do
     Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -113,7 +112,9 @@ defmodule EvercamMedia.TimelapseRecording.TimelapseRecordingSupervisor do
           recording: TimelapseRecording.recording(camera.timelapse_recordings),
           timezone: camera.timezone,
           url: Camera.hd_snapshot_url(camera),
-          auth: Util.auth(camera),
+          auth: Camera.get_auth_type(camera),
+          username: Camera.username(camera),
+          password: Camera.password(camera),
           sleep: TimelapseRecording.sleep(camera.timelapse_recordings),
           initial_sleep: TimelapseRecording.initial_sleep(camera.timelapse_recordings),
           bucket_path: get_bucket_path(camera.exid, bucket_path),

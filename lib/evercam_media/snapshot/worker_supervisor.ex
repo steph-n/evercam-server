@@ -15,7 +15,6 @@ defmodule EvercamMedia.Snapshot.WorkerSupervisor do
   use Supervisor
   require Logger
   alias EvercamMedia.Snapshot.StreamerSupervisor
-  alias EvercamMedia.Util
   alias EvercamMedia.Snapshot.Worker
 
   def start_link() do
@@ -100,7 +99,9 @@ defmodule EvercamMedia.Snapshot.WorkerSupervisor do
           recording: CloudRecording.recording(camera.cloud_recordings),
           timezone: camera.timezone,
           url: Camera.snapshot_url(camera),
-          auth: Util.auth(camera),
+          auth: Camera.get_auth_type(camera),
+          username: Camera.username(camera),
+          password: Camera.password(camera),
           sleep: CloudRecording.sleep(camera.cloud_recordings),
           initial_sleep: CloudRecording.initial_sleep(camera.cloud_recordings),
           is_paused: is_paused,

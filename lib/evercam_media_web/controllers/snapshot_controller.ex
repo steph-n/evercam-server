@@ -694,6 +694,7 @@ defmodule EvercamMediaWeb.SnapshotController do
       url: Camera.snapshot_url(camera),
       username: Camera.username(camera),
       password: Camera.password(camera),
+      auth: Camera.get_auth_type(camera),
       vendor_exid: Camera.get_vendor_attr(camera, :exid),
       timestamp: Calendar.DateTime.Format.unix(Calendar.DateTime.now_utc),
       store_snapshot: store_snapshot,
@@ -707,7 +708,8 @@ defmodule EvercamMediaWeb.SnapshotController do
       description: "Test snapshot",
       url: "#{params["external_url"]}/#{params["jpg_url"]}",
       username: params["cam_username"],
-      password: params["cam_password"]
+      password: params["cam_password"],
+      auth: params["vendor_id"] |> VendorModel.get_auth_type,
     }
   end
 
