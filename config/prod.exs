@@ -81,7 +81,8 @@ config :evercam_media,
     {"@daily", {EvercamMedia.Util, :kill_all_ffmpegs, []}},
     {"@hourly", {EvercamMedia.ShareRequestReminder, :check_share_requests, []}},
     {"@hourly", {EvercamMedia.OfflinePeriodicReminder, :offline_cameras_reminder, []}},
-    {"* * * * *", {EvercamMedia.Util, :check_camera_streams, []}}
+    {"* * * * *", {EvercamMedia.Util, :check_camera_streams, [0]}},
+    {"* * * * *", {EvercamMedia.Util, :check_camera_streams, [30000]}}
   ]
 
 config :evercam_media, EvercamMedia.Mailer,

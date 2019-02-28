@@ -199,7 +199,8 @@ defmodule EvercamMedia.Util do
     spawn(fn -> Camera.all |> Enum.map(&(invalidate_response_time_cache &1)) end)
   end
 
-  def check_camera_streams do
+  def check_camera_streams(sleep_period) do
+    :timer.sleep(sleep_period)
     ["dunke-wqnzu", "dunke-ibcwt", "dunke-bnivp", "dunke-gqiwe"]
     |> Enum.each(fn(camera_exid) ->
       camera = Camera.get_full(camera_exid)
