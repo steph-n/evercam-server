@@ -125,7 +125,7 @@ defmodule EvercamMediaWeb.StreamController do
   end
 
   defp stream(rtsp_url, token, camera, ip, fullname, :check) do
-    case length(ffmpeg_pids(rtsp_url)) do
+    case length(Util.ffmpeg_pids(rtsp_url)) do
       0 ->
         spawn(fn -> MetaData.delete_by_camera_and_action(camera.id, "hls") end)
         start_stream(rtsp_url, token, camera, ip, fullname, "hls")
@@ -153,7 +153,7 @@ defmodule EvercamMediaWeb.StreamController do
 
   defp kill_streams(rtsp_url) do
     rtsp_url
-    |> ffmpeg_pids
+    |> Util.ffmpeg_pids
     |> Enum.each(fn(pid) -> Porcelain.shell("kill -9 #{pid}") end)
   end
 
@@ -165,11 +165,6 @@ defmodule EvercamMediaWeb.StreamController do
       :timer.sleep(500)
       sleep_until_hls_playlist_exists(token, retry + 1)
     end
-  end
-
-  defp ffmpeg_pids(rtsp_url) do
-    Porcelain.shell("ps -ef | grep ffmpeg | grep '#{rtsp_url}' | grep -v grep | awk '{print $2}'").out
-    |> String.split
   end
 
   defp construct_ffmpeg_command(rtsp_url, token) do
@@ -184,7 +179,7 @@ defmodule EvercamMediaWeb.StreamController do
         false ->
           pid =
             rtsp_url
-            |> ffmpeg_pids
+            |> Util.ffmpeg_pids
             |> List.first
 
           construct_params(fullname, vendor, camera.id, action, ip, pid, rtsp_url, token, stream_in)

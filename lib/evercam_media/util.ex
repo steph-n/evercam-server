@@ -199,6 +199,26 @@ defmodule EvercamMedia.Util do
     spawn(fn -> Camera.all |> Enum.map(&(invalidate_response_time_cache &1)) end)
   end
 
+  def check_camera_streams do
+    ["dunke-wqnzu", "dunke-ibcwt", "dunke-bnivp", "dunke-gqiwe"]
+    |> Enum.each(fn(camera_exid) ->
+      camera = Camera.get_full(camera_exid)
+      rtsp_url = Camera.rtsp_url(camera)
+      case length(ffmpeg_pids(rtsp_url)) do
+        0 ->
+          token = url_token(camera)
+          "ffmpeg -rtsp_transport tcp -stimeout 6000000 -i '#{rtsp_url}' -f lavfi -i aevalsrc=0 -vcodec copy -acodec aac -map 0:0 -map 1:0 -shortest -strict experimental -f flv rtmp://localhost:1935/live/#{token}"
+          |> Porcelain.spawn_shell
+        _ -> Logger.debug("Stream running for #{camera.name}")
+      end
+    end)
+  end
+
+  def ffmpeg_pids(rtsp_url) do
+    Porcelain.shell("ps -ef | grep ffmpeg | grep '#{rtsp_url}' | grep -v grep | awk '{print $2}'").out
+    |> String.split
+  end
+
   def invalidate_response_time_cache(nil), do: :noop
   def invalidate_response_time_cache(camera) do
     ConCache.delete(:camera_response_times, camera.exid)
