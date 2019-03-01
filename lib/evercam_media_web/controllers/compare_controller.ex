@@ -216,8 +216,8 @@ defmodule EvercamMediaWeb.CompareController do
 
   defp start_export(true, camera_exid, compare_exid, params) do
     spawn fn -> create_animated(params["create_animation"], camera_exid, compare_exid, params["before_image"], params["after_image"]) end
-    spawn fn -> do_export_image(camera_exid, compare_exid, String.to_integer(params["before_date"]), params["before_image"], "start") end
-    spawn fn -> do_export_image(camera_exid, compare_exid, String.to_integer(params["after_date"]), params["after_image"], "end") end
+    spawn fn -> do_export_image(camera_exid, compare_exid, convert_to_datetime(params["before_date"]), params["before_image"], "start") end
+    spawn fn -> do_export_image(camera_exid, compare_exid, convert_to_datetime(params["after_date"]), params["after_image"], "end") end
   end
   defp start_export(_is_run, _camera_exid, _compare_exid, _params), do: :nothing
 
