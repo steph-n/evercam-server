@@ -73,6 +73,9 @@ config :ex_aws,
   secret_access_key: System.get_env["SECRET_ACCESS_KEY"],
   region: "eu-west-1"
 
+config :evercam_media,
+  dunkettle_cameras: System.get_env["DUNKETTLE_CAMERAS"] || ""
+
 config :evercam_media, :phoenix_swagger,
   swagger_files: %{
     "priv/static/swagger.json" => [

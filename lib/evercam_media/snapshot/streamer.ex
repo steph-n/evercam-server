@@ -12,6 +12,8 @@ defmodule EvercamMedia.Snapshot.Streamer do
   alias EvercamMedia.Snapshot.StreamerSupervisor
   require Logger
 
+  @dunkettle_cameras Application.get_env(:evercam_media, :dunkettle_cameras) |> String.split(",")
+
   ################
   ## Client API ##
   ################
@@ -108,10 +110,7 @@ defmodule EvercamMedia.Snapshot.Streamer do
     |> Enum.join(", ")
   end
 
-  defp get_fps("dunke-wqnzu"), do: 2000
-  defp get_fps("dunke-ibcwt"), do: 2000
-  defp get_fps("dunke-bnivp"), do: 2000
-  defp get_fps("dunke-gqiwe"), do: 2000
+  defp get_fps(camera_exid) when camera_exid in @dunkettle_cameras, do: 2000
   defp get_fps(_), do: 1000
 
   defp check_empty_nil(desc, value) when value in [nil, ""], do: desc

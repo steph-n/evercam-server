@@ -201,7 +201,8 @@ defmodule EvercamMedia.Util do
 
   def check_camera_streams(sleep_period) do
     :timer.sleep(sleep_period)
-    ["dunke-wqnzu", "dunke-ibcwt", "dunke-bnivp", "dunke-gqiwe"]
+    Application.get_env(:evercam_media, :dunkettle_cameras)
+    |> String.split(",")
     |> Enum.each(fn(camera_exid) ->
       camera = Camera.get_full(camera_exid)
       rtsp_url = Camera.rtsp_url(camera)

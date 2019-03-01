@@ -5,6 +5,7 @@ defmodule EvercamMediaWeb.StreamController do
 
   @hls_dir "/tmp/hls"
   @hls_url Application.get_env(:evercam_media, :hls_url)
+  @dunkettle_cameras Application.get_env(:evercam_media, :dunkettle_cameras) |> String.split(",")
 
   def rtmp(conn, params) do
     ensure_nvr_stream(conn, params, params["nvr"])
@@ -34,15 +35,10 @@ defmodule EvercamMediaWeb.StreamController do
     json(conn, %{message: message})
   end
 
-  defp delete_meta_and_kill(camera_id, camera_exid, rtsp_url) do
+  defp delete_meta_and_kill(camera_id, camera_exid, _) when camera_exid in @dunkettle_cameras, do: MetaData.delete_by_camera_id(camera_id)
+  defp delete_meta_and_kill(camera_id, _, rtsp_url) do
     MetaData.delete_by_camera_id(camera_id)
-    case camera_exid do
-      "dunke-wqnzu" -> :noop
-      "dunke-ibcwt" -> :noop
-      "dunke-bnivp" -> :noop
-      "dunke-gqiwe" -> :noop
-      _ -> kill_streams(rtsp_url)
-    end
+    kill_streams(rtsp_url)
   end
 
   defp hls_response(200, conn, params, _) do
@@ -105,7 +101,7 @@ defmodule EvercamMediaWeb.StreamController do
     end
   end
 
-  defp check_port(camera, camera_exid) when camera_exid in ["dunke-wqnzu", "dunke-ibcwt", "dunke-bnivp", "dunke-gqiwe"] do
+  defp check_port(camera, camera_exid) when camera_exid in @dunkettle_cameras do
     host = Camera.host(camera)
     port = Camera.port(camera, "external", "rtsp")
     Logger.error "[check_port] [#{camera_exid}] [Camera port status: #{!Util.port_open?(host, "#{port}")}]"
