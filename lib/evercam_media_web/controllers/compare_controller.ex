@@ -275,14 +275,14 @@ defmodule EvercamMediaWeb.CompareController do
 
   defp delete_files(compare, camera_exid) do
     spawn(fn ->
-      before_date = Util.ecto_datetime_to_unix(compare.before_date)
-      after_date = Util.ecto_datetime_to_unix(compare.after_date)
+      before_unix = compare.before_date |> Calendar.DateTime.Format.unix
+      after_unix = compare.after_date |> Calendar.DateTime.Format.unix
       animation_path = "#{camera_exid}/compares/#{compare.exid}/#{compare.exid}"
       old_animation_path = "#{camera_exid}/compares/#{compare.exid}"
-      before_image = "#{S3.construct_compare_bucket_path(camera_exid, compare.exid)}#{S3.construct_compare_file_name(before_date, "start")}"
-      old_before_image = "#{S3.construct_bucket_path(camera_exid, before_date)}#{S3.construct_file_name(before_date)}"
-      after_image = "#{S3.construct_compare_bucket_path(camera_exid, compare.exid)}#{S3.construct_compare_file_name(after_date, "end")}"
-      old_after_image = "#{S3.construct_bucket_path(camera_exid, after_date)}#{S3.construct_file_name(after_date)}"
+      before_image = "#{S3.construct_compare_bucket_path(camera_exid, compare.exid)}#{S3.construct_compare_file_name(compare.before_date, "start")}"
+      old_before_image = "#{S3.construct_bucket_path(camera_exid, before_unix)}#{S3.construct_file_name(before_unix)}"
+      after_image = "#{S3.construct_compare_bucket_path(camera_exid, compare.exid)}#{S3.construct_compare_file_name(compare.after_date, "end")}"
+      old_after_image = "#{S3.construct_bucket_path(camera_exid, after_unix)}#{S3.construct_file_name(after_unix)}"
       files = [
         "#{after_image}",
         "#{before_image}",
