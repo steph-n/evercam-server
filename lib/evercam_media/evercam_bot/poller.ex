@@ -29,6 +29,13 @@ defmodule EvercamMedia.EvercamBot.Poller do
   end
 
   @doc """
+  Take care of unknown messages which otherwise would trigger function clause mismatch error.
+  """
+  def handle_info(_, state) do
+    {:noreply, [], state}
+  end
+
+  @doc """
     Client
   """
 
