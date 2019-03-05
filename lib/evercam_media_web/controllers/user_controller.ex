@@ -187,7 +187,6 @@ defmodule EvercamMediaWeb.UserController do
               |> Base.encode16
               |> String.downcase
 
-            share_default_camera(user)
             EvercamMedia.UserMailer.confirm(user, code)
             Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
           else
@@ -527,15 +526,6 @@ defmodule EvercamMediaWeb.UserController do
 
   defp has_share_request_key?(value) when value in [nil, ""], do: false
   defp has_share_request_key?(_value), do: true
-
-  defp share_default_camera(user) do
-    evercam_user = User.by_username("evercam")
-    remembrance_camera = Camera.get_remembrance_camera
-    rights = Util.camera_share_get_rights("public", evercam_user, remembrance_camera)
-    message = "Default camera shared with newly created user."
-
-    CameraShare.create_share(remembrance_camera, user, evercam_user, rights, message, "public")
-  end
 
   defp create_share_for_request(nil, _user, conn), do: render_error(conn, 400, "Camera share request does not exist.")
   defp create_share_for_request(share_request, user, conn) do
