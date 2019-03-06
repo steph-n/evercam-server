@@ -9,9 +9,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
     _access_token1 = Repo.insert!(%AccessToken{user_id: user3.id, request: UUID.uuid4(:hex), is_revoked: false})
     _access_token2 = Repo.insert!(%AccessToken{user_id: user2.id, request: UUID.uuid4(:hex), is_revoked: false})
     camera = Repo.insert!(%Camera{owner_id: user.id, name: "Austin", exid: "austin", is_public: false, config: ""})
-    remembrance_camera = Repo.insert!(%Camera{owner_id: user.id, name: "Herbst Wicklow Cam", exid: "evercam-remembrance-camera", is_public: false, config: ""})
     share = Repo.insert!(%CameraShare{camera_id: camera.id, user_id: user2.id, sharer_id: user.id, kind: "private"})
-    _share2 = Repo.insert!(%CameraShare{camera_id: remembrance_camera.id, user_id: user2.id, sharer_id: user.id, kind: "private"})
     _share_request = Repo.insert!(%CameraShareRequest{camera_id: camera.id, user_id: user.id, email: "share_request@xyz.com", status: -1, rights: "snapshot,list", key: UUID.uuid4(:hex)})
 
     {:ok, user: user, camera: camera, share: share}
@@ -239,19 +237,5 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     assert response.status == 401
     assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
-  end
-
-  test "GET /v/cameras/evercam-remembrance-camera/shares, return empty array when exid is evercam-remembrance-camera", context do
-    response =
-      build_conn()
-      |> get("/v2/cameras/evercam-remembrance-camera/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
-
-    shares =
-      response.resp_body
-      |> Poison.decode!
-      |> Map.get("shares")
-
-    assert shares == []
-    assert response.status == 200
   end
 end

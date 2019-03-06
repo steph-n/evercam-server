@@ -50,8 +50,6 @@ defmodule EvercamMediaWeb.CameraShareController do
     do
       shares =
         cond do
-          user == nil && exid == "evercam-remembrance-camera" ->
-            []
           user != nil && current_user != nil ->
             CameraShare.user_camera_share(camera, user)
           current_user != nil && caller_can_view(current_user, camera) ->
@@ -191,7 +189,6 @@ defmodule EvercamMediaWeb.CameraShareController do
     cond do
       !caller ->
         render_error(conn, 401, "Unauthorized.")
-      params["camera_id"] == "evercam-remembrance-camera" -> json(conn, %{})
       true ->
         shared_users =
           caller.id
