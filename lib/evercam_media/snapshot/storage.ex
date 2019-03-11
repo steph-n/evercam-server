@@ -266,7 +266,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
-  defp request_from_seaweedfs(url, type, attribute) do
+  def request_from_seaweedfs(url, type, attribute) do
     hackney = [pool: :seaweedfs_download_pool, recv_timeout: 15000]
     with {:ok, response} <- HTTPoison.get(url, ["Accept": "application/json"], hackney: hackney),
          %HTTPoison.Response{status_code: 200, body: body} <- response,
