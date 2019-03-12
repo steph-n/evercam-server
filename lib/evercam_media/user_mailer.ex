@@ -5,6 +5,7 @@ defmodule EvercamMedia.UserMailer do
   import SnapmailLogs, only: [save_snapmail: 4]
 
   @from Application.get_env(:evercam_media, EvercamMediaWeb.Endpoint)[:email]
+  @no_reply "Evercam <no-reply@evercam.io>"
   @year Calendar.DateTime.now_utc |> Calendar.Strftime.strftime!("%Y")
 
   def cr_settings_changed(current_user, camera, cloud_recording, old_cloud_recording, user_request_ip) do
@@ -28,7 +29,7 @@ defmodule EvercamMedia.UserMailer do
 
   def confirm(user, code) do
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(user.email)
     |> subject("Evercam Confirmation")
     |> render_body("confirm.html", %{user: user, code: code, year: @year})
@@ -43,7 +44,7 @@ defmodule EvercamMedia.UserMailer do
     |> String.split(",", trim: true)
     |> Enum.each(fn(email) ->
       new()
-      |> from(@from)
+      |> from(@no_reply)
       |> to(email)
       |> add_attachment(thumbnail)
       |> subject("\"#{camera.name}\" camera is now #{status}")
@@ -63,7 +64,7 @@ defmodule EvercamMedia.UserMailer do
     |> String.split(",", trim: true)
     |> Enum.each(fn(email) ->
       new()
-      |> from(@from)
+      |> from(@no_reply)
       |> to(email)
       |> add_attachment(thumbnail)
       |> subject("#{subject} reminder: \"#{camera.name}\" camera has gone offline")
@@ -75,7 +76,7 @@ defmodule EvercamMedia.UserMailer do
   def camera_shared_notification(user, camera, sharee_email, message) do
     thumbnail = get_thumbnail(camera)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(sharee_email)
     |> bcc(user.email)
     |> add_attachment(thumbnail)
@@ -88,7 +89,7 @@ defmodule EvercamMedia.UserMailer do
   def camera_share_request_notification(user, camera, email, message, key) do
     thumbnail = get_thumbnail(camera)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(email)
     |> bcc(["#{user.email}", "marco@evercam.io", "vinnie@evercam.io", "erin@evercam.io"])
     |> add_attachment(thumbnail)
@@ -101,7 +102,7 @@ defmodule EvercamMedia.UserMailer do
   def accepted_share_request_notification(user, camera, email) do
     thumbnail = get_thumbnail(camera)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(user.email)
     |> add_attachment(thumbnail)
     |> subject("#{email} has accepted your request to view your camera")
@@ -112,7 +113,7 @@ defmodule EvercamMedia.UserMailer do
   def revoked_share_request_notification(user, camera, email) do
     thumbnail = get_thumbnail(camera)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(user.email)
     |> bcc(["marco@evercam.io", "vinnie@evercam.io", "erin@evercam.io"])
     |> add_attachment(thumbnail)
@@ -124,7 +125,7 @@ defmodule EvercamMedia.UserMailer do
   def camera_create_notification(user, camera) do
     thumbnail = get_thumbnail(camera)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(user.email)
     |> bcc(["marco@evercam.io", "vinnie@evercam.io", "erin@evercam.io"])
     |> add_attachment(thumbnail)
@@ -135,7 +136,7 @@ defmodule EvercamMedia.UserMailer do
 
   def password_reset_request(user) do
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(user.email)
     |> subject("Password reset requested for Evercam")
     |> render_body("password_reset_request.html", %{user: user, year: @year})
@@ -145,7 +146,7 @@ defmodule EvercamMedia.UserMailer do
   def archive_completed(archive, email) do
     thumbnail = Storage.load_archive_thumbnail(archive.camera.exid, archive.exid)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(email)
     |> add_attachment(thumbnail)
     |> subject("Archive #{archive.title} is ready.")
@@ -157,7 +158,7 @@ defmodule EvercamMedia.UserMailer do
     thumbnail = get_thumbnail(archive.camera)
     archive_failed_dev(archive, thumbnail)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(email)
     |> add_attachment(thumbnail)
     |> subject("Archive #{archive.title} is failed.")
@@ -197,7 +198,7 @@ defmodule EvercamMedia.UserMailer do
     from_d = get_formatted_date(snapshot_extractor.from_date)
     to_d = get_formatted_date(snapshot_extractor.to_date)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(snapshot_extractor.requestor)
     |> subject("Snapshot Extraction (Local) started")
     |> render_body("snapshot_extractor_alert.html", %{snapshot_extractor: snapshot_extractor, from_d: from_d, to_d: to_d, interval: parse_interval(Integer.floor_div(snapshot_extractor.interval, 60)), year: @year})
@@ -207,7 +208,7 @@ defmodule EvercamMedia.UserMailer do
   def snapshot_extraction_completed(snapshot_extractor, snap_count) do
     url = get_dropbox_url(snapshot_extractor)
     new()
-    |> from(@from)
+    |> from(@no_reply)
     |> to(snapshot_extractor.requestor)
     |> subject("Snapshot Extraction (Local) Completed")
     |> render_body("snapshot_extractor_complete.html", %{camera: snapshot_extractor.camera.name, count: snap_count, dropbox_url: url, year: @year})

@@ -5,7 +5,7 @@ defmodule EvercamMedia.CleanAssetsFromSeaweed do
   alias EvercamMedia.Snapshot.Storage
   require Logger
 
-  def clean_weed(server_ip, type, attribute) do
+  def clean_weed_assets(server_ip, type, attribute) do
     Storage.request_from_seaweedfs("http://#{server_ip}/?limit=3600", type, attribute)
     |> Enum.each(fn(exid) ->
       delete_directory(exid, "http://#{server_ip}/#{exid}/clips/?recursive=true")
