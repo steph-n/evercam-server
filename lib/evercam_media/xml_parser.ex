@@ -53,6 +53,7 @@ defmodule EvercamMedia.XMLParser do
     case :xmerl_xpath.string(node, xml_element) do
       [element] -> parse_text(element)
       [] -> ""
+      list -> list |> List.first |> parse_text
     end
   end
 
