@@ -3,6 +3,7 @@ defmodule EvercamMediaWeb.CompareController do
   use PhoenixSwagger
   alias EvercamMedia.Util
   alias EvercamMedia.TimelapseRecording.S3
+  alias EvercamMedia.Snapshot.Storage
 
   def swagger_definitions do
     %{
@@ -168,7 +169,7 @@ defmodule EvercamMediaWeb.CompareController do
           }
           |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
           Util.log_activity(current_user, camera, "compare created", extra)
-          start_export(Application.get_env(:evercam_media, :run_spawn), camera_exid, compare.exid, params)
+          start_export(Application.get_env(:evercam_media, :run_spawn), camera, compare.exid, params)
           render(conn |> put_status(:created), "show.json", %{compare: created_compare})
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
@@ -214,10 +215,16 @@ defmodule EvercamMediaWeb.CompareController do
   defp get_content_type("gif"), do: "image/gif"
   defp get_content_type("mp4"), do: "video/mp4"
 
-  defp start_export(true, camera_exid, compare_exid, params) do
-    spawn fn -> create_animated(params["create_animation"], camera_exid, compare_exid, params["before_image"], params["after_image"]) end
-    spawn fn -> do_export_image(camera_exid, compare_exid, convert_to_datetime(params["before_date"]), params["before_image"], "start") end
-    spawn fn -> do_export_image(camera_exid, compare_exid, convert_to_datetime(params["after_date"]), params["after_image"], "end") end
+  defp start_export(true, camera, compare_exid, params) do
+    timezone = Camera.get_timezone(camera)
+    before_datetime = convert_to_datetime(params["before_date"])
+    after_datetime = convert_to_datetime(params["after_date"])
+    before_image = get_image(camera.exid, Calendar.DateTime.Format.unix(before_datetime), timezone)
+    after_image = get_image(camera.exid, Calendar.DateTime.Format.unix(after_datetime), timezone)
+
+    spawn fn -> create_animated(params["create_animation"], camera.exid, compare_exid, before_image, after_image) end
+    spawn fn -> do_export_image(camera.exid, compare_exid, before_datetime, before_image, "start") end
+    spawn fn -> do_export_image(camera.exid, compare_exid, after_datetime, after_image, "end") end
   end
   defp start_export(_is_run, _camera_exid, _compare_exid, _params), do: :nothing
 
@@ -303,6 +310,13 @@ defmodule EvercamMediaWeb.CompareController do
     image_base64
     |> String.replace_leading("data:image/jpeg;base64,", "")
     |> Base.decode64!
+  end
+
+  defp get_image(camera_exid, datetime, timezone) do
+    case Storage.nearest(camera_exid, datetime, :v2, timezone) do
+      [snap] -> snap.data
+      _ -> ""
+    end
   end
 
   defp ensure_camera_exists(nil, exid, conn) do

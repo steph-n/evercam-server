@@ -195,13 +195,14 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 404, "Camera didn't respond with a base64 image "
   end
 
-  def latest(conn, %{"id" => camera_exid}) do
+  def latest(conn, %{"id" => camera_exid} = params) do
     %{assigns: %{version: version}} = conn
     camera = Camera.get_full(camera_exid)
     timezone = Camera.get_timezone(camera)
     case snapshot_thumbnail(camera, conn.assigns[:current_user], false) do
       {200, response} ->
         data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
+        save_latest_image(params["is_save"], camera_exid, response[:timestamp], response[:image])
         conn
         |> json(%{data: data, created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), status: "ok"})
       {404, response} ->
@@ -749,6 +750,11 @@ defmodule EvercamMediaWeb.SnapshotController do
   #######################
   ## Utility functions ##
   #######################
+
+  defp save_latest_image(save, camera_exid, timestamp, image) when save in ["true", true] do
+    spawn fn -> Storage.save(camera_exid, timestamp, image, "Evercam Proxy") end
+  end
+  defp save_latest_image(_, _, _, _), do: :noop
 
   defp check_snap_date(:after, snapshot_dt, datetime) do
     case Calendar.DateTime.diff(Calendar.DateTime.Parse.unix!(snapshot_dt), datetime) do
