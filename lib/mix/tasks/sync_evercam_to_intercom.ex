@@ -1,5 +1,6 @@
 defmodule EvercamMedia.SyncEvercamToIntercom do
   require Logger
+  alias EvercamMedia.Intercom
 
   @intercom_url System.get_env["INTERCOM_URL"]
   @intercom_token System.get_env["INTERCOM_ACCESS_TOKEN"]
@@ -34,6 +35,36 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
   def verify_user([], next_url) do
     Logger.info "Start next page users. URL: #{next_url}"
     get_users(next_url)
+  end
+
+  def add_company_to_user(emails) do
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    emails_list = String.split(emails, ",")
+
+    Enum.each(emails_list, fn(email) ->
+      company_domain = String.split(email, "@") |> List.last
+      company_id =
+        case Intercom.get_company(company_domain) do
+          {:ok, company} -> company["company_id"]
+          _ ->
+            Logger.info "Company does not found for #{email}."
+            Intercom.create_company(company_domain, String.split(company_domain, ".") |> List.first)
+            company_domain
+        end
+
+      case Intercom.get_user(email) do
+        {:ok, response} ->
+          intercom_user = response.body |> Poison.decode!
+          Logger.info "Adding company for email: #{email}, intercom_id: #{intercom_user["id"]}, company_id: #{company_id}"
+          intercom_new_user = %{
+            id: intercom_user["id"],
+            companies: [%{company_id: company_id}]
+          }
+          |> Poison.encode!
+          HTTPoison.post(@intercom_url, intercom_new_user, headers)
+        _ -> ""
+      end
+    end)
   end
 
   def start_update_status(next_page \\ nil) do

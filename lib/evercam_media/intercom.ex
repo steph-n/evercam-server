@@ -26,6 +26,24 @@ defmodule EvercamMedia.Intercom do
     end
   end
 
+  def create_company(company_id, company_name) do
+    intercom_url = @intercom_url |> String.replace("users", "companies")
+    url = "#{intercom_url}"
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    company_changeset = %{
+      company_id: company_id,
+      name: company_name,
+      created_at: Calendar.DateTime.now_utc |> Calendar.DateTime.Format.unix
+    }
+
+    json =
+      case Poison.encode(company_changeset) do
+        {:ok, json} -> json
+        _ -> nil
+      end
+    HTTPoison.post(url, json, headers)
+  end
+
   def create_user(user, user_agent, requester_ip, status) do
     company_id =
       case get_company(String.split(user.email, "@") |> List.last) do
