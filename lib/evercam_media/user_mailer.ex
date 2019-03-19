@@ -91,7 +91,7 @@ defmodule EvercamMedia.UserMailer do
     new()
     |> from(@no_reply)
     |> to(email)
-    |> bcc(["#{user.email}", "marco@evercam.io", "vinnie@evercam.io", "erin@evercam.io"])
+    |> bcc(["#{user.email}", "marco@evercam.io", "vinnie@evercam.io", "erin@evercam.io", "azhar@evercam.io"])
     |> add_attachment(thumbnail)
     |> reply_to(user.email)
     |> subject("#{User.get_fullname(user)} has shared the camera #{camera.name} with you.")

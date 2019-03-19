@@ -26,14 +26,13 @@ defmodule EvercamMedia.ShareRequestReminder do
     {hour, _minute, _second} = camera_time
     if hour == 9 do
       case Calendar.DateTime.diff(current_date, share_request.created_at) do
-        {:ok, total_seconds, _, :after} ->
-          can_send_reminder(share_request, current_date, total_seconds)
+        {:ok, total_seconds, _, :after} -> can_send_reminder(share_request, current_date, total_seconds)
         _ -> 0
       end
     end
   end
 
-  defp can_send_reminder(share_request, current_date, total_seconds) when total_seconds < 1_814_400 do
+  defp can_send_reminder(share_request, current_date, total_seconds) when total_seconds < 1_846_805 do
     case Calendar.DateTime.diff(current_date, share_request.updated_at) do
       {:ok, seconds, _, :after} -> send_notification(share_request, seconds)
       _ -> 0
@@ -41,23 +40,30 @@ defmodule EvercamMedia.ShareRequestReminder do
   end
   defp can_send_reminder(_share_request, _current_date, _total_seconds), do: :noop
 
-  # 7 days seconds 604800
-  defp send_notification(share_request, seconds) when seconds > 604_800 do
-    send_email_notification(share_request.user, share_request.camera, share_request.email, share_request.message, share_request.key)
-    share_request
-    |> CameraShareRequest.update_changeset(%{updated_at: Calendar.DateTime.to_erl(Calendar.DateTime.now_utc)})
-    |> Repo.update
+  # Send reminder after 1, 7 and 21 days
+  defp send_notification(share_request, seconds) do
+    cond do
+      seconds >= 115_200 && seconds < 118_800 ->
+        Logger.debug "1 Day reminder."
+      seconds >= 633_600 && seconds < 637_200 ->
+        send_email_notification(share_request)
+      seconds >= 1_846_800 && seconds < 1_843_200 ->
+        send_email_notification(share_request)
+      true -> :noop
+    end
   end
-  defp send_notification(_share_request, _seconds), do: :noop
 
-  defp send_email_notification(user, camera, to_email, message, share_request_key) do
+  defp send_email_notification(share_request) do
     try do
       Task.start(fn ->
-        EvercamMedia.UserMailer.camera_share_request_notification(user, camera, to_email, message, share_request_key)
+        EvercamMedia.UserMailer.camera_share_request_notification(share_request.user, share_request.camera, share_request.email, share_request.message, share_request.key)
       end)
     catch _type, error ->
       Logger.error inspect(error)
       Logger.error Exception.format_stacktrace System.stacktrace
     end
+    share_request
+    |> CameraShareRequest.update_changeset(%{updated_at: Calendar.DateTime.to_erl(Calendar.DateTime.now_utc)})
+    |> Repo.update
   end
 end
