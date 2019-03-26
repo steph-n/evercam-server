@@ -61,6 +61,7 @@ defmodule EvercamMediaWeb.CameraView do
         rtmp: Util.get_rtmp_url(camera, User.get_fullname(user)),
       },
       thumbnail_url: thumbnail_url(camera),
+      project: project(camera.projects)
     }
   end
 
@@ -91,6 +92,7 @@ defmodule EvercamMediaWeb.CameraView do
         rtmp: Util.get_rtmp_url(camera, User.get_fullname(user)),
       },
       thumbnail_url: thumbnail_url(camera),
+      project: project(camera.projects)
     }
   end
 
@@ -162,6 +164,14 @@ defmodule EvercamMediaWeb.CameraView do
       storage_duration: timelapse_recording.storage_duration,
       status: timelapse_recording.status,
       schedule: timelapse_recording.schedule
+    }
+  end
+
+  defp project(nil), do: nil
+  defp project(project) do
+    %{
+      name: project.exid,
+      id: project.name
     }
   end
 end
