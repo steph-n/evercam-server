@@ -430,6 +430,7 @@ defmodule EvercamMediaWeb.CameraController do
           full_camera =
             camera
             |> Repo.preload(:owner, force: true)
+            |> Repo.preload(:projects, force: true)
             |> Repo.preload(:timelapse_recordings, force: true)
             |> Repo.preload(:cloud_recordings, force: true)
             |> Repo.preload(:vendor_model, force: true)
