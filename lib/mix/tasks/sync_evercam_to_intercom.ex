@@ -67,6 +67,29 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     end)
   end
 
+  def update_company(ids_names) do
+    intercom_url = @intercom_url |> String.replace("users", "companies")
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    company_list = String.split(ids_names, ",")
+
+    Enum.each(company_list, fn(company) ->
+      company_id = String.split(company, ":") |> List.first
+      company_name = String.split(company, ":") |> List.last
+      case Intercom.get_company(company_id) do
+        {:ok, company} ->
+          intercom_new_company = %{
+            id: company["id"],
+            name: company_name
+          }
+          |> Poison.encode!
+          HTTPoison.post(intercom_url, intercom_new_company, headers)
+          Logger.info "Updated company #{company_id} with name #{company_name}"
+        _ ->
+          Logger.info "Company does not found for #{company_id}."
+      end
+    end)
+  end
+
   def start_update_status(next_page \\ nil) do
     api_url =
       case next_page do
