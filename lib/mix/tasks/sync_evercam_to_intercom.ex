@@ -78,7 +78,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
       case Intercom.get_company(company_id) do
         {:ok, company} ->
           intercom_new_company = %{
-            id: company["id"],
+            company_id: company_id,
             name: company_name
           }
           |> Poison.encode!
