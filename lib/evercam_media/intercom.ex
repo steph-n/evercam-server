@@ -45,10 +45,14 @@ defmodule EvercamMedia.Intercom do
   end
 
   def create_user(user, user_agent, requester_ip, status) do
+    company_domain = String.split(user.email, "@") |> List.last
     company_id =
-      case get_company(String.split(user.email, "@") |> List.last) do
+      case get_company(company_domain) do
         {:ok, company} -> company["company_id"]
-        _ -> ""
+        _ ->
+          name = company_domain |> String.split(".") |> List.first |> String.capitalize
+          create_company(company_domain, name)
+          company_domain
       end
     headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "Accept:application/json", "Content-Type": "application/json"]
     intercom_new_user = %{
