@@ -90,8 +90,8 @@ defmodule EvercamMedia.Intercom do
   end
 
   defp is_valid_company(company_domain, name) do
-    invalid_domains = "gmail,yahoo,hotmail,outlook,linkedin.live"
-    case String.contains?(invalid_domains, name |> String.downcase) do
+    invalid_domains = ["gmail", "yahoo", "hotmail", "outlook", "linkedin", "live"]
+    case Enum.any?(invalid_domains, fn x -> String.contains?(name |> String.downcase, x) end) do
       false ->
         create_company(company_domain, name)
         company_domain
