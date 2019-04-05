@@ -6,7 +6,12 @@ defmodule EvercamMedia.Intercom do
   @intercom_token System.get_env["INTERCOM_ACCESS_TOKEN"]
 
   def get_user(user_id) do
-    url = "#{@intercom_url}?user_id=#{user_id}"
+    search_string =
+      case String.contains?(user_id, "@") do
+        true -> "email=#{user_id}"
+        _ -> "user_id=#{user_id}"
+      end
+    url = "#{@intercom_url}?#{search_string}"
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
     response = HTTPoison.get(url, headers) |> elem(1)
     case response.status_code do
@@ -51,8 +56,7 @@ defmodule EvercamMedia.Intercom do
         {:ok, company} -> company["company_id"]
         _ ->
           name = company_domain |> String.split(".") |> List.first |> String.capitalize
-          create_company(company_domain, name)
-          company_domain
+          is_valid_company(company_domain, name)
       end
     headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "Accept:application/json", "Content-Type": "application/json"]
     intercom_new_user = %{
@@ -83,6 +87,16 @@ defmodule EvercamMedia.Intercom do
 
     HTTPoison.post(@intercom_url, json, headers)
     tag_user(user.email, get_tag_name(company_id))
+  end
+
+  defp is_valid_company(company_domain, name) do
+    invalid_domains = "gmail,yahoo,hotmail,outlook,linkedin.live"
+    case String.contains?(invalid_domains, name |> String.downcase) do
+      false ->
+        create_company(company_domain, name)
+        company_domain
+      _ -> ""
+    end
   end
 
   def update_intercom_user(false, _user, _old_username, _user_agent, _requester_ip), do: :noop
