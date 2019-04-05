@@ -76,7 +76,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
       company_id = String.split(company, ":") |> List.first
       company_name = String.split(company, ":") |> List.last
       case Intercom.get_company(company_id) do
-        {:ok, company} ->
+        {:ok, _company} ->
           intercom_new_company = %{
             company_id: company_id,
             name: company_name
@@ -101,7 +101,32 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
     users = Poison.decode!(body) |> Map.get("users")
     pages = Poison.decode!(body) |> Map.get("pages")
-    update_status(users, Map.get(pages, "next"))
+    update_intercom_user_attr(users, Map.get(pages, "next"))
+  end
+
+  defp update_intercom_user_attr([intercom_user | rest], next_url) do
+    intercom_email = Map.get(intercom_user, "email")
+    intercom_user_id = Map.get(intercom_user, "user_id")
+    intercom_id = Map.get(intercom_user, "id")
+    first_seen = Map.get(intercom_user, "created_at")
+
+    Logger.info "Update attributes of intercom user email: #{intercom_email}"
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+
+    intercom_new_user = %{
+      id: intercom_id,
+      email: intercom_email,
+      user_id: intercom_user_id,
+      signed_up_at: first_seen
+    }
+    |> Poison.encode!
+    HTTPoison.post(@intercom_url, intercom_new_user, headers)
+    update_intercom_user_attr(rest, next_url)
+  end
+  defp update_intercom_user_attr([], nil), do: Logger.info "Users status updated."
+  defp update_intercom_user_attr([], next_url) do
+    Logger.info "Start next page users. URL: #{next_url}"
+    start_update_status(next_url)
   end
 
   defp update_status([intercom_user | rest], next_url) do
@@ -112,7 +137,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
       "Shared-Non-Registered" ->
         case User.by_username_or_email(intercom_email) do
           nil -> Logger.info "Intercom user status is corrected. email: #{intercom_email}"
-          %User{} = _user -> update_intercom_user(intercom_id, intercom_email)
+          %User{} = _user -> update_intercom_user_status(intercom_id, intercom_email)
         end
       _ -> :noop
     end
@@ -124,7 +149,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     start_update_status(next_url)
   end
 
-  defp update_intercom_user(intercom_id, intercom_email) do
+  defp update_intercom_user_status(intercom_id, intercom_email) do
     Logger.info "Update statue of intercom user email: #{intercom_email}"
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
 
