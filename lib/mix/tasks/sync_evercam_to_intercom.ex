@@ -19,6 +19,71 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     verify_user(users, Map.get(pages, "next"))
   end
 
+  def get_companies(next_page \\ nil) do
+    intercom_url = @intercom_url |> String.replace("users", "companies")
+    api_url =
+      case next_page do
+        url when url in [nil, ""] -> "#{intercom_url}"
+        next_url -> next_url
+      end
+
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
+    {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
+    companies = Poison.decode!(body) |> Map.get("companies")
+    pages = Poison.decode!(body) |> Map.get("pages")
+    sync_companies(companies, Map.get(pages, "next"))
+  end
+
+  defp sync_companies([intercom_company | rest], next_url) do
+    domain = Map.get(intercom_company, "company_id")
+    name = Map.get(intercom_company, "name")
+    created_at = Map.get(intercom_company, "created_at")
+    session_count = Map.get(intercom_company, "session_count")
+    user_count = Map.get(intercom_company, "user_count")
+    website = Map.get(intercom_company, "website")
+    Logger.info "Company: #{name}, Company_id: #{domain}, users-count: #{user_count}, session-count: #{session_count}, website: #{website}, Created_at: #{created_at}"
+    case Company.by_exid(domain) do
+      nil ->
+        {:ok, company} = Company.create_company(domain, name,
+          %{
+            size: user_count,
+            session_count: session_count,
+            website: website,
+            inserted_at: Calendar.DateTime.Parse.unix!(created_at)
+          }
+        )
+        company.id
+      %Company{} = company ->
+        company_params =
+          %{}
+          |> add_parameter("field", "size", user_count)
+          |> add_parameter("field", "session_count", session_count)
+          |> add_parameter("field", "website", website)
+          |> add_parameter("field", "name", name)
+        Company.update_company(company, company_params)
+        company.id
+    end
+    |> add_company_id(domain)
+    sync_companies(rest, next_url)
+  end
+  defp sync_companies([], nil), do: Logger.info "Companies sync completed."
+  defp sync_companies([], next_url) do
+    Logger.info "Start next page companies. URL: #{next_url}"
+    get_companies(next_url)
+  end
+
+  defp add_parameter(params, _field, _key, value) when value in [nil, ""], do: params
+  defp add_parameter(params, "field", key, value) do
+    Map.put(params, key, value)
+  end
+
+  defp add_company_id(company_id, domain) do
+    User.by_email_domain(domain)
+    |> Enum.each(fn(u) ->
+      User.link_company(u, company_id)
+    end)
+  end
+
   def verify_user([intercom_user | rest], next_url) do
     intercom_email = Map.get(intercom_user, "email")
     user_id = Map.get(intercom_user, "user_id")
@@ -26,7 +91,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     case User.by_username_or_email(intercom_email) do
       nil ->
         Logger.info "User deleted from evercam. email: #{intercom_email}"
-        EvercamMedia.Intercom.delete_user(intercom_email, "email")
+        Intercom.delete_user(intercom_email)
       %User{} = user -> Logger.info "Intercom user exists in Evercam. email: #{user.email}"
     end
     verify_user(rest, next_url)

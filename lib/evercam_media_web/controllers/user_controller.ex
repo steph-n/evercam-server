@@ -412,7 +412,7 @@ defmodule EvercamMediaWeb.UserController do
     User.invalidate_auth(user.api_id, user.api_key)
     Camera.invalidate_user(user)
     User.invalidate_share_users(user)
-    Intercom.delete_user(user.username)
+    Intercom.delete_user(user.email)
   end
 
   defp delete_user_camera_compares(user) do

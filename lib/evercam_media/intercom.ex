@@ -86,6 +86,7 @@ defmodule EvercamMedia.Intercom do
       end
 
     HTTPoison.post(@intercom_url, json, headers)
+    sync_company_with_evercam(user, company_id)
     tag_user(user.email, get_tag_name(company_id))
   end
 
@@ -97,6 +98,46 @@ defmodule EvercamMedia.Intercom do
         company_domain
       _ -> ""
     end
+  end
+
+  defp sync_company_with_evercam(_user, domain) when domain in [nil, ""], do: :noop
+  defp sync_company_with_evercam(user, domain) do
+    case get_company(domain) do
+      {:ok, ic_company} ->
+        case Company.by_exid(domain) do
+          nil ->
+            {:ok, company} = Company.create_company(domain, ic_company["name"],
+              %{
+                size: ic_company["user_count"],
+                session_count: ic_company["session_count"],
+                website: ic_company["website"],
+                inserted_at: Calendar.DateTime.Parse.unix!(ic_company["created_at"])
+              }
+            )
+            company.id
+          %Company{} = company ->
+            company_params =
+              %{}
+              |> add_parameter("field", "size", ic_company["user_count"])
+              |> add_parameter("field", "session_count", ic_company["session_count"])
+              |> add_parameter("field", "website", ic_company["website"])
+              |> add_parameter("field", "name", ic_company["name"])
+            Company.update_company(company, company_params)
+            company.id
+        end
+        |> link_company_in_evercam(user, user.id)
+      _ -> Logger.debug "Company does not exist."
+    end
+  end
+
+  defp add_parameter(params, _field, _key, value) when value in [nil, ""], do: params
+  defp add_parameter(params, "field", key, value) do
+    Map.put(params, key, value)
+  end
+
+  defp link_company_in_evercam(_company_id, _user, user_id) when user_id in [nil, ""], do: :noop
+  defp link_company_in_evercam(company_id, user, _user_id) do
+    User.link_company(user, company_id)
   end
 
   def update_intercom_user(false, _user, _old_username, _user_agent, _requester_ip), do: :noop
@@ -166,16 +207,22 @@ defmodule EvercamMedia.Intercom do
     Map.put(params, :companies, [%{company_id: "#{company_id}"}])
   end
 
-  def delete_user(user, by_val \\ "user_id", tries \\ 1)
-  def delete_user(_user, _by_val, 3), do: :noop
-  def delete_user(user, by_val, tries) do
-    url = "#{@intercom_url}?#{by_val}=#{user}"
+  def delete_user(user, tries \\ 1)
+  def delete_user(_user, 3), do: :noop
+  def delete_user(user, tries) do
+    company_domain = String.split(user, "@") |> List.last
+    url = "#{@intercom_url}?email=#{user}"
     headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "Accept:application/json", "Content-Type": "application/json"]
 
     case HTTPoison.delete(url, headers) do
       {:ok, _} -> :noop
-      {:error, _} -> delete_user(user, by_val, tries + 1)
+      {:error, _} -> delete_user(user, tries + 1)
       _ -> :noop
+    end
+    case Company.by_exid(company_domain) do
+      nil -> :noop
+      %Company{} = company ->
+        Company.update_company(company, %{size: company.size - 1})
     end
   end
 
