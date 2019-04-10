@@ -4,6 +4,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
   @intercom_url System.get_env["INTERCOM_URL"]
   @intercom_token System.get_env["INTERCOM_ACCESS_TOKEN"]
+  @fullcontact_key System.get_env["FULLCONTACT_API_KEY"]
 
   def get_users(next_page \\ nil) do
     api_url =
@@ -229,5 +230,22 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     |> Poison.encode!
 
     HTTPoison.post(@intercom_url, intercom_new_user, headers)
+  end
+
+  def update_company_linkedin do
+    Company.all
+    |> Enum.each(fn(company) ->
+      url = "https://api.fullcontact.com/v3/company.enrich"
+      case HTTPoison.post(url, '{"domain":"#{company.exid}"}', ["Content-Type": "application/x-www-form-urlencoded", "Authorization": "Bearer #{@fullcontact_key}"]) do
+        {:ok,  %HTTPoison.Response{status_code: 200, body: body}} ->
+          company = body |> Poison.decode!
+          Company.update_company(company, %{linkedin_url: company["linkedin"]})
+        {:ok,  %HTTPoison.Response{body: body}} ->
+          res = body |> Poison.decode!
+          Logger.info res["message"]
+        {:error, error} -> Logger.info "#{inspect error}"
+      end
+      :timer.sleep(10000)
+    end)
   end
 end
