@@ -20,6 +20,28 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     verify_user(users, Map.get(pages, "next"))
   end
 
+  def update_evercam_users do
+    User.all
+    |> Enum.each(fn(u) ->
+      Logger.debug u.email
+      case Intercom.get_user(u.email) do
+        {:ok, response} ->
+          ic_user = response.body |> Poison.decode!
+          urls =
+            ic_user["social_profiles"]["social_profiles"]
+            |> Enum.reduce(%{}, fn(item, social_links) ->
+              add_url_to_params(social_links, item["url"], String.downcase(item["name"]))
+            end)
+          User.update_user(u, urls)
+        _ -> ""
+      end
+    end)
+  end
+
+  defp add_url_to_params(social_links, url, "twitter"), do: Map.merge(social_links, %{twitter_url: url})
+  defp add_url_to_params(social_links, url, "linkedin"), do: Map.merge(social_links, %{linkedin_url: url})
+  defp add_url_to_params(social_links, _, _), do: social_links
+
   def get_companies(next_page \\ nil) do
     intercom_url = @intercom_url |> String.replace("users", "companies")
     api_url =
