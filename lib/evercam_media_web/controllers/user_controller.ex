@@ -63,6 +63,12 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
 
+  def invalidate_cache(conn, _params) do
+    conn.assigns[:current_user]
+    |> Camera.invalidate_user
+    json(conn, %{})
+  end
+
   swagger_path :credentials do
     get "/users/{id}/credentials"
     summary "Returns API credentials of given user."

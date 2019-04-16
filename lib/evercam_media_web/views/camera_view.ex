@@ -170,8 +170,8 @@ defmodule EvercamMediaWeb.CameraView do
   defp project(nil), do: nil
   defp project(project) do
     %{
-      name: project.exid,
-      id: project.name
+      name: project.name,
+      id: project.exid
     }
   end
 end
