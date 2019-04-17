@@ -182,6 +182,18 @@ defmodule EvercamMediaWeb.CameraController do
     end
   end
 
+  def invalidate_cache(conn, params) do
+    message =
+      case conn.assigns[:current_user] do
+        %User{} ->
+          camera = params["id"] |> Camera.get_full
+          Camera.invalidate_camera(camera)
+          "Camera cache cleared"
+        _ -> "Unauthorized."
+      end
+    json(conn, %{message: message})
+  end
+
   swagger_path :show do
     get "/cameras/{id}"
     summary "Returns the camera details."
@@ -358,7 +370,7 @@ defmodule EvercamMediaWeb.CameraController do
     with :ok <- camera_exists(conn, exid, camera),
          true <- user_has_delete_rights(conn, caller, camera)
     do
-      admin_user = User.by_username("evercam")
+      admin_user = User.by_username_or_email("howrya@evercam.io")
       camera_params = %{
         owner_id: admin_user.id,
         discoverable: false,

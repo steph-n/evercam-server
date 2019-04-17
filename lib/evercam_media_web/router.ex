@@ -95,7 +95,7 @@ end
       options "/users/:id", UserController, :nothing
       delete "/users/:id", UserController, :delete_user
       get "/users/session/activities", UserController, :user_activities
-      delete "/users/clear/cache", UserController, :invalidate_cache
+      delete "/users/invalidate/cache", UserController, :invalidate_cache
 
       # Cameras route
       get "/cameras", CameraController, :index
@@ -108,6 +108,7 @@ end
       put "/cameras/:id", CameraController, :transfer
       delete "/cameras/:id", CameraController, :delete_camera
       post "/cameras", CameraController, :create
+      delete "/cameras/:id/invalidate/cache", CameraController, :invalidate_cache
 
       # Archive route
       get "/cameras/archives/pending", ArchiveController, :pending_archives
