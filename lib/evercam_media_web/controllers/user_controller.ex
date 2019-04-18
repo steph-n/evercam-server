@@ -410,9 +410,10 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   defp delete_user(user) do
-    delete_user_camera_compares(user)
+    delete_user_camera_assets(user)
     CameraShare.delete_by_user(user.id)
     CameraShareRequest.delete_by_user_id(user.id)
+    Snapmail.delete_no_camera_snapmail()
     Camera.delete_by_owner(user.id)
     User.delete_by_id(user.id)
     User.invalidate_auth(user.api_id, user.api_key)
@@ -421,10 +422,19 @@ defmodule EvercamMediaWeb.UserController do
     Intercom.delete_user(user.email)
   end
 
-  defp delete_user_camera_compares(user) do
+  defp delete_user_camera_assets(user) do
     Camera.for(user, false)
     |> Enum.map(fn(cam) -> cam.id end)
-    |> Enum.each(fn(id) -> Compare.delete_by_camera(id) end)
+    |> Enum.each(fn(id) ->
+      Compare.delete_by_camera(id)
+
+      MetaData.delete_by_camera_id(id)
+      SnapmailCamera.delete_by_camera_id(id)
+      SnapshotExtractor.delete_by_camera_id(id)
+      Timelapse.delete_by_camera_id(id)
+      CloudRecording.delete_by_camera_id(id)
+      Archive.delete_by_camera(id)
+    end)
   end
 
   defp user_exists(conn, email) do
