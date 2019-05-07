@@ -37,6 +37,7 @@ defmodule EvercamMedia.Snapshot.WorkerSupervisor do
     case get_config(camera) do
       {:ok, settings} ->
         Logger.debug "[#{settings.config.camera_exid}] Starting worker"
+        spawn fn -> EvercamMedia.Snapshot.Storage.check_camera_last_image(settings.config.camera_exid) end
         Supervisor.start_child(__MODULE__, [settings])
       {:error, _message, url} ->
         Logger.warn "[#{camera.exid}] Skipping camera worker as the host is invalid: #{url}"

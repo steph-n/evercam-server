@@ -700,6 +700,7 @@ defmodule EvercamMediaWeb.CameraController do
   end
 
   defp delete_snapshot_worker(camera) do
+    ConCache.delete(:camera_thumbnail, "#{camera.exid}")
     Camera.invalidate_camera(camera)
     CameraActivity.delete_by_camera_id(camera.id)
     Storage.delete_everything_for(camera.exid)

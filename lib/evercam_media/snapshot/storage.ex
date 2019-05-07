@@ -37,11 +37,10 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
 
   # Temporary solution for extractor to sync
-  def seaweedfs_save_sync(camera_exid, timestamp, image, notes) do
+  def seaweedfs_save_sync(camera_exid, timestamp, image, _notes) do
     seaweedfs = timestamp |> Calendar.DateTime.Parse.unix! |> point_to_seaweed
     hackney = [pool: :seaweedfs_upload_pool]
-    app_name = notes_to_app_name(notes)
-    directory_path = construct_directory_path(camera_exid, timestamp, app_name, "")
+    directory_path = construct_directory_path(camera_exid, timestamp, "recordings", "")
     file_name = construct_file_name(timestamp)
     file_path = directory_path <> file_name
     case HTTPoison.post("#{seaweedfs}#{file_path}", {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
@@ -50,10 +49,9 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
-  def seaweedfs_save(camera_exid, timestamp, image, notes) do
+  def seaweedfs_save(camera_exid, timestamp, image, _notes) do
     hackney = [pool: :seaweedfs_upload_pool]
-    app_name = notes_to_app_name(notes)
-    directory_path = construct_directory_path(camera_exid, timestamp, app_name, "")
+    directory_path = construct_directory_path(camera_exid, timestamp, "recordings", "")
     file_name = construct_file_name(timestamp)
     file_path = directory_path <> file_name
     case HTTPoison.post("#{@seaweedfs_new}#{file_path}", {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
@@ -388,6 +386,65 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
+  ########################################
+  ###### Load latest image to cache ######
+  ########################################
+  def check_camera_last_image(camera_id) do
+    Logger.info "Load thumbnail to cache."
+    with {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs_new, "#{camera_id}/snapshots/recordings"),
+         {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs_new, "#{camera_id}/snapshots/archives"),
+         {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs_1, "#{camera_id}/snapshots/recordings"),
+         {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs_1, "#{camera_id}/snapshots/archives"),
+         {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs, "#{camera_id}/snapshots/recordings"),
+         {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs, "#{camera_id}/snapshots/archives"),
+         {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs, "#{camera_id}/snapshots/timelapse") do
+    else
+      {:ok, image, timestamp} -> update_cache_thumbnail("#{camera_id}", timestamp, image)
+    end
+  end
+
+  defp load_latest_snapshot_to_cache(weed_url, path) do
+    hackney = [pool: :seaweedfs_download_pool]
+    type = seaweefs_type(weed_url)
+    attribute = seaweedfs_attribute(weed_url)
+    files = seaweedfs_files(weed_url)
+    name = seaweedfs_name(weed_url)
+
+    with {:year, year} <- get_latest_directory_name(:year, "#{weed_url}/#{path}/", type, attribute),
+         {:month, month} <- get_latest_directory_name(:month, "#{weed_url}/#{path}/#{year}/", type, attribute),
+         {:day, day} <- get_latest_directory_name(:day, "#{weed_url}/#{path}/#{year}/#{month}/", type, attribute),
+         {:hour, hour} <- get_latest_directory_name(:hour, "#{weed_url}/#{path}/#{year}/#{month}/#{day}/", type, attribute),
+         {:image, last_image} <- get_latest_directory_name(:image, "#{weed_url}/#{path}/#{year}/#{month}/#{day}/#{hour}/?limit=3600", files, name) do
+      case HTTPoison.get("#{weed_url}/#{path}/#{year}/#{month}/#{day}/#{hour}/#{last_image}", [], hackney: hackney) do
+        {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+          [minute, second, _] = String.split(last_image, "_")
+          erl_date = {{to_integer(year), to_integer(month), to_integer(day)}, {to_integer(hour), to_integer(minute), to_integer(second)}}
+          {:ok, datetime} = Calendar.DateTime.from_erl(erl_date, "UTC")
+          {:ok, body, datetime |> Calendar.DateTime.Format.unix}
+        {:ok, %HTTPoison.Response{status_code: 404}} -> {:error, "not found"}
+        {:error, %HTTPoison.Error{reason: reason}} ->
+          {:error, reason}
+      end
+    else
+      _ -> {:error, "Not Found."}
+    end
+  end
+
+  defp get_latest_directory_name(directory, url, type, attribute) do
+    request_from_seaweedfs(url, type, attribute)
+    |> Enum.sort(&(&2 > &1))
+    |> case do
+      [] -> {:error}
+      res -> {directory, List.last(res)}
+    end
+  end
+  ############################################
+  ###### End load latest image to cache ######
+  ############################################
+
+  ##########################
+  ###### Oldest Image ######
+  ##########################
   def get_or_save_oldest_snapshot(camera_exid) do
     "#{@seaweedfs_new}/#{camera_exid}/snapshots/"
     |> request_from_seaweedfs("Entries", "FullPath")
@@ -523,6 +580,10 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
+  ##########################
+  #### End oldest Image ####
+  ##########################
+
   defp to_integer(nil), do: ""
   defp to_integer(value) do
     case Integer.parse(value) do
@@ -531,15 +592,14 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
-  def save(camera_exid, timestamp, image, "Evercam Thumbnail"), do: update_cache_and_save_thumbnail("#{camera_exid}", timestamp, image)
   def save(camera_exid, timestamp, image, "Evercam SnapMail") do
     save_snapmail_to_s3("#{camera_exid}", timestamp, image)
-    update_cache_and_save_thumbnail("#{camera_exid}", timestamp, image)
+    update_cache_thumbnail("#{camera_exid}", timestamp, image)
   end
   def save(camera_exid, timestamp, image, notes) do
     try do
       seaweedfs_save("#{camera_exid}", timestamp, image, notes)
-      update_cache_and_save_thumbnail("#{camera_exid}", timestamp, image)
+      update_cache_thumbnail("#{camera_exid}", timestamp, image, Calendar.DateTime.now!("UTC"))
     catch _type, _error ->
       :noop
     end
@@ -588,28 +648,16 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
   defp exist_oldest_directory([], _directory, _bool, _url, _type, _attribute), do: :noop
 
-  def update_cache_and_save_thumbnail(camera_exid, timestamp, image) do
+  def update_cache_thumbnail(camera_exid, timestamp, image, thumbnail_save_date \\ nil) do
     {last_save_date, _, _img} = ConCache.dirty_get_or_store(:camera_thumbnail, camera_exid, fn() ->
       {Calendar.DateTime.now!("UTC"), timestamp, image}
     end)
-    case Calendar.DateTime.diff(Calendar.DateTime.now!("UTC"), last_save_date) do
-      {:ok, seconds, _, :after} -> thumbnail_save_seaweedfs(camera_exid, image, timestamp, last_save_date, seconds)
-      _ -> ConCache.dirty_put(:camera_thumbnail, camera_exid, {last_save_date, timestamp, image})
-    end
-  end
-
-  def thumbnail_save_seaweedfs(camera_exid, image, timestamp, _last_save_date, seconds) when seconds > 60 do
-    hackney = [pool: :seaweedfs_upload_pool]
-    url = "#{@seaweedfs_new}/#{camera_exid}/snapshots/thumbnail.jpg"
-    file_path = "/#{camera_exid}/snapshots/thumbnail.jpg"
-    case HTTPoison.post(url, {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
-      {:ok, response} -> response
-      {:error, error} -> Logger.info "[thumbnail_save_seaweedfs] [#{camera_exid}] [#{inspect error}]"
-    end
-    ConCache.dirty_put(:camera_thumbnail, camera_exid, {Calendar.DateTime.now!("UTC"), timestamp, image})
-  end
-  def thumbnail_save_seaweedfs(camera_exid, image, timestamp, last_save_date, _seconds) do
-    ConCache.dirty_put(:camera_thumbnail, camera_exid, {last_save_date, timestamp, image})
+    new_save_date =
+      case thumbnail_save_date do
+        nil -> last_save_date
+        datetime -> datetime
+      end
+    ConCache.dirty_put(:camera_thumbnail, camera_exid, {new_save_date, timestamp, image})
   end
 
   def load_archive_thumbnail(camera_exid, archive_id) do
@@ -671,32 +719,6 @@ defmodule EvercamMedia.Snapshot.Storage do
     Logger.info "[#{camera_exid}] [archive_delete] [#{archive_id}]"
     EvercamMedia.TimelapseRecording.S3.delete_object(["#{archive_path}", "#{archive_thumbail_path}"])
     Logger.info "[archive_delete] [#{camera_exid}] [#{archive_id}]"
-  end
-
-  def import_archive_to_seaweed(max_id) do
-    Archive.get_all_with_associations
-    |> Enum.filter(fn(archive) -> archive.id < max_id end)
-    |> Enum.each(fn(archive) ->
-      mp4_url = "http://timelapse.evercam.io/timelapses/#{archive.camera.exid}/archives/#{archive.exid}.mp4"
-      case HTTPoison.get(mp4_url, [], hackney: [pool: :seaweedfs_download_pool]) do
-        {:ok, %HTTPoison.Response{status_code: 200, body: video}} ->
-          file_path = "/#{archive.camera.exid}/clips/#{archive.exid}.mp4"
-          upload_url = "#{@seaweedfs}#{file_path}"
-          hackney = [pool: :seaweedfs_upload_pool]
-          case HTTPoison.head(upload_url, [], hackney: hackney) do
-            {:ok, %HTTPoison.Response{status_code: 200}} ->
-              HTTPoison.put!(upload_url, {:multipart, [{file_path, video, []}]}, [], hackney: hackney)
-            {:ok, %HTTPoison.Response{status_code: 404}} ->
-              HTTPoison.post!(upload_url, {:multipart, [{file_path, video, []}]}, [], hackney: hackney)
-            _error ->
-              :noop
-          end
-          Logger.info "[archive_import] [success] [#{archive.camera.exid}] [#{archive.exid}]"
-        error ->
-          Logger.info "[archive_import] [error] [#{archive.camera.exid}] [#{archive.exid}] [#{inspect error}]"
-          {:error, :not_found}
-      end
-    end)
   end
 
   def load(camera_exid, timestamp, notes) when notes in [nil, ""] do
@@ -767,6 +789,7 @@ defmodule EvercamMedia.Snapshot.Storage do
   def cleanup(nil), do: :noop
   def cleanup(%CloudRecording{storage_duration: -1}), do: :noop
   def cleanup(%CloudRecording{status: "paused"}), do: :noop
+  def cleanup(%CloudRecording{status: "off"}), do: :noop
   def cleanup(%CloudRecording{camera: nil}), do: :noop
   def cleanup(cloud_recording) do
     cloud_recording.camera.exid

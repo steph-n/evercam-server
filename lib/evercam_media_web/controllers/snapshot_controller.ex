@@ -202,7 +202,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     case snapshot_thumbnail(camera, conn.assigns[:current_user], false) do
       {200, response} ->
         data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
-        save_latest_image(params["is_save"], camera_exid, response[:timestamp], response[:image])
+        save_latest_image(params["is_save"], camera, response[:timestamp], response[:image])
         conn
         |> json(%{data: data, created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), status: "ok"})
       {404, response} ->
@@ -663,7 +663,8 @@ defmodule EvercamMediaWeb.SnapshotController do
   defp update_thumbnail(nil), do: :noop
   defp update_thumbnail(camera) do
     if camera.is_online && !Util.camera_recording?(camera) do
-      construct_args(camera, true, "Evercam Thumbnail")
+      store_snapshot = save_thumbnail(camera.cloud_recordings)
+      construct_args(camera, store_snapshot, "Evercam Thumbnail")
       |> Map.put(:description, "Thumbnail")
       |> fetch_snapshot(3)
     end
@@ -721,7 +722,7 @@ defmodule EvercamMediaWeb.SnapshotController do
   defp handle_camera_response(args, {:ok, data}, true) do
     spawn fn ->
       Util.broadcast_snapshot(args[:camera_exid], data, args[:timestamp])
-      Storage.save(args[:camera_exid], args[:timestamp], data, args[:notes])
+      do_save_to_seaweed(args[:camera_exid], args[:timestamp], data, args[:notes])
       DBHandler.update_camera_status(args[:camera_exid], args[:timestamp], true)
     end
     {200, %{image: data, timestamp: args[:timestamp], notes: args[:notes]}}
@@ -729,6 +730,7 @@ defmodule EvercamMediaWeb.SnapshotController do
 
   defp handle_camera_response(args, {:ok, data}, false) do
     spawn fn ->
+      Storage.update_cache_thumbnail("#{args[:camera_exid]}", args[:timestamp], data)
       Util.broadcast_snapshot(args[:camera_exid], data, args[:timestamp])
       DBHandler.update_camera_status(args[:camera_exid], args[:timestamp], true)
     end
@@ -751,8 +753,40 @@ defmodule EvercamMediaWeb.SnapshotController do
   ## Utility functions ##
   #######################
 
-  defp save_latest_image(save, camera_exid, timestamp, image) when save in ["true", true] do
-    spawn fn -> Storage.save(camera_exid, timestamp, image, "Evercam Proxy") end
+  defp save_thumbnail(nil), do: true
+  defp save_thumbnail(cr) do
+    case cr.status do
+      "off" -> true
+      "paused" -> true
+      _ -> false
+    end
+  end
+
+  defp do_save_to_seaweed(camera_exid, timestamp, image, notes) do
+    case ConCache.get(:camera_thumbnail, "#{camera_exid}") do
+      nil -> Storage.save(camera_exid, timestamp, image, notes)
+      {last_save_date, _, _} ->
+        case Calendar.DateTime.diff(Calendar.DateTime.now!("UTC"), last_save_date) do
+          {:ok, seconds, _, :after} when seconds > 300 ->
+            Storage.save(camera_exid, timestamp, image, notes)
+          _ -> Storage.update_cache_thumbnail("#{camera_exid}", timestamp, image)
+        end
+    end
+  end
+
+  defp save_latest_image(save, camera, timestamp, image) when save in ["true", true] do
+    spawn fn ->
+      save_snapshot = save_thumbnail(camera.cloud_recordings)
+
+      with true <- save_snapshot,
+          {:ok, _, _} <- Storage.load(camera.exid, timestamp, "") do
+            Logger.debug "Image already exists"
+      else
+        false -> Logger.info "Don't save because camera is on recording."
+        {:error, :not_found} -> Storage.save(camera.exid, timestamp, image, "Evercam Proxy")
+        {:error, _} -> Logger.debug "Error to get snapshot"
+      end
+    end
   end
   defp save_latest_image(_, _, _, _), do: :noop
 
