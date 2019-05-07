@@ -111,6 +111,8 @@ end
       delete "/cameras/:id/invalidate/cache", CameraController, :invalidate_cache
 
       # Archive route
+      get "/archives", ArchiveController, :user_archives
+      options "/archives", ArchiveController, :nothing
       get "/cameras/archives/pending", ArchiveController, :pending_archives
       get "/cameras/:id/archives", ArchiveController, :index
       get "/cameras/:id/archives/:archive_id", ArchiveController, :show

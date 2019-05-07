@@ -73,6 +73,19 @@ defmodule EvercamMediaWeb.ArchiveController do
     end
   end
 
+  def user_archives(conn, _params) do
+    %{assigns: %{version: version}} = conn
+    current_user = conn.assigns[:current_user]
+
+    case current_user do
+      nil -> render_error(conn, 401, "Unauthorized.")
+      _ ->
+        archives = Archive.requested_by(current_user.id)
+        compares = Compare.requested_by(current_user.id)
+        render(conn, "index.#{version}.json", %{archives: archives, compares: compares})
+    end
+  end
+
   swagger_path :show do
     get "/cameras/{id}/archives/{archive_id}"
     summary "Returns the archives Details."
