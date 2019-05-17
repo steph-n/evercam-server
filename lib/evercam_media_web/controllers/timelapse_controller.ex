@@ -137,9 +137,6 @@ defmodule EvercamMediaWeb.TimelapseController do
     end
   end
 
-  defp authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")
-  defp authorized(_conn, _current_user), do: :ok
-
   defp timelapse_exist(conn, timelapse_exid) do
     case Timelapse.by_exid(timelapse_exid) do
       nil -> render_error(conn, 404, "Timelapse not found.")

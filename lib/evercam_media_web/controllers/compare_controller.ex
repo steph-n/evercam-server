@@ -408,7 +408,4 @@ defmodule EvercamMediaWeb.CompareController do
         |> Calendar.DateTime.from_erl!("Etc/UTC")
     end
   end
-
-  defp authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")
-  defp authorized(_conn, _current_user), do: :ok
 end

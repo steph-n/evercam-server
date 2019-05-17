@@ -127,7 +127,4 @@ defmodule EvercamMediaWeb.LogController do
 
   defp ensure_params(:ok, _conn), do: :ok
   defp ensure_params({:invalid, message}, conn), do: render_error(conn, 400, message)
-
-  defp authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")
-  defp authorized(_conn, _current_user), do: :ok
 end

@@ -588,7 +588,4 @@ defmodule EvercamMediaWeb.UserController do
       Logger.error Exception.format_stacktrace System.stacktrace
     end
   end
-
-  defp authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")
-  defp authorized(_conn, _current_user), do: :ok
 end

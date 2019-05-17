@@ -319,9 +319,6 @@ defmodule EvercamMediaWeb.SnapmailController do
     |> Enum.join(",")
   end
 
-  defp authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")
-  defp authorized(_conn, _current_user), do: :ok
-
   defp ensure_cameras_exist("update", _conn, camera_exids, _user) when camera_exids in [nil, ""], do: {:ok, nil}
   defp ensure_cameras_exist("create", conn, camera_exids, _user) when camera_exids in [nil, ""] do
     render_error(conn, 404, %{camera_exids: ["can't be blank"]})

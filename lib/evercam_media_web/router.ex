@@ -233,6 +233,16 @@ end
 
       post "/sdk/nvr/reboot", SDKController, :nvr_reboot
       options "/sdk/nvr/reboot", SDKController, :nothing
+
+      # Projects route
+      get "/projects", ProjectController, :index
+      get "/projects/:id", ProjectController, :show
+      post "/projects/:id/overlay", ProjectController, :add_overlay
+      options "/projects/:id/overlay", ProjectController, :nothing
+      patch "/projects/:id/overlay/:overlay_id", ProjectController, :update_overlay
+      options "/projects/:id/overlay/:overlay_id", ProjectController, :nothing
+      post "/projects", ProjectController, :create
+      options "/projects", ProjectController, :nothing
     end
 
     scope "/" do
@@ -425,6 +435,16 @@ end
 
       post "/sdk/nvr/reboot", SDKController, :nvr_reboot
       options "/sdk/nvr/reboot", SDKController, :nothing
+
+      # Projects route
+      get "/projects", ProjectController, :index
+      get "/projects/:id", ProjectController, :show
+      post "/projects/:id/overlay", ProjectController, :add_overlay
+      options "/projects/:id/overlay", ProjectController, :nothing
+      patch "/projects/:id/overlay/:overlay_id", ProjectController, :update_overlay
+      options "/projects/:id/overlay/:overlay_id", ProjectController, :nothing
+      post "/projects", ProjectController, :create
+      options "/projects", ProjectController, :nothing
     end
 
     scope "/" do

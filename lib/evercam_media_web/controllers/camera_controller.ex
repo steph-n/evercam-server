@@ -577,7 +577,10 @@ defmodule EvercamMediaWeb.CameraController do
 
   defp camera_update_changeset(camera, params, caller_email) do
     camera_params =
-      %{config: Map.get(camera, :config)}
+      %{
+        config: Map.get(camera, :config),
+        location_detailed: camera |> Map.get(:location_detailed) |> get_location_detail
+      }
       |> construct_camera_parameters("update", params)
       |> add_alert_email(camera.alert_emails, caller_email, params["is_online_email_owner_notification"])
 
@@ -586,7 +589,14 @@ defmodule EvercamMediaWeb.CameraController do
 
   defp camera_create_changeset(params, caller_email) do
     camera_params =
-      %{config: %{"snapshots" => %{}}}
+      %{
+        config: %{"snapshots" => %{}},
+        location_detailed: %{
+          "camera_loc" => %{},
+          "object_loc" => %{},
+          "fov" => %{}
+        }
+      }
       |> add_parameter("field", :owner_id, params["owner_id"])
       |> construct_camera_parameters("create", params)
       |> add_alert_email([], caller_email, params["is_online_email_owner_notification"])
@@ -624,7 +634,23 @@ defmodule EvercamMediaWeb.CameraController do
     |> add_url_parameter(model, "mpeg", "mpeg4", params["mpeg_url"])
     |> add_parameter("auth", "username", params["cam_username"])
     |> add_parameter("auth", "password", params["cam_password"])
+    |> add_location_detail("camera_loc", "lat", params["camera_loc_lat"])
+    |> add_location_detail("camera_loc", "lng", params["camera_loc_lng"])
+    |> add_location_detail("camera_loc", "alt", params["camera_loc_alt"])
+    |> add_location_detail("object_loc", "lat", params["object_loc_lat"])
+    |> add_location_detail("object_loc", "lng", params["object_loc_lng"])
+    |> add_location_detail("object_loc", "alt", params["object_loc_alt"])
+    |> add_location_detail("fov", "horizontal", params["fov_horizontal"])
   end
+
+  defp get_location_detail(nil) do
+    %{
+      "camera_loc" => %{},
+      "object_loc" => %{},
+      "fov" => %{}
+    }
+  end
+  defp get_location_detail(location_detailed), do: location_detailed
 
   defp add_alert_email(params, emails, caller_email, send_notification) when send_notification in [true, "true"] do
     alert_emails =
@@ -668,6 +694,11 @@ defmodule EvercamMediaWeb.CameraController do
         params
       end
     put_in(params, [:config, "auth", "basic", key], value)
+  end
+
+  defp add_location_detail(params, _, _, value) when value in [nil, ""], do: params
+  defp add_location_detail(params, key, key1, value) do
+    put_in(params, [:location_detailed, key, key1], value)
   end
 
   defp add_url_parameter(params, nil, _type, _attr, _custom_value), do: params

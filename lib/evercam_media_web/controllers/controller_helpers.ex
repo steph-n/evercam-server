@@ -10,6 +10,9 @@ defmodule EvercamMediaWeb.ControllerHelpers do
     |> render("error.json", %{message: message})
   end
 
+  def authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")
+  def authorized(_conn, _current_user), do: :ok
+
   def user_request_ip(conn, requester_ip \\ "")
   def user_request_ip(conn, requester_ip) when requester_ip in [nil, ""] do
     x_real_ip = Plug.Conn.get_req_header(conn, "x-real-ip")

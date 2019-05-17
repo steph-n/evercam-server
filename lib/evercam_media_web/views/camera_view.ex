@@ -55,6 +55,7 @@ defmodule EvercamMediaWeb.CameraView do
       discoverable: camera.discoverable,
       timezone: Camera.get_timezone(camera),
       location: Camera.get_location(camera),
+      location_detailed: camera.location_detailed,
       rights: Camera.get_rights(camera, user),
       proxy_url: %{
         hls: Util.get_hls_url(camera, User.get_fullname(user)),
@@ -86,6 +87,7 @@ defmodule EvercamMediaWeb.CameraView do
       discoverable: camera.discoverable,
       timezone: Camera.get_timezone(camera),
       location: Camera.get_location(camera),
+      location_detailed: camera.location_detailed,
       rights: Camera.get_rights(camera, user),
       proxy_url: %{
         hls: Util.get_hls_url(camera, User.get_fullname(user)),
