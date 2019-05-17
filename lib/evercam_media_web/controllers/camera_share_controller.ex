@@ -90,7 +90,7 @@ defmodule EvercamMediaWeb.CameraShareController do
         %{ agent: get_user_agent(conn, params["agent"]) }
         |> Map.merge(get_requester_Country(requester_ip, params["u_country"], params["u_country_code"]))
 
-      zoho_camera = %{}
+      zoho_camera = get_zoho_camera(camera.exid, caller.email)
 
       fetch_shares =
         Enum.reduce(email_array, {[], [], [], Calendar.DateTime.now_utc}, fn email, {shares, share_requests, changes, datetime} = _acc ->
@@ -100,7 +100,7 @@ defmodule EvercamMediaWeb.CameraShareController do
             case CameraShare.create_share(camera, sharee, caller, params["rights"], params["message"]) do
               {:ok, camera_share} ->
                 create_camera_share(Application.get_env(:evercam_media, :run_spawn), caller, sharee, camera, camera_share, extra, next_datetime)
-                add_contact_to_zoho(false, zoho_camera, sharee, caller.username)
+                add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), zoho_camera, sharee, caller.email)
                 {[camera_share | shares], share_requests, changes, next_datetime}
               {:error, changeset} ->
                 {shares, share_requests, [attach_email_to_message(changeset, email) | changes], next_datetime}
@@ -228,7 +228,7 @@ defmodule EvercamMediaWeb.CameraShareController do
       delete_snapmails(Application.get_env(:evercam_media, :run_spawn), sharee, camera)
       Camera.invalidate_user(sharee)
       Camera.invalidate_camera(camera)
-      delete_share_to_zoho(false, exid, User.get_fullname(sharee), caller.username)
+      delete_share_to_zoho(Application.get_env(:evercam_media, :run_spawn), exid, User.get_fullname(sharee), caller.email)
 
       extra =
         %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
@@ -278,7 +278,15 @@ defmodule EvercamMediaWeb.CameraShareController do
     end)
   end
 
-  defp add_contact_to_zoho(true, zoho_camera, user, user_id) when user_id in ["garda", "gardashared", "construction", "oldconstruction", "smartcities"] do
+  defp get_zoho_camera(camera_exid, user_id) when user_id in ["gardashared@evercam.io", "construction@evercam.io", "old-construction@evercam.io", "smartcities@evercam.io"] do
+    case Zoho.get_camera(camera_exid) do
+      {:ok, zoho_camera} -> zoho_camera
+      _ -> %{}
+    end
+  end
+  defp get_zoho_camera(_camera_exid, _user_id), do: :noop
+
+  defp add_contact_to_zoho(true, zoho_camera, user, user_id) when user_id in ["gardashared@evercam.io", "construction@evercam.io", "old-construction@evercam.io", "smartcities@evercam.io"] do
     spawn fn ->
       contact =
         case Zoho.get_contact(user.email) do
@@ -322,7 +330,7 @@ defmodule EvercamMediaWeb.CameraShareController do
   end
   defp delete_snapmails(_mode, _, _), do: :noop
 
-  defp delete_share_to_zoho(true, camera_exid, user_fullname, user_id) when user_id in ["garda", "gardashared", "construction", "oldconstruction", "smartcities"] do
+  defp delete_share_to_zoho(true, camera_exid, user_fullname, user_id) when user_id in ["gardashared@evercam.io", "construction@evercam.io", "old-construction@evercam.io", "smartcities@evercam.io"] do
     spawn fn ->
       case Zoho.get_share(camera_exid, user_fullname) do
         {:ok, share} -> Zoho.delete_share(share["id"])

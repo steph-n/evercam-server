@@ -316,7 +316,7 @@ defmodule EvercamMediaWeb.CameraController do
               |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
               Util.log_activity(caller, camera, "camera edited", extra)
               update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
-              update_camera_to_zoho(false, camera, caller.username)
+              update_camera_to_zoho(Application.get_env(:evercam_media, :run_spawn), camera, caller.email)
               render(conn, "show.#{version}.json", %{camera: camera, user: caller})
             {:error, changeset} ->
               render_error(conn, 400, Util.parse_changeset(changeset))
@@ -377,7 +377,7 @@ defmodule EvercamMediaWeb.CameraController do
         is_public: false
       }
       renamed_camera = Map.put(camera, :name, "#{camera.name} (Deleted)")
-      update_camera_to_zoho(false, renamed_camera, caller.username)
+      update_camera_to_zoho(Application.get_env(:evercam_media, :run_spawn), renamed_camera, caller.email)
       camera
       |> Camera.delete_changeset(camera_params)
       |> Repo.update!
@@ -455,7 +455,7 @@ defmodule EvercamMediaWeb.CameraController do
           Util.log_activity(caller, camera, "camera created", extra)
           Camera.invalidate_user(caller)
           send_email_notification(Application.get_env(:evercam_media, :run_spawn), caller, full_camera)
-          add_camera_to_zoho(false, full_camera, caller.username)
+          add_camera_to_zoho(Application.get_env(:evercam_media, :run_spawn), full_camera, caller.email)
           conn
           |> put_status(:created)
           |> render("show.#{version}.json", %{camera: full_camera, user: caller})
@@ -466,7 +466,7 @@ defmodule EvercamMediaWeb.CameraController do
     end
   end
 
-  defp add_camera_to_zoho(true, camera, user_id) when user_id in ["garda", "gardashared", "construction", "oldconstruction", "smartcities"] do
+  defp add_camera_to_zoho(true, camera, user_id) when user_id in ["gardashared@evercam.io", "construction@evercam.io", "old-construction@evercam.io", "smartcities@evercam.io"] do
     spawn fn ->
       case Zoho.get_camera(camera.exid) do
         {:ok, _} -> Logger.info "[add_camera_to_zoho] [#{camera.exid}] [Camera already exists]"
@@ -476,7 +476,7 @@ defmodule EvercamMediaWeb.CameraController do
   end
   defp add_camera_to_zoho(_mode, _camera, _user_id), do: :noop
 
-  defp update_camera_to_zoho(true, camera, user_id) when user_id in ["garda", "gardashared", "construction", "oldconstruction", "smartcities"] do
+  defp update_camera_to_zoho(true, camera, user_id) when user_id in ["gardashared@evercam.io", "construction@evercam.io", "old-construction@evercam.io", "smartcities@evercam.io"] do
     spawn fn ->
       case Zoho.get_camera(camera.exid) do
         {:nodata, _} -> Logger.info "[update_camera_to_zoho] [#{camera.exid}] [Camera does not exists]"

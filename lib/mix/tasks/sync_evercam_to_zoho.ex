@@ -12,7 +12,12 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     email_or_username
     |> User.by_username_or_email
     |> Camera.for(false)
-    |> Zoho.insert_camera
+    |> Enum.chunk_every(99)
+    |> Enum.each(fn(cameras) ->
+      cameras
+      |> Zoho.insert_camera
+      |> IO.inspect
+    end)
 
     Logger.info "Camera(s) sync successfully."
   end

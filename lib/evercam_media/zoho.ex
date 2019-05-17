@@ -28,7 +28,7 @@ defmodule EvercamMedia.Zoho do
 
     case HTTPoison.post(url, Poison.encode!(request), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 201}} -> {:ok, body}
-      _ -> {:error}
+      response -> {:error, response}
     end
   end
 
@@ -149,8 +149,8 @@ defmodule EvercamMedia.Zoho do
   def create_camera_request([camera | rest], camera_json) do
     url_to_nvr = "http://#{Camera.host(camera, "external")}:#{Camera.get_nvr_port(camera)}"
     evercam_type =
-      case camera.owner.username do
-        "smartcities" -> "Smart Cities"
+      case camera.owner.email do
+        "smartcities@evercam.io" -> "Smart Cities"
         _ -> "Construction"
       end
     camera_obj =
