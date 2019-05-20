@@ -481,7 +481,7 @@ defmodule EvercamMediaWeb.CameraController do
       case Zoho.get_camera(camera.exid) do
         {:nodata, _} -> Logger.info "[update_camera_to_zoho] [#{camera.exid}] [Camera does not exists]"
         {:ok, zoho_camera} ->
-          record_id = zoho_camera |> List.first |> Map.fetch!("content")
+          record_id = zoho_camera["id"]
           Zoho.update_camera([camera], record_id)
       end
     end
