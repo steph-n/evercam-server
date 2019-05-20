@@ -415,6 +415,7 @@ defmodule EvercamMediaWeb.UserController do
     CameraShareRequest.delete_by_user_id(user.id)
     Snapmail.delete_no_camera_snapmail()
     Camera.delete_by_owner(user.id)
+    AccessToken.delete_by_user_id(user.id)
     User.delete_by_id(user.id)
     User.invalidate_auth(user.api_id, user.api_key)
     Camera.invalidate_user(user)
