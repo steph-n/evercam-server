@@ -47,16 +47,24 @@ defmodule EvercamMedia.Snapshot.Streamer do
     cond do
       camera == nil ->
         Logger.debug "[#{camera_exid}] Shutting down streamer, camera doesn't exist"
+        ConCache.put(:do_camera_request, camera.exid, true)
         StreamerSupervisor.stop_streamer(camera_exid)
       length(subscribers(camera_exid)) == 0 ->
         Logger.debug "[#{camera_exid}] Shutting down streamer, no subscribers"
+        ConCache.put(:do_camera_request, camera.exid, true)
         StreamerSupervisor.stop_streamer(camera_exid)
       Util.camera_recording?(camera) ->
         Logger.debug "[#{camera_exid}] Shutting down streamer, already streaming"
+        ConCache.put(:do_camera_request, camera.exid, true)
         StreamerSupervisor.stop_streamer(camera_exid)
       true ->
         Logger.debug "[#{camera_exid}] Streaming ..."
-        spawn fn -> stream(camera) end
+        spawn fn ->
+          case {camera_exid, ConCache.get(:do_camera_request, camera_exid)} do
+            {"angel-ibvua", false} -> Logger.debug "Don't send snapshot request to camera #{camera.name}"
+            _ -> stream(camera)
+          end
+        end
     end
     Process.send_after(self(), :tick, get_fps(camera_exid))
     {:noreply, [], camera_exid}
@@ -74,8 +82,10 @@ defmodule EvercamMedia.Snapshot.Streamer do
   #####################
 
   def stream(camera) do
+    ConCache.put(:do_camera_request, camera.exid, false)
     timestamp = Calendar.DateTime.now_utc |> Calendar.DateTime.Format.unix
     response = camera |> construct_args(timestamp) |> CamClient.fetch_snapshot
+    ConCache.put(:do_camera_request, camera.exid, true)
 
     case response do
       {:ok, data} ->

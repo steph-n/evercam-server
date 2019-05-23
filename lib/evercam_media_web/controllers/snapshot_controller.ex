@@ -167,7 +167,12 @@ defmodule EvercamMediaWeb.SnapshotController do
 
   def thumbnail(conn, %{"id" => camera_exid}) do
     camera = Camera.get_full(camera_exid)
-    case snapshot_thumbnail(camera, conn.assigns[:current_user], true) do
+    create_thumbnail =
+      case camera.exid do
+        "angel-ibvua" -> false
+        _ -> true
+      end
+    case snapshot_thumbnail(camera, conn.assigns[:current_user], create_thumbnail) do
       {200, response} ->
         conn
         |> put_resp_header("content-type", "image/jpeg")

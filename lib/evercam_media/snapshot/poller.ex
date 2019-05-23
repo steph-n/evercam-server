@@ -133,8 +133,12 @@ defmodule EvercamMedia.Snapshot.Poller do
   #######################
 
   defp do_request(nil, state) do
-    timestamp = Calendar.DateTime.now!("UTC") |> Calendar.DateTime.Format.unix
-    Worker.get_snapshot(state.name, {:poll, timestamp})
+    case state.config.camera_exid do
+      "angel-ibvua" ->
+        ConCache.get(:do_camera_request, state.config.camera_exid)
+        |> send_request(state)
+      _ -> send_request(true, state)
+    end
   end
   defp do_request(_pid, state) do
     Logger.debug "Do not request to camera: #{state.name} because streamer is running."
@@ -145,6 +149,12 @@ defmodule EvercamMedia.Snapshot.Poller do
       _ -> :noop
     end
   end
+
+  defp send_request(do_request, state) when do_request in [nil, true] do
+    timestamp = Calendar.DateTime.now!("UTC") |> Calendar.DateTime.Format.unix
+    Worker.get_snapshot(state.name, {:poll, timestamp})
+  end
+  defp send_request(false, state), do: Logger.debug "Don't send snapshot request to camera #{state.name}"
 
   defp start_timer(sleep, message, false, _pause_sleep) do
     Process.send_after(self(), message, sleep)

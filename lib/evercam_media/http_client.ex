@@ -13,6 +13,54 @@ defmodule EvercamMedia.HTTPClient do
     HTTPoison.get url, ["Authorization": "Digest #{digest_token}"], hackney: hackney
   end
 
+  ############################
+  ####### Async Request#######
+  ############################
+  def get_async(url, username, password) do
+    response =
+      case get(url) do
+        {:ok, response} -> response
+        response -> response
+      end
+
+    digest_token = DigestAuth.get_digest_token(response, url, username, password)
+    hackney = [pool: :snapshot_pool]
+    HTTPoison.get(url, ["Authorization": "Digest #{digest_token}"], [stream_to: self()])
+    |> collect_response(self(), <<>>)
+  end
+
+  def collect_response(id, par, data) do
+    receive do
+      %HTTPoison.AsyncStatus{code: 200, id: id} ->
+        Logger.debug "Collect response status"
+        collect_response(id, par, data)
+      %HTTPoison.AsyncHeaders{headers: _headers, id: id} ->
+        Logger.debug "Collect response headers"
+        collect_response(id, par, data)
+      %HTTPoison.AsyncChunk{chunk: chunk, id: id,} ->
+        Logger.info EvercamMedia.Util.jpeg?(chunk)
+        # name = Calendar.DateTime.now_utc |> Calendar.Strftime.strftime!("%Y%m%dT%H%M%SZ")
+        timestamp = Calendar.DateTime.now!("UTC") |> Calendar.DateTime.Format.unix
+        # IO.inspect
+        # File.write("#{Application.get_env(:evercam_media, :storage_dir)}/#{name}.jpg", chunk)
+        EvercamMedia.Snapshot.Storage.save("evercam-office", timestamp, chunk, "Evercam Proxy")
+        # :timer.sleep(5000)
+        collect_response(id, par, data)
+      %HTTPoison.AsyncEnd{id: _id} ->
+        Logger.debug "Stream complete"
+      _ ->
+        Logger.debug "Unknown message in response"
+        collect_response(id, par, data)
+    after
+      15000 ->
+        Logger.debug "No response after 5 seconds."
+    end
+  end
+
+  ############################
+  ##### end Async Request#####
+  ############################
+
   def get(:basic_auth, url, "", "") do
     get(url)
   end

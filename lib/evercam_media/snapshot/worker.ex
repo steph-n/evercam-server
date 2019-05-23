@@ -153,6 +153,7 @@ defmodule EvercamMedia.Snapshot.Worker do
   Server callback for camera_reply
   """
   def handle_info({:camera_reply, result, timestamp, reply_to}, state) do
+    ConCache.put(:do_camera_request, state.config.camera_exid, true)
     case result do
       {:ok, image} ->
         data = {state.name, timestamp, image}
@@ -209,7 +210,7 @@ defmodule EvercamMedia.Snapshot.Worker do
   defp try_snapshot(state, config, camera_exid, timestamp, reply_to, worker, attempt) do
     camera = Camera.get(camera_exid)
     spawn fn ->
-
+      ConCache.put(:do_camera_request, camera_exid, false)
       result =
         config
         |> add_missing_params(timestamp, attempt)
@@ -221,6 +222,13 @@ defmodule EvercamMedia.Snapshot.Worker do
             Process.exit self(), :shutdown
           end
           ConCache.put(:camera_lock, camera_exid, camera_exid)
+
+          case camera_exid do
+            "angel-ibvua" -> 600
+            _ -> 0
+          end
+          |> :timer.sleep
+
           try_snapshot(state, config, camera_exid, timestamp, reply_to, worker, attempt + 1)
         _ ->
           ConCache.delete(:camera_lock, camera_exid)
