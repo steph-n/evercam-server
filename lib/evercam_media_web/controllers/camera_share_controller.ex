@@ -100,7 +100,7 @@ defmodule EvercamMediaWeb.CameraShareController do
             case CameraShare.create_share(camera, sharee, caller, params["rights"], params["message"]) do
               {:ok, camera_share} ->
                 create_camera_share(Application.get_env(:evercam_media, :run_spawn), caller, sharee, camera, camera_share, extra, next_datetime)
-                add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), zoho_camera, sharee, caller.email)
+                add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), zoho_camera, camera, sharee, caller.email)
                 {[camera_share | shares], share_requests, changes, next_datetime}
               {:error, changeset} ->
                 {shares, share_requests, [attach_email_to_message(changeset, email) | changes], next_datetime}
@@ -286,13 +286,13 @@ defmodule EvercamMediaWeb.CameraShareController do
   end
   defp get_zoho_camera(_camera_exid, _user_id), do: :noop
 
-  defp add_contact_to_zoho(true, zoho_camera, user, user_id) when user_id in ["gardashared@evercam.io", "construction@evercam.io", "old-construction@evercam.io", "smartcities@evercam.io"] do
+  defp add_contact_to_zoho(true, zoho_camera, evercam_camera, user, user_id) when user_id in ["gardashared@evercam.io", "construction@evercam.io", "old-construction@evercam.io", "smartcities@evercam.io"] do
     spawn fn ->
       contact =
         case Zoho.get_contact(user.email) do
           {:ok, contact} -> contact
           {:nodata, _message} ->
-            {:ok, contact} = Zoho.insert_contact(user)
+            {:ok, contact} = Zoho.insert_contact(user, evercam_camera.owner.email)
             Map.put(contact, "Full_Name", User.get_fullname(user))
           {:error} -> nil
         end
@@ -302,7 +302,7 @@ defmodule EvercamMediaWeb.CameraShareController do
       end
     end
   end
-  defp add_contact_to_zoho(_mode, _camera, _user, _user_id), do: :noop
+  defp add_contact_to_zoho(_, _, _, _, _), do: :noop
 
   defp ensure_list(email) do
     case is_binary(email) do

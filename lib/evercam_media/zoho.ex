@@ -48,6 +48,21 @@ defmodule EvercamMedia.Zoho do
     end
   end
 
+  def get_account(domain) do
+    search_criteria = "(Website:starts_with:http://#{domain})or(Website:starts_with:http://www.#{domain})or(Website:starts_with:https://#{domain})or(Website:starts_with:https://www.#{domain})or(Website:starts_with:www.#{domain})or(Website:starts_with:#{domain})"
+    url = "#{@zoho_url}Accounts/search?criteria=(#{search_criteria})"
+    headers = ["Authorization": "#{@zoho_auth_token}"]
+
+    case HTTPoison.get(url, headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        json_response = Poison.decode!(body)
+        account = Map.get(json_response, "data") |> List.first
+        {:ok, account}
+      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Account does't exits."}
+      _ -> {:error}
+    end
+  end
+
   def get_contact(email) do
     url = "#{@zoho_url}Contacts/search?criteria=(Email:equals:#{email})"
     headers = ["Authorization": "#{@zoho_auth_token}"]
@@ -62,14 +77,20 @@ defmodule EvercamMedia.Zoho do
     end
   end
 
-  def insert_contact(user) do
+  def insert_contact(user, owner_email \\ nil) do
     url = "#{@zoho_url}Contacts"
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+    domain = user.email |> String.split("@") |> List.last |> String.split(".") |> List.first
+    account_name =
+      case get_account(domain) do
+        {:ok, account} -> account["Account_Name"]
+        _ -> get_account_by_owner_email(owner_email)
+      end
 
     contact_xml =
       %{"data" =>
         [%{
-          "Account_Name" => "No Account",
+          "Account_Name" => account_name,
           "First_Name" => "#{user.firstname}",
           "Last_Name" => "#{user.lastname}",
           "Email" => "#{user.email}"
@@ -82,6 +103,15 @@ defmodule EvercamMedia.Zoho do
         contact = Map.get(json_response, "data") |> List.first
         {:ok, contact["details"]}
       error -> {:error, error}
+    end
+  end
+
+  defp get_account_by_owner_email(nil), do: "No Account"
+  defp get_account_by_owner_email(owner_email) do
+    domain = owner_email |> String.split("@") |> List.last |> String.split(".") |> List.first
+    case get_account(domain) do
+      {:ok, account} -> account["Account_Name"]
+      _ -> "No Account"
     end
   end
 

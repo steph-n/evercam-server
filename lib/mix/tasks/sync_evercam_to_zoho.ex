@@ -4,6 +4,9 @@ defmodule EvercamMedia.SyncEvercamToZoho do
   import Ecto.Query
   require Logger
 
+  @zoho_url System.get_env["ZOHO_URL"]
+  @zoho_auth_token System.get_env["ZOHO_AUTH_TOKEN"]
+
   def sync_cameras(email_or_username) do
     {:ok, _} = Application.ensure_all_started(:evercam_media)
 
@@ -36,6 +39,49 @@ defmodule EvercamMedia.SyncEvercamToZoho do
         {:error} -> Logger.error "Error to insert"
       end
     end)
+  end
+
+  def sync_accounts_with_contacts(true, page, contacts, account_name) do
+    account_name = String.replace(account_name, " ", "%20")
+    url = "#{@zoho_url}Contacts/search?criteria=(Account_Name:equals:#{account_name})&page=#{page}"
+    Logger.info url
+    headers = ["Authorization": "#{@zoho_auth_token}"]
+
+    case HTTPoison.get(url, headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        zoho_response = Poison.decode!(body)
+        info = zoho_response |> Map.get("info")
+        contact_lists = Map.get(zoho_response, "data")
+        sync_accounts_with_contacts(info["more_records"], info["page"] + 1, contacts ++ contact_lists, account_name)
+        {:ok}
+      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Contact does't exits."}
+      error -> IO.inspect error
+    end
+  end
+  def sync_accounts_with_contacts(false, _page, contacts, _account_name), do: find_account_and_link(contacts)
+
+  defp find_account_and_link([contact | rest]) do
+    domain = contact["Email"] |> String.split("@") |> List.last |> String.split(".") |> List.first
+    case Zoho.get_account(domain) do
+      {:ok, account} ->
+        Logger.info "Update contact email: #{contact["Email"]}, id: #{contact["id"]}, Account Name: #{account["Account_Name"]}"
+        update_contact(contact["id"], [%{"Account_Name" => account["Account_Name"]}])
+        |> IO.inspect
+      _ -> ""
+    end
+    find_account_and_link(rest)
+  end
+  defp find_account_and_link([]), do: Logger.info "Completed"
+
+  defp update_contact(id, request_params) do
+    url = "#{@zoho_url}Contacts/#{id}"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+
+    contact_xml = %{ "data" => request_params }
+    case HTTPoison.put(url, Poison.encode!(contact_xml), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
+      error -> {:error, error}
+    end
   end
 
   def sync_camera_sharees(email_or_username) do
@@ -89,7 +135,6 @@ defmodule EvercamMedia.SyncEvercamToZoho do
         end)
       _ -> do_associate(camera_shares, zoho_camera)
     end
-
   end
 
   def do_associate(camera_shares, zoho_camera) do
