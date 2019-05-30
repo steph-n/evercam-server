@@ -41,6 +41,21 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     end)
   end
 
+  def correct_contacts_info() do
+    User
+    |> Repo.all
+    |> Enum.each(fn(user) ->
+      case Zoho.get_contact(user.email) do
+        {:ok, contact} ->
+          Logger.info "Found contact id: #{contact["id"]}, Name: #{contact["First_Name"]} #{contact["Last_Name"]}, Email: #{contact["Email"]}, Is_Evercam_User: #{contact["Evercam_User"]}."
+          update_contact(contact["id"], [%{"Evercam_User" => true}])
+          :timer.sleep(1000)
+        {:nodata, _message} -> Logger.info "Contact '#{user.email}' does not exists."
+        {:error} -> Logger.error "Error to get contact"
+      end
+    end)
+  end
+
   def sync_accounts_with_contacts(true, page, contacts, account_name) do
     account_name = String.replace(account_name, " ", "%20")
     url = "#{@zoho_url}Contacts/search?criteria=(Account_Name:equals:#{account_name})&page=#{page}"
