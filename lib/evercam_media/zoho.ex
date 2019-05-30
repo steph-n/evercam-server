@@ -93,7 +93,8 @@ defmodule EvercamMedia.Zoho do
           "Account_Name" => account_name,
           "First_Name" => "#{user.firstname}",
           "Last_Name" => "#{user.lastname}",
-          "Email" => "#{user.email}"
+          "Email" => "#{user.email}",
+          "Evercam_User" => true
         }]
       }
 
