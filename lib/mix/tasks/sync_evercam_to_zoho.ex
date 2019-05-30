@@ -73,6 +73,43 @@ defmodule EvercamMedia.SyncEvercamToZoho do
   end
   defp find_account_and_link([]), do: Logger.info "Completed"
 
+  def fix_empty_account_contacts() do
+    url = "#{@zoho_url}Contacts?sort_by=Account_Name&sort_order=asc"
+    Logger.info url
+    headers = ["Authorization": "#{@zoho_auth_token}"]
+
+    case HTTPoison.get(url, headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        zoho_response = Poison.decode!(body)
+        contacts = Map.get(zoho_response, "data")
+        link_empty_account(contacts)
+        {:ok}
+      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Contact does't exits."}
+      error -> IO.inspect error
+    end
+  end
+
+  defp link_empty_account([contact | rest]) do
+    case {contact["Account_Name"], contact["Email"]} do
+      {nil, nil} ->
+        Logger.info "Email empty."
+        update_contact(contact["id"], [%{"Account_Name" => "No Account"}])
+      {nil, _email} ->
+        domain = contact["Email"] |> String.split("@") |> List.last |> String.split(".") |> List.first
+        case Zoho.get_account(domain) do
+          {:ok, account} ->
+            Logger.info "Update contact email: #{contact["Email"]}, id: #{contact["id"]}, Account Name: #{account["Account_Name"]}"
+            update_contact(contact["id"], [%{"Account_Name" => account["Account_Name"]}])
+          _ ->
+            Logger.info "Account not found. Email: #{contact["Email"]}"
+            update_contact(contact["id"], [%{"Account_Name" => "No Account"}])
+        end
+      {_acc, _email} -> Logger.info "Contact has account"
+    end
+    link_empty_account(rest)
+  end
+  defp link_empty_account([]), do: Logger.info "Completed"
+
   defp update_contact(id, request_params) do
     url = "#{@zoho_url}Contacts/#{id}"
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
