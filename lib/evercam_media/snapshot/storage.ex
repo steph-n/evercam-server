@@ -216,6 +216,7 @@ defmodule EvercamMedia.Snapshot.Storage do
 
       files
       |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
+      |> Enum.reject(fn(file_name) -> String.ends_with?(file_name, ".json") end)
       |> Enum.map(fn(file_name) ->
         Map.get(dir_paths, app_name)
         |> construct_snapshot_record(file_name, app_name, 0, version, timezone)
