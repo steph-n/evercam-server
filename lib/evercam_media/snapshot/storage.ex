@@ -433,7 +433,7 @@ defmodule EvercamMedia.Snapshot.Storage do
 
   defp get_latest_directory_name(directory, url, type, attribute) do
     request_from_seaweedfs(url, type, attribute)
-    |> Enum.sort(&(&2 > &1))
+    |> Enum.sort
     |> case do
       [] -> {:error}
       res -> {directory, List.last(res)}
