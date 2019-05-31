@@ -107,6 +107,27 @@ defmodule EvercamMedia.Zoho do
     end
   end
 
+  def update_contact(id, request_params) do
+    url = "#{@zoho_url}Contacts/#{id}"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+
+    contact_xml = %{ "data" => request_params }
+    case HTTPoison.put(url, Poison.encode!(contact_xml), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
+      error -> {:error, error}
+    end
+  end
+
+  def delete_contact(id) do
+    url = "#{@zoho_url}Contacts/#{id}"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+
+    case HTTPoison.delete(url, headers) do
+      {:ok, _} -> {:ok}
+      error -> {:error, error}
+    end
+  end
+
   defp get_account_by_owner_email(nil), do: "No Account"
   defp get_account_by_owner_email(owner_email) do
     domain = owner_email |> String.split("@") |> List.last |> String.split(".") |> List.first

@@ -48,7 +48,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
       case Zoho.get_contact(user.email) do
         {:ok, contact} ->
           Logger.info "Found contact id: #{contact["id"]}, Name: #{contact["First_Name"]} #{contact["Last_Name"]}, Email: #{contact["Email"]}, Is_Evercam_User: #{contact["Evercam_User"]}."
-          update_contact(contact["id"], [%{"Evercam_User" => true}])
+          Zoho.update_contact(contact["id"], [%{"Evercam_User" => true}])
           :timer.sleep(1000)
         {:nodata, _message} -> Logger.info "Contact '#{user.email}' does not exists."
         {:error} -> Logger.error "Error to get contact"
@@ -80,7 +80,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     case Zoho.get_account(domain) do
       {:ok, account} ->
         Logger.info "Update contact email: #{contact["Email"]}, id: #{contact["id"]}, Account Name: #{account["Account_Name"]}"
-        update_contact(contact["id"], [%{"Account_Name" => account["Account_Name"]}])
+        Zoho.update_contact(contact["id"], [%{"Account_Name" => account["Account_Name"]}])
         |> IO.inspect
       _ -> ""
     end
@@ -108,33 +108,22 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     case {contact["Account_Name"], contact["Email"]} do
       {nil, nil} ->
         Logger.info "Email empty."
-        update_contact(contact["id"], [%{"Account_Name" => "No Account"}])
+        Zoho.update_contact(contact["id"], [%{"Account_Name" => "No Account"}])
       {nil, _email} ->
         domain = contact["Email"] |> String.split("@") |> List.last |> String.split(".") |> List.first
         case Zoho.get_account(domain) do
           {:ok, account} ->
             Logger.info "Update contact email: #{contact["Email"]}, id: #{contact["id"]}, Account Name: #{account["Account_Name"]}"
-            update_contact(contact["id"], [%{"Account_Name" => account["Account_Name"]}])
+            Zoho.update_contact(contact["id"], [%{"Account_Name" => account["Account_Name"]}])
           _ ->
             Logger.info "Account not found. Email: #{contact["Email"]}"
-            update_contact(contact["id"], [%{"Account_Name" => "No Account"}])
+            Zoho.update_contact(contact["id"], [%{"Account_Name" => "No Account"}])
         end
       {_acc, _email} -> Logger.info "Contact has account"
     end
     link_empty_account(rest)
   end
   defp link_empty_account([]), do: Logger.info "Completed"
-
-  defp update_contact(id, request_params) do
-    url = "#{@zoho_url}Contacts/#{id}"
-    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
-
-    contact_xml = %{ "data" => request_params }
-    case HTTPoison.put(url, Poison.encode!(contact_xml), headers) do
-      {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
-      error -> {:error, error}
-    end
-  end
 
   def sync_camera_sharees(email_or_username) do
     user = User.by_username_or_email(email_or_username)
