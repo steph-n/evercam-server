@@ -71,11 +71,16 @@ defmodule EvercamMedia.Snapshot.Deletion do
   def handle_info(:delete, state) do
     {:ok, timer} = Map.fetch(state, :timer)
     :erlang.cancel_timer(timer)
+    camera = Camera.get(state.config.camera_exid)
 
-    Logger.debug "start deletion for camera: #{state.name}"
-    state.config.camera_id
-    |> CloudRecording.by_camera_id
-    |> cleanup
+    case camera.is_online do
+      true ->
+        Logger.debug "start deletion for camera: #{state.name}"
+        state.config.camera_id
+        |> CloudRecording.by_camera_id
+        |> cleanup
+      _ -> Logger.debug "Do not start deletion for camera: #{state.name}"
+    end
 
     timer = start_timer(:delete)
     {:noreply, [], Map.put(state, :timer, timer)}

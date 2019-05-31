@@ -421,7 +421,6 @@ defmodule EvercamMediaWeb.UserController do
     Camera.invalidate_user(user)
     User.invalidate_share_users(user)
     Intercom.delete_user(user.email)
-    spawn(fn -> delete_user_from_zoho(user) end)
   end
 
   defp delete_user_camera_assets(user) do
