@@ -74,11 +74,15 @@ defmodule EvercamMedia.StorageJson do
     timezone = Camera.get_timezone(camera)
     case atom do
       :latest ->
-        {:ok, date, _image} = Storage.seaweed_thumbnail_load(camera.exid)
-        Util.convert_unix_to_iso(date, timezone)
+        case Storage.seaweed_thumbnail_load(camera.exid) do
+          {:ok, date, _image} -> Util.convert_unix_to_iso(date, timezone)
+          _ -> ""
+        end
       :oldest ->
-        {:ok, _image, date} = Storage.get_or_save_oldest_snapshot(camera.exid)
-        Util.convert_unix_to_iso(date, timezone)
+        case Storage.get_or_save_oldest_snapshot(camera.exid) do
+          {:ok, _image, date} -> Util.convert_unix_to_iso(date, timezone)
+          _ -> ""
+        end
     end
   end
 
