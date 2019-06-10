@@ -22,6 +22,7 @@ defmodule EvercamMedia do
       Supervisor.child_spec({ConCache, [ttl_check_interval: :timer.seconds(1), global_ttl: :timer.hours(1), name: :do_camera_request]}, id: :do_camera_request),
       worker(EvercamMedia.Scheduler, []),
       worker(EvercamMedia.Janitor, []),
+      worker(EvercamMedia.StorageJson, []),
       # supervisor(Evercam.Repo, []),
       # supervisor(Evercam.SnapshotRepo, []),
       supervisor(EvercamMediaWeb.Endpoint, []),
