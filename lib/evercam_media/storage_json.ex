@@ -4,6 +4,9 @@ defmodule EvercamMedia.StorageJson do
   require Logger
   import Ecto.Query
 
+  alias EvercamMedia.Snapshot.Storage
+  alias EvercamMedia.Util
+
   @seaweedfs_new  Application.get_env(:evercam_media, :seaweedfs_url_new)
   @seaweedfs_old Application.get_env(:evercam_media, :seaweedfs_url)
   @seaweedfs_oldest Application.get_env(:evercam_media, :seaweedfs_url_1)
@@ -39,7 +42,7 @@ defmodule EvercamMedia.StorageJson do
           Enum.map(servers, fn server ->
             type = seaweefs_type(server)
             attribute = seaweedfs_attribute(server)
-            url = "http://" <> server <> ":8888" <> "/#{camera.exid}/snapshots/recordings/"
+            url = server <> "/#{camera.exid}/snapshots/recordings/"
             Enum.map(years, fn year ->
               final_url = url <> year <> "/"
               %{
@@ -52,6 +55,7 @@ defmodule EvercamMedia.StorageJson do
         %{
           camera_name: camera.name,
           camera_exid: camera.exid,
+          camera_id: camera.id,
           oldest_snapshot_date: _snapshot_date(:oldest, camera),
           latest_snapshot_date: _snapshot_date(:latest, camera),
           years: years_data
@@ -67,22 +71,21 @@ defmodule EvercamMedia.StorageJson do
   defp seaweedfs_attribute(_), do: "Name"
 
   defp _snapshot_date(atom, camera) do
-    with {:ok, %HTTPoison.Response{body: body, status_code: 200}} <- HTTPoison.get(
-                                            "https://media.evercam.io/v2/cameras/#{camera.exid}/recordings/snapshots/#{atom |> to_string}?api_id=#{camera.owner.api_id}&api_key=#{camera.owner.api_key}"
-                                            )
-    do
-      {:ok, %{"created_at" => date}} = Jason.decode(body)
-      date
-    else
-      _ ->
-        ""
+    timezone = Camera.get_timezone(camera)
+    case atom do
+      :latest ->
+        {:ok, date, _image} = Storage.seaweed_thumbnail_load(camera.exid)
+        Util.convert_unix_to_iso(date, timezone)
+      :oldest ->
+        {:ok, _image, date} = Storage.get_or_save_oldest_snapshot(camera.exid)
+        Util.convert_unix_to_iso(date, timezone)
     end
   end
 
   def check_for_online_json_file do
     Logger.info "Checking for online file."
     with {:ok, %HTTPoison.Response{status_code: 200}} <- HTTPoison.get(
-                              "http://#{@seaweedfs_new}:8888/evercam-admin3/storage.json",
+                              "#{@seaweedfs_new}/evercam-admin3/storage.json",
                               ["Accept": "application/json"],
                               hackney: [pool: :seaweedfs_download_pool]
                             )
@@ -111,7 +114,7 @@ defmodule EvercamMedia.StorageJson do
   def seaweedfs_save(_data, _tries = 4), do: :noop
   def seaweedfs_save(data, tries) do
     hackney = [pool: :seaweedfs_upload_pool]
-    case HTTPoison.post("http://#{@seaweedfs_new}:8888/evercam-admin3/storage.json", {:multipart, [{"/evercam-admin3/storage.json", Jason.encode!(data), []}]}, [], hackney: hackney) do
+    case HTTPoison.post("#{@seaweedfs_new}/evercam-admin3/storage.json", {:multipart, [{"/evercam-admin3/storage.json", Jason.encode!(data), []}]}, [], hackney: hackney) do
       {:ok, response} -> response
       {:error, error} ->
         seaweedfs_save(data, tries + 1)
