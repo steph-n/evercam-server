@@ -56,6 +56,7 @@ defmodule EvercamMedia.StorageJson do
           camera_name: camera.name,
           camera_exid: camera.exid,
           camera_id: camera.id,
+          owner_id: camera.owner.id,
           oldest_snapshot_date: _snapshot_date(:oldest, camera),
           latest_snapshot_date: _snapshot_date(:latest, camera),
           years: years_data
