@@ -79,6 +79,7 @@ end
     post "/users/exist/:input", UserController, :user_exist
 
     get "/public/cameras", PublicController, :index
+    get "/storage/stats", PublicController, :storage_stats
 
     scope "/" do
       pipe_through :auth

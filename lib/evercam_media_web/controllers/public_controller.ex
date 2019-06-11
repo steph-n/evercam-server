@@ -20,6 +20,13 @@ defmodule EvercamMediaWeb.PublicController do
     |> render("geojson.json", %{cameras: cameras})
   end
 
+  def storage_stats(conn, _params) do
+    spawn(fn ->
+      EvercamMedia.StorageJson.start_link("refresh")
+    end)
+    json(conn, %{success: true})
+  end
+
   swagger_path :index do
     get "/public/cameras"
     summary "Returns all public cameras list."
