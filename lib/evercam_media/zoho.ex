@@ -63,6 +63,21 @@ defmodule EvercamMedia.Zoho do
     end
   end
 
+  def search_account(domain) do
+    url = "https://www.zohoapis.com/crm/v2/coql"
+    headers = ["Authorization": "#{@zoho_auth_token}"]
+    query = "select Account_Name from Accounts limit 2" # where Website like(#{domain})"
+
+    case HTTPoison.post(url, Poison.encode!(%{select_query: query}), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        json_response = Poison.decode!(body)
+        account = Map.get(json_response, "data") |> List.first
+        {:ok, account}
+      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Account does't exits."}
+      error -> {:error, error}
+    end
+  end
+
   def get_contact(email) do
     url = "#{@zoho_url}Contacts/search?criteria=(Email:equals:#{email})"
     headers = ["Authorization": "#{@zoho_auth_token}"]
