@@ -9,6 +9,8 @@
 <style type="text/css">
   #image-div img {
     width: 100% !important;
+    max-width: 640px !important;
+    height: auto !important;
   }
   @media only screen and (max-width: 600px) {
     a[class="btn"] {
@@ -19,6 +21,9 @@
     }
     table.social div[class="column"] {
       width: auto !important;
+    }
+    #image-div img {
+      max-width: 100% !important;
     }
   }
   @media only screen and (max-width: 480px){
