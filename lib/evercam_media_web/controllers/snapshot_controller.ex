@@ -401,8 +401,12 @@ defmodule EvercamMediaWeb.SnapshotController do
         |> Calendar.DateTime.subtract!(1)
       days = Storage.days(camera_exid, from, to, timezone)
 
+      filtered_days =
+        ((Calendar.DateTime.now!(timezone) |> Calendar.Strftime.strftime!("%z") |> String.to_integer) / 100 < 0)
+        |> check_recording_day(camera_exid, timezone, year, month, days)
+
       conn
-      |> json(%{days: days})
+      |> json(%{days: filtered_days})
     end
   end
 
@@ -757,6 +761,19 @@ defmodule EvercamMediaWeb.SnapshotController do
   #######################
   ## Utility functions ##
   #######################
+
+  def check_recording_day(false, _, _, _, _, days), do: days
+  def check_recording_day(true, camera_exid, timezone, year, month, days) do
+    Enum.reduce(days, [], fn(day, days_list) ->
+      from = construct_timestamp(year, month, "#{day}", "00:00:00", timezone)
+      to = construct_timestamp(year, month, "#{day}", "23:59:59", timezone)
+      case Storage.hours(camera_exid, from, to, timezone) do
+        [] -> days_list
+        _ -> days_list ++ [day]
+      end
+    end)
+    |> IO.inspect
+  end
 
   defp save_thumbnail(nil), do: true
   defp save_thumbnail(cr) do

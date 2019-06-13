@@ -194,11 +194,16 @@ defmodule EvercamMediaWeb.StreamController do
     cam_username = Camera.username(camera)
     cam_password = Camera.password(camera)
     channel = parse_channel(rtsp_url)
-    stream_info = get_stream_info(ip, port, cam_username, cam_password, channel)
-    [width, height] = get_resolution(stream_info.resolution)
-    %{width: width, height: height, codec_name: stream_info.video_encoding, pix_fmt: "", avg_frame_rate: "#{stream_info.frame_rate}", bit_rate: stream_info.bitrate}
+    case get_stream_info(ip, port, cam_username, cam_password, channel) do
+      %{} -> get_stream_info_with_ffmpeg(rtsp_url)
+      stream_info ->
+        [width, height] = get_resolution(stream_info.resolution)
+        %{width: width, height: height, codec_name: stream_info.video_encoding, pix_fmt: "", avg_frame_rate: "#{stream_info.frame_rate}", bit_rate: stream_info.bitrate}
+    end
   end
-  defp get_stream_info(_, _, rtsp_url) do
+  defp get_stream_info(_, _, rtsp_url), do: get_stream_info_with_ffmpeg(rtsp_url)
+
+  defp get_stream_info_with_ffmpeg(rtsp_url) do
     Porcelain.exec("ffprobe", ["-v", "error", "-show_streams", "#{rtsp_url}"], [err: :out]).out
     |> String.split("\n", trim: true)
     |> Enum.filter(fn(item) ->
