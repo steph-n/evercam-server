@@ -7,11 +7,6 @@
 </head>
 <body bgcolor="#FFFFFF" style="font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: none; width: 100% !important; height: 100%; margin: 0; padding: 0;">
 <style type="text/css">
-  #image-div img {
-    width: 100% !important;
-    max-width: 640px !important;
-    height: auto !important;
-  }
   @media only screen and (max-width: 600px) {
     a[class="btn"] {
       display: block !important; margin-bottom: 10px !important; background-image: none !important; margin-right: 0 !important;
@@ -21,9 +16,6 @@
     }
     table.social div[class="column"] {
       width: auto !important;
-    }
-    #image-div img {
-      max-width: 100% !important;
     }
   }
   @media only screen and (max-width: 480px){
@@ -59,7 +51,7 @@
 
       <div class="content" style="font-family: Arial, Helvetica, sans-serif; display: block; margin: 0 auto; padding: 15px;">
         <table style="font-family: Arial, Helvetica, sans-serif; width: 100%; margin: 0; padding: 0;"><tr style="font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
-          <td id="image-div" style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
+          <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
             <p class="lead" style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Hello, </p>
 
