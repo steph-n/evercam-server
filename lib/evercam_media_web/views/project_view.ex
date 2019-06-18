@@ -14,7 +14,7 @@ defmodule EvercamMediaWeb.ProjectView do
     %{
       id: project.exid,
       name: project.name,
-      camera_ids: Enum.map(project.cameras, fn(c) -> c.exid end),
+      camera_ids: Enum.map(project.cameras, fn(c) -> %{id: c.exid, location: get_camera_location(c, c.location_detailed)} end),
       owner: User.get_fullname(project.user),
       owner_email: project.user.email,
       overlays: get_overlays(project.overlays),
@@ -26,7 +26,7 @@ defmodule EvercamMediaWeb.ProjectView do
     %{
       id: project.exid,
       name: project.name,
-      camera_ids: Enum.map(project.cameras, fn(c) -> c.exid end),
+      camera_ids: Enum.map(project.cameras, fn(c) -> %{id: c.exid, location: get_camera_location(c, c.location_detailed)} end),
       owner: User.get_fullname(project.user),
       owner_email: project.user.email,
       overlays: get_overlays(project.overlays),
@@ -46,4 +46,7 @@ defmodule EvercamMediaWeb.ProjectView do
       }
     end)
   end
+
+  defp get_camera_location(camera, nil), do: Camera.get_location(camera) |> Map.merge(%{dir: 0, fov_h: 0})
+  defp get_camera_location(_, location_detail), do: location_detail
 end

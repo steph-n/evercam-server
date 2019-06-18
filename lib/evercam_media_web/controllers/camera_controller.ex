@@ -591,11 +591,7 @@ defmodule EvercamMediaWeb.CameraController do
     camera_params =
       %{
         config: %{"snapshots" => %{}},
-        location_detailed: %{
-          "camera_loc" => %{},
-          "object_loc" => %{},
-          "fov" => %{}
-        }
+        location_detailed: %{}
       }
       |> add_parameter("field", :owner_id, params["owner_id"])
       |> construct_camera_parameters("create", params)
@@ -634,22 +630,13 @@ defmodule EvercamMediaWeb.CameraController do
     |> add_url_parameter(model, "mpeg", "mpeg4", params["mpeg_url"])
     |> add_parameter("auth", "username", params["cam_username"])
     |> add_parameter("auth", "password", params["cam_password"])
-    |> add_location_detail("camera_loc", "lat", params["camera_loc_lat"])
-    |> add_location_detail("camera_loc", "lng", params["camera_loc_lng"])
-    |> add_location_detail("camera_loc", "alt", params["camera_loc_alt"])
-    |> add_location_detail("object_loc", "lat", params["object_loc_lat"])
-    |> add_location_detail("object_loc", "lng", params["object_loc_lng"])
-    |> add_location_detail("object_loc", "alt", params["object_loc_alt"])
-    |> add_location_detail("fov", "horizontal", params["fov_horizontal"])
+    |> add_location_detail("lat", params["location_lat"])
+    |> add_location_detail("lng", params["location_lng"])
+    |> add_location_detail("dir", params["camera_dir"])
+    |> add_location_detail("fov_h", params["camera-fov-h"])
   end
 
-  defp get_location_detail(nil) do
-    %{
-      "camera_loc" => %{},
-      "object_loc" => %{},
-      "fov" => %{}
-    }
-  end
+  defp get_location_detail(nil), do: %{}
   defp get_location_detail(location_detailed), do: location_detailed
 
   defp add_alert_email(params, emails, caller_email, send_notification) when send_notification in [true, "true"] do
@@ -696,9 +683,9 @@ defmodule EvercamMediaWeb.CameraController do
     put_in(params, [:config, "auth", "basic", key], value)
   end
 
-  defp add_location_detail(params, _, _, value) when value in [nil, ""], do: params
-  defp add_location_detail(params, key, key1, value) do
-    put_in(params, [:location_detailed, key, key1], value)
+  defp add_location_detail(params, _, value) when value in [nil, ""], do: params
+  defp add_location_detail(params, key, value) do
+    put_in(params, [:location_detailed, key], value)
   end
 
   defp add_url_parameter(params, nil, _type, _attr, _custom_value), do: params

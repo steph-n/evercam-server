@@ -87,7 +87,7 @@ defmodule EvercamMediaWeb.CameraView do
       discoverable: camera.discoverable,
       timezone: Camera.get_timezone(camera),
       location: Camera.get_location(camera),
-      location_detailed: camera.location_detailed,
+      location_detailed: get_camera_location(camera, camera.location_detailed),
       rights: Camera.get_rights(camera, user),
       proxy_url: %{
         hls: Util.get_hls_url(camera, User.get_fullname(user)),
@@ -176,4 +176,7 @@ defmodule EvercamMediaWeb.CameraView do
       id: project.exid
     }
   end
+
+  defp get_camera_location(camera, nil), do: Camera.get_location(camera) |> Map.merge(%{dir: 0, fov_h: 0})
+  defp get_camera_location(_, location_detail), do: location_detail
 end
