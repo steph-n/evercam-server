@@ -242,6 +242,7 @@ end
       options "/projects/:id/overlay", ProjectController, :nothing
       patch "/projects/:id/overlay/:overlay_id", ProjectController, :update_overlay
       options "/projects/:id/overlay/:overlay_id", ProjectController, :nothing
+      delete "/projects/:id/overlay/:overlay_id", ProjectController, :delete_overlay
       post "/projects", ProjectController, :create
       options "/projects", ProjectController, :nothing
     end

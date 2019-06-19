@@ -693,6 +693,18 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
+  def save_map_file(image_name, url, extension, fileType) do
+    case HTTPoison.get("#{url}", [], hackney: [pool: :seaweedfs_download_pool]) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: content}} ->
+        file_path = "mapping/#{image_name}.#{extension}"
+        File.mkdir_p("#{@root_dir}/mapping/")
+        File.write("#{@root_dir}/mapping/#{image_name}.#{extension}", content)
+        do_save(file_path, content, [content_type: "#{fileType}", acl: :public_read])
+        File.rm_rf("#{@root_dir}/mapping/")
+      {:error, _} -> :noop
+    end
+  end
+
   def save_archive_edited_image(camera_exid, archive_exid, content) do
     File.mkdir_p("#{@root_dir}/#{archive_exid}/")
     File.write("#{@root_dir}/#{archive_exid}/#{archive_exid}.png", content)

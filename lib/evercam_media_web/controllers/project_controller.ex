@@ -43,7 +43,7 @@ defmodule EvercamMediaWeb.ProjectController do
     end
   end
 
-  def add_overlay(conn, %{"id" => project_exid, "path" => path, "sw_lat" => sw_lat, "sw_lng" => sw_lng, "ne_lat" => ne_lat, "ne_lng" => ne_lng }) do
+  def add_overlay(conn, %{"id" => project_exid, "sw_lat" => sw_lat, "sw_lng" => sw_lng, "ne_lat" => ne_lat, "ne_lng" => ne_lng } = params) do
     caller = conn.assigns[:current_user]
 
     with :ok <- authorized(conn, caller),
@@ -51,10 +51,12 @@ defmodule EvercamMediaWeb.ProjectController do
     do
       sw_points = %Geo.Point{coordinates: {sw_lng, sw_lat}}
       ne_points = %Geo.Point{coordinates: {ne_lng, ne_lat}}
+      EvercamMedia.Snapshot.Storage.save_map_file(params["image_name"], params["file_url"], params["file_extension"], params["fileType"])
+      path = "https://s3-eu-west-1.amazonaws.com/evercam-camera-assets/mapping/#{params["image_name"]}.#{params["file_extension"]}"
       case Overlay.insert_overlay(project.id, path, sw_points, ne_points) do
-        {:ok, _overlay} ->
-          complete_project = Project.by_exid(project_exid)
-          render(conn, "show.json", %{project: complete_project})
+        {:ok, overlay} ->
+          conn
+          |> json(%{id: overlay.id, path: overlay.path, sw_bounds: Overlay.get_location(overlay.sw_bounds), ne_bounds: Overlay.get_location(overlay.ne_bounds)})
         {:error, changeset} -> render_error(conn, 400, Util.parse_changeset(changeset))
       end
     end
@@ -72,11 +74,27 @@ defmodule EvercamMediaWeb.ProjectController do
       overlay_changeset = Overlay.changeset(overlay, %{path: path, sw_bounds: sw_points, ne_bounds: ne_points})
 
       case Evercam.Repo.update(overlay_changeset) do
-        {:ok, _overlay} ->
-          complete_project = Project.by_exid(project_exid)
-          render(conn, "show.json", %{project: complete_project})
+        {:ok, overlay} ->
+          conn
+          |> json(%{id: overlay.id, path: overlay.path, sw_bounds: Overlay.get_location(overlay.sw_bounds), ne_bounds: Overlay.get_location(overlay.ne_bounds)})
         {:error, changeset} -> render_error(conn, 400, Util.parse_changeset(changeset))
       end
+    end
+  end
+
+  def delete_overlay(conn, %{"id" => project_exid, "overlay_id" => overlay_id}) do
+    caller = conn.assigns[:current_user]
+
+    with :ok <- authorized(conn, caller),
+         {:ok, _project} <- project_exist(conn, project_exid),
+         {:ok, overlay} <- overlay_exist(conn, overlay_id)
+    do
+      Overlay.delete_by_id(overlay.id)
+      spawn(fn ->
+        ["mapping/#{overlay.path |> String.split("/") |> List.last}"]
+        |> EvercamMedia.TimelapseRecording.S3.delete_object
+      end)
+      json(conn, %{})
     end
   end
 
