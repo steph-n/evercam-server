@@ -62,7 +62,7 @@ defmodule EvercamMediaWeb.ProjectController do
     end
   end
 
-  def update_overlay(conn, %{"id" => project_exid, "overlay_id" => overlay_id, "path" => path, "sw_lat" => sw_lat, "sw_lng" => sw_lng, "ne_lat" => ne_lat, "ne_lng" => ne_lng }) do
+  def update_overlay(conn, %{"id" => project_exid, "overlay_id" => overlay_id, "sw_lat" => sw_lat, "sw_lng" => sw_lng, "ne_lat" => ne_lat, "ne_lng" => ne_lng }) do
     caller = conn.assigns[:current_user]
 
     with :ok <- authorized(conn, caller),
@@ -71,7 +71,7 @@ defmodule EvercamMediaWeb.ProjectController do
     do
       sw_points = %Geo.Point{coordinates: {sw_lng, sw_lat}}
       ne_points = %Geo.Point{coordinates: {ne_lng, ne_lat}}
-      overlay_changeset = Overlay.changeset(overlay, %{path: path, sw_bounds: sw_points, ne_bounds: ne_points})
+      overlay_changeset = Overlay.changeset(overlay, %{sw_bounds: sw_points, ne_bounds: ne_points})
 
       case Evercam.Repo.update(overlay_changeset) do
         {:ok, overlay} ->
