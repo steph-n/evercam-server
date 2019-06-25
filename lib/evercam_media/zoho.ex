@@ -66,7 +66,7 @@ defmodule EvercamMedia.Zoho do
   def search_account(domain) do
     url = "https://www.zohoapis.com/crm/v2/coql"
     headers = ["Authorization": "#{@zoho_auth_token}"]
-    query = "select Account_Name from Accounts limit 2" # where Website like(#{domain})"
+    query = "select Account_Name from Accounts where Website like(#{domain})"
 
     case HTTPoison.post(url, Poison.encode!(%{select_query: query}), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
@@ -110,7 +110,8 @@ defmodule EvercamMedia.Zoho do
           "First_Name" => "#{user.firstname}",
           "Last_Name" => "#{user.lastname}",
           "Email" => "#{user.email}",
-          "Evercam_User" => true
+          "Evercam_User" => true,
+          "Evercam_Signup_Date" => Calendar.Strftime.strftime!(user.created_at, "%Y-%m-%dT%H:%M:%S+00:00")
         }]
       }
 

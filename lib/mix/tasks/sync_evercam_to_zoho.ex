@@ -47,8 +47,9 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     |> Enum.each(fn(user) ->
       case Zoho.get_contact(user.email) do
         {:ok, contact} ->
-          Logger.info "Found contact id: #{contact["id"]}, Name: #{contact["First_Name"]} #{contact["Last_Name"]}, Email: #{contact["Email"]}, Is_Evercam_User: #{contact["Evercam_User"]}."
-          Zoho.update_contact(contact["id"], [%{"Evercam_User" => true}])
+          Logger.info "Found contact id: #{contact["id"]}, Email: #{contact["Email"]}, Evercam_Signup_Date: #{contact["Evercam_Signup_Date"]}."
+          evercam_user_signup_date = user.created_at |> Calendar.Strftime.strftime!("%Y-%m-%dT%H:%M:%S+00:00")
+          Zoho.update_contact(contact["id"], [%{"Evercam_Signup_Date" => evercam_user_signup_date}])
           :timer.sleep(1000)
         {:nodata, _message} -> Logger.info "Contact '#{user.email}' does not exists."
         {:error} -> Logger.error "Error to get contact"
