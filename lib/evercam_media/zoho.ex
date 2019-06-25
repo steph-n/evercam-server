@@ -105,6 +105,7 @@ defmodule EvercamMedia.Zoho do
     contact_xml =
       %{"data" =>
         [%{
+          "Contact_lead_source" => "Evercam User",
           "Account_Name" => account_name,
           "First_Name" => "#{user.firstname}",
           "Last_Name" => "#{user.lastname}",
