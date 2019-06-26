@@ -110,7 +110,6 @@ defmodule EvercamMedia.Zoho do
           "First_Name" => "#{user.firstname}",
           "Last_Name" => "#{user.lastname}",
           "Email" => "#{user.email}",
-          "Evercam_User" => true,
           "Evercam_Signup_Date" => Calendar.Strftime.strftime!(user.created_at, "%Y-%m-%dT%H:%M:%S+00:00")
         }]
       }
