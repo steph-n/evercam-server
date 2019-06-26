@@ -309,12 +309,16 @@ defmodule EvercamMediaWeb.CameraController do
             {:ok, camera} ->
               Camera.invalidate_camera(camera)
               camera = Camera.get_full(camera.exid)
-              extra = %{
-                agent: get_user_agent(conn, params["agent"]),
-                cam_settings: add_settings_key(old_camera, camera, camera_changeset.changes)
-              }
-              |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-              Util.log_activity(caller, camera, "camera edited", extra)
+              case Application.get_env(:evercam_media, :run_spawn) do
+                true ->
+                  extra = %{
+                    agent: get_user_agent(conn, params["agent"]),
+                    cam_settings: add_settings_key(old_camera, camera)
+                  }
+                  |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+                  Util.log_activity(caller, camera, "camera edited", extra)
+                _ -> :noop
+              end
               update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
               update_camera_to_zoho(Application.get_env(:evercam_media, :run_spawn), camera, caller.email)
               render(conn, "show.#{version}.json", %{camera: camera, user: caller})
@@ -325,16 +329,11 @@ defmodule EvercamMediaWeb.CameraController do
     end
   end
 
-  defp add_settings_key(old_camera, camera, changes) do
-    case Map.has_key?(changes, :config) do
-      true ->
-        %{
-          old: set_settings(old_camera),
-          new: set_settings(camera)
-        }
-      false ->
-        false
-    end
+  defp add_settings_key(old_camera, camera) do
+    %{
+      old: set_settings(old_camera),
+      new: set_settings(camera)
+    }
   end
 
   defp set_settings(camera) do
@@ -345,7 +344,10 @@ defmodule EvercamMediaWeb.CameraController do
       snapshot_url: Util.deep_get(camera, [:config, "snapshots", "jpg"], ""),
       auth: Util.deep_get(camera, [:config, "auth", "basic"], ""),
       vendor_model_name: camera.vendor_model.name,
-      vendor_name: camera.vendor_model.vendor.name
+      vendor_name: camera.vendor_model.vendor.name,
+      public: camera.is_public,
+      discoverable: camera.discoverable,
+      name: camera.name
     }
   end
 
