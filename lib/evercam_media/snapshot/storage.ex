@@ -56,7 +56,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     file_path = directory_path <> file_name
     case HTTPoison.post("#{@seaweedfs_new}#{file_path}", {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
       {:ok, response} -> response
-      {:error, error} -> Logger.info "[seaweedfs_save] [#{camera_exid}] [#{inspect error}]"
+      {:error, error} -> Logger.info "[seaweedfs_save] [#{file_path}] [#{camera_exid}] [#{inspect error}]"
     end
   end
 
