@@ -35,8 +35,12 @@ defmodule EvercamMedia.CreateArchiveThumbnail do
       case compare.camera do
         nil -> Logger.info "Camera not found with id: #{compare.camera_id}, Archive: #{compare.exid}"
         _ ->
-          Logger.info "Start create thumbnail for compare: #{compare.exid}, camera: #{compare.camera.exid}"
-          download_compare_and_create_thumbnail(compare)
+          try do
+            Logger.info "Start create thumbnail for compare: #{compare.exid}, camera: #{compare.camera.exid}"
+            download_images_and_create_thumbnail(compare)
+          catch _type, error ->
+            IO.inspect error
+          end
       end
     end)
   end
@@ -56,21 +60,54 @@ defmodule EvercamMedia.CreateArchiveThumbnail do
     end
   end
 
-  defp download_compare_and_create_thumbnail(compare) do
-    case S3.do_load("#{compare.camera.exid}/compares/#{compare.exid}.mp4") do
-      {:ok, response} ->
-        path = "#{@root_dir}/#{compare.exid}/"
-        File.mkdir_p(path)
-        File.write("#{path}/#{compare.exid}.mp4", response)
-        create_thumbnail(compare.exid, path)
-        S3.do_save("#{compare.camera.exid}/compares/thumb-#{compare.exid}.jpg", File.read!("#{path}thumb-#{compare.exid}.jpg"), [content_type: "image/jpg", acl: :public_read])
-        Logger.info "Thumbnail for compare (#{compare.exid}) created and saved to S3."
-        File.rm_rf path
-      {:error, _, _} -> Logger.info "Failed to download compare (#{compare.exid})."
+  defp download_images_and_create_thumbnail(compare) do
+    path = "#{@root_dir}/#{compare.exid}/"
+    directory_path = S3.construct_compare_bucket_path(compare.camera.exid, compare.exid)
+    start_path = S3.construct_compare_file_name(compare.before_date, "start")
+    end_path = S3.construct_compare_file_name(compare.after_date, "end")
+    {:ok, start_image} = S3.do_load("#{directory_path}#{start_path}")
+    {:ok, end_image} = S3.do_load("#{directory_path}#{end_path}")
+    File.mkdir_p(path)
+    File.write("#{path}/before_image.jpg", start_image)
+    File.write("#{path}/after_image.jpg", end_image)
+    evercam_logo = Path.join(Application.app_dir(:evercam_media), "priv/static/images/evercam-logo-white.png")
+    export_thumbnail(compare.camera.exid, compare.exid, path, evercam_logo)
+
+    animated_file = "#{path}#{compare.exid}.gif"
+    animation_command = "convert -depth 8 -gravity SouthEast -define jpeg:size=1280x720 \\( #{evercam_logo} -resize '100x100!' \\) -write MPR:logo +delete \\( #{path}before_image.jpg -resize '1280x720!' MPR:logo -geometry +15+15 -composite -write MPR:before \\) \\( #{path}after_image.jpg  -resize '1280x720!' MPR:logo -geometry +15+15 -composite -write MPR:after  \\) +append -quantize transparent -colors 250 -unique-colors +repage -write MPR:commonmap +delete MPR:after  -map MPR:commonmap +repage -write MPR:after  +delete MPR:before -map MPR:commonmap +repage -write MPR:before \\( MPR:after -set delay 25 -crop 15x0 -reverse \\) MPR:after \\( MPR:before -set delay 27 -crop 15x0 \\) -set delay 2 -loop 0 -write #{animated_file} +delete 0--2"
+    mp4_command = "ffmpeg -f gif -i #{animated_file} -pix_fmt yuv420p -c:v h264_nvenc -movflags +faststart -filter:v crop='floor(in_w/2)*2:floor(in_h/2)*2' #{path}#{compare.exid}.mp4"
+    command = "#{animation_command} && #{mp4_command}"
+    case Porcelain.shell(command).out do
+      "" ->
+        upload_path = "#{compare.camera.exid}/compares/#{compare.exid}/"
+        S3.do_save_multiple(%{
+          "#{animated_file}" => "#{upload_path}#{compare.exid}.gif",
+          "#{path}#{compare.exid}.mp4" => "#{upload_path}#{compare.exid}.mp4"
+        })
+      _ -> :noop
     end
+    File.rm_rf(path)
   end
 
   defp create_thumbnail(id, path) do
     Porcelain.shell("ffmpeg -i #{path}#{id}.mp4 -vframes 1 -vf scale=640:-1 -y #{path}thumb-#{id}.jpg", [err: :out]).out
+  end
+
+  defp export_thumbnail(camera_exid, compare_id, root, evercam_logo) do
+    left_arrow = "-draw \"stroke red fill red translate 582,340 rotate -180 scale 4,4 path 'M -17,12  l -12,-9 +12,-9 z'\""
+    # left_arrow = "-draw \"stroke red fill red translate 560,340 rotate -180 scale 4,4 path 'M 5,0  l -15,-5  +5,+5  -5,+5  +15,-5 z'\""
+    right_arrow = "-draw \"stroke red fill red translate 680,340 scale 4,4 path 'M -12,6  l -12,-9 +12,-9'\""
+    # right_arrow = "-draw \"stroke red fill red translate 700,340 scale 4,4 path 'M 10,0  l -15,-5  +5,+5  -5,+5  +15,-5 z'\""
+    line = "-stroke red -strokewidth 3 -draw 'line 640,0 640,720'"
+    cmd = "convert -size 1280x720 xc:None -background None \\( #{root}before_image.jpg -resize '1280x720!' -crop 640x720+0+0 \\) -gravity West -composite \\( #{root}after_image.jpg -resize '1280x720!' -crop 640x720+640+0 \\) -gravity East -composite \\( #{evercam_logo} -resize '100x100!' \\) -geometry +15+15 -gravity SouthEast -composite #{left_arrow} #{right_arrow} #{line} -resize 640x #{root}thumb-#{compare_id}.jpg"
+
+    case Porcelain.shell(cmd).out do
+      "" ->
+        upload_path = "#{camera_exid}/compares/#{compare_id}/"
+        S3.do_save_multiple(%{
+          "#{root}thumb-#{compare_id}.jpg" => "#{upload_path}thumb-#{compare_id}.jpg"
+        })
+      _ -> :noop
+    end
   end
 end

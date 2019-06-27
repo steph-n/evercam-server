@@ -234,10 +234,10 @@ defmodule EvercamMediaWeb.CompareController do
   end
 
   defp export_thumbnail(camera_exid, compare_id, root, evercam_logo) do
-    left_arrow = "-draw \"stroke red fill red translate 580,340 rotate -180 scale 2,2 path 'M -10,0  l -15,-5  +5,+5  -5,+5  +15,-5 z'\""
-    right_arrow = "-draw \"stroke red fill red translate 680,340 scale 2,2 path 'M 0,0  l -15,-5  +5,+5  -5,+5  +15,-5 z'\""
+    left_arrow = "-draw \"stroke red fill red translate 582,340 rotate -180 scale 4,4 path 'M -17,12  l -12,-9 +12,-9 z'\""
+    right_arrow = "-draw \"stroke red fill red translate 680,340 scale 4,4 path 'M -12,6  l -12,-9 +12,-9'\""
     line = "-stroke red -strokewidth 3 -draw 'line 640,0 640,720'"
-    cmd = "convert -size 1280x720 xc:None -background None \\( #{root}before_image.jpg -resize '1280x720!' -crop 640x720+0+0 \\) -gravity West -composite \\( #{root}after_image.jpg -resize '1280x720!' -crop 640x720+640+0 \\) -gravity East -composite #{evercam_logo} -geometry +15+15 -gravity SouthEast -composite #{left_arrow} #{right_arrow} #{line} -resize 640x #{root}thumb-#{compare_id}.jpg"
+    cmd = "convert -size 1280x720 xc:None -background None \\( #{root}before_image.jpg -resize '1280x720!' -crop 640x720+0+0 \\) -gravity West -composite \\( #{root}after_image.jpg -resize '1280x720!' -crop 640x720+640+0 \\) -gravity East -composite \\( #{evercam_logo} -resize '100x100!' \\) -geometry +15+15 -gravity SouthEast -composite #{left_arrow} #{right_arrow} #{line} -resize 640x #{root}thumb-#{compare_id}.jpg"
     case Porcelain.shell(cmd).out do
       "" ->
         upload_path = "#{camera_exid}/compares/#{compare_id}/"
@@ -256,7 +256,7 @@ defmodule EvercamMediaWeb.CompareController do
     evercam_logo = Path.join(Application.app_dir(:evercam_media), "priv/static/images/evercam-logo-white.png")
     spawn fn -> export_thumbnail(camera_exid, compare_id, root, evercam_logo) end
     animated_file = "#{root}#{compare_id}.gif"
-    animation_command = "convert -depth 8 -gravity SouthEast -define jpeg:size=1280x720 #{evercam_logo} -write MPR:logo +delete \\( #{root}before_image.jpg -resize '1280x720!' MPR:logo -geometry +15+15 -composite -write MPR:before \\) \\( #{root}after_image.jpg  -resize '1280x720!' MPR:logo -geometry +15+15 -composite -write MPR:after  \\) +append -quantize transparent -colors 250 -unique-colors +repage -write MPR:commonmap +delete MPR:after  -map MPR:commonmap +repage -write MPR:after  +delete MPR:before -map MPR:commonmap +repage -write MPR:before \\( MPR:after -set delay 25 -crop 15x0 -reverse \\) MPR:after \\( MPR:before -set delay 27 -crop 15x0 \\) -set delay 2 -loop 0 -write #{animated_file} +delete 0--2"
+    animation_command = "convert -depth 8 -gravity SouthEast -define jpeg:size=1280x720 \\( #{evercam_logo} -resize '100x100!' \\) -write MPR:logo +delete \\( #{root}before_image.jpg -resize '1280x720!' MPR:logo -geometry +15+15 -composite -write MPR:before \\) \\( #{root}after_image.jpg  -resize '1280x720!' MPR:logo -geometry +15+15 -composite -write MPR:after  \\) +append -quantize transparent -colors 250 -unique-colors +repage -write MPR:commonmap +delete MPR:after  -map MPR:commonmap +repage -write MPR:after  +delete MPR:before -map MPR:commonmap +repage -write MPR:before \\( MPR:after -set delay 25 -crop 15x0 -reverse \\) MPR:after \\( MPR:before -set delay 27 -crop 15x0 \\) -set delay 2 -loop 0 -write #{animated_file} +delete 0--2"
     mp4_command = "ffmpeg -f gif -i #{animated_file} -pix_fmt yuv420p -c:v h264_nvenc -movflags +faststart -filter:v crop='floor(in_w/2)*2:floor(in_h/2)*2' #{root}#{compare_id}.mp4"
     command = "#{animation_command} && #{mp4_command}"
     try do
