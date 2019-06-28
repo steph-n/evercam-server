@@ -24,7 +24,6 @@ defmodule EvercamMedia.HTTPClient do
       end
 
     digest_token = DigestAuth.get_digest_token(response, url, username, password)
-    hackney = [pool: :snapshot_pool]
     HTTPoison.get(url, ["Authorization": "Digest #{digest_token}"], [stream_to: self()])
     |> collect_response(self(), <<>>)
   end

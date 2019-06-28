@@ -94,11 +94,10 @@ defmodule EvercamMedia.CreateArchiveThumbnail do
   end
 
   defp export_thumbnail(camera_exid, compare_id, root, evercam_logo) do
-    left_arrow = "-draw \"stroke red fill red translate 582,340 rotate -180 scale 4,4 path 'M -17,12  l -12,-9 +12,-9 z'\""
-    # left_arrow = "-draw \"stroke red fill red translate 560,340 rotate -180 scale 4,4 path 'M 5,0  l -15,-5  +5,+5  -5,+5  +15,-5 z'\""
-    right_arrow = "-draw \"stroke red fill red translate 680,340 scale 4,4 path 'M -12,6  l -12,-9 +12,-9'\""
-    # right_arrow = "-draw \"stroke red fill red translate 700,340 scale 4,4 path 'M 10,0  l -15,-5  +5,+5  -5,+5  +15,-5 z'\""
-    line = "-stroke red -strokewidth 3 -draw 'line 640,0 640,720'"
+    arrow = Path.join(Application.app_dir(:evercam_media), "priv/static/images/arrow-symbol.png")
+    left_arrow = "\\( #{arrow} -resize '40x70!' \\) -geometry +650+330 -composite "
+    right_arrow = "\\( #{arrow} -resize '40x70!' -rotate 180 \\) -geometry +587+330 -composite"
+    line = "-stroke red -strokewidth 8 -draw 'line 640,0 640,720'"
     cmd = "convert -size 1280x720 xc:None -background None \\( #{root}before_image.jpg -resize '1280x720!' -crop 640x720+0+0 \\) -gravity West -composite \\( #{root}after_image.jpg -resize '1280x720!' -crop 640x720+640+0 \\) -gravity East -composite \\( #{evercam_logo} -resize '100x100!' \\) -geometry +15+15 -gravity SouthEast -composite #{left_arrow} #{right_arrow} #{line} -resize 640x #{root}thumb-#{compare_id}.jpg"
 
     case Porcelain.shell(cmd).out do

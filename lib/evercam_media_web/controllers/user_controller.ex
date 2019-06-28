@@ -438,13 +438,6 @@ defmodule EvercamMediaWeb.UserController do
     end)
   end
 
-  defp delete_user_from_zoho(user) do
-    case EvercamMedia.Zoho.get_contact(user.email) do
-      {:ok, contact} -> EvercamMedia.Zoho.delete_contact(contact["id"])
-      _ -> Logger.debug "Contact '#{user.email}' does not exists."
-    end
-  end
-
   defp user_exists(conn, email) do
     case User.by_username_or_email(email) do
       nil -> render_error(conn, 404, "User not found.")
