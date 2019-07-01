@@ -5,6 +5,7 @@ defmodule EvercamMediaWeb.UserController do
   alias Evercam.Repo
   alias EvercamMedia.Util
   alias EvercamMedia.Intercom
+  alias EvercamMedia.Zoho
   require Logger
 
   def swagger_definitions do
@@ -199,6 +200,7 @@ defmodule EvercamMediaWeb.UserController do
             share_request = CameraShareRequest.by_key_and_status(share_request_key)
             create_share_for_request(share_request, user, conn)
             Intercom.update_user(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
+            add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), share_request, user)
           end
           share_requests = CameraShareRequest.by_email(user.email)
           multiple_share_create(share_requests, user, conn)
@@ -589,4 +591,27 @@ defmodule EvercamMediaWeb.UserController do
       Logger.error Exception.format_stacktrace System.stacktrace
     end
   end
+
+  defp add_contact_to_zoho(true, share_request, user) do
+    spawn fn ->
+      contact =
+        case Zoho.get_contact(user.email) do
+          {:ok, contact} -> contact
+          {:nodata, _message} ->
+            {:ok, contact} = Zoho.insert_contact(user)
+            Map.put(contact, "Full_Name", User.get_fullname(user))
+          {:error} -> nil
+        end
+      case {contact, share_request} do
+        {nil, _} -> :noop
+        {_, nil} -> :noop
+        {zoho_contact, request} ->
+          case Zoho.get_camera(request.camera.exid) do
+            {:ok, zoho_camera} -> Zoho.associate_camera_contact(zoho_contact, zoho_camera)
+            _ -> %{}
+          end
+      end
+    end
+  end
+  defp add_contact_to_zoho(_, _, _), do: :noop
 end
