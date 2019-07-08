@@ -60,6 +60,26 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
+  def get_days_meta(camera_exid) do
+    hackney = [pool: :seaweedfs_download_pool]
+    file_path = "#{@seaweedfs_new}/#{camera_exid}/days.json"
+
+    case HTTPoison.get(file_path, ["Accept": "application/json"], hackney: hackney) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Jason.decode!(body)
+      _ -> %{}
+    end
+  end
+
+  def save_days_meta(camera_exid, metadata) do
+    hackney = [pool: :seaweedfs_upload_pool]
+    file_path = "/#{camera_exid}/days.json"
+    case HTTPoison.post("#{@seaweedfs_new}#{file_path}", {:multipart, [{file_path, Jason.encode!(metadata), []}]}, [], hackney: hackney) do
+      {:ok, response} -> response
+      {:error, error} -> Logger.info "[save_days_meta] [#{camera_exid}] [#{inspect error}]"
+    end
+  end
+
   def seaweedfs_thumbnail_export(file_path, image) do
     path = String.replace_leading(file_path, "/storage", "")
     hackney = [pool: :seaweedfs_upload_pool]

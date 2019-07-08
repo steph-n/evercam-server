@@ -774,6 +774,13 @@ defmodule EvercamMediaWeb.SnapshotController do
       end
     end)
     |> IO.inspect
+    # |> save_meta(%{}, camera_exid, year, month)
+  end
+
+  defp save_meta(days, meta, camera_exid, year, month) do
+    meta_data = Map.merge(meta, %{"#{year}_#{month}": days})
+    Storage.save_days_meta(camera_exid, meta_data)
+    days
   end
 
   defp save_thumbnail(nil), do: true
