@@ -95,6 +95,6 @@ defmodule EvercamMedia.Snapshot.UpdateThumbnail do
   #######################
 
   defp start_timer(message) do
-    Process.send_after(self(), message, 1000 * 60 * 1)
+    Process.send_after(self(), message, 1000 * 60 * 30)
   end
 end
