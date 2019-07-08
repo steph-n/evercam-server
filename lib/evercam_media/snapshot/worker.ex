@@ -84,7 +84,8 @@ defmodule EvercamMedia.Snapshot.Worker do
     }
 
     {:ok, poller} = EvercamMedia.Snapshot.Poller.start_link(args)
-    args = Map.merge(args, %{ poller: poller })
+    {:ok, update_thumbnail} = EvercamMedia.Snapshot.UpdateThumbnail.start_link(args)
+    args = Map.merge(args, %{ poller: poller, update_thumbnail: update_thumbnail })
     config = Map.get(args, :config)
 
     args = case config.recording do
