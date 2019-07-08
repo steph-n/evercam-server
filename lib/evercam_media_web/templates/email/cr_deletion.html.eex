@@ -64,9 +64,11 @@
           <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
             <p class="lead" style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Hi Marco Herbst, </p>
-            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Cloud recording for camera <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v2/cameras/<%= @camera_exid %>"><%= @camera_name %></a> has been deleted by Admin: <%= @admin_name %> - <%= @admin_email %>.<br>
+            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Cloud recordings for camera <a style="color:#428bca; text-decoration:none;" href="https://dash.evercam.io/v2/cameras/<%= @camera_exid %>"><%= @camera_name %></a> has been deleted.<br>See the changes below.
             </p>
-            <p>From Date: <%= @start_date %> to Date: <%= @end_date %></p>
+
+            <%= raw get_cr_deletion_details(@admin_name, @admin_email, @start_date, @end_date, @image_count, @camera_name) %>
+
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">We greatly appreciate any feedback, so if you have any suggestions or if there is anything we can do to improve your Evercam experience, please let us know.</p><br>
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Thanks again for joining us,</p><br>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>

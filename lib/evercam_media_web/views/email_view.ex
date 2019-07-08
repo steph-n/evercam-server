@@ -75,6 +75,40 @@ defmodule EvercamMediaWeb.EmailView do
     </p>"
   end
 
+  def get_cr_deletion_details(admin_name, admin_email, start_date, end_date, image_count, camera_name) do
+    "<p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'>
+      Cloud Recordings Deletion:
+      <table>
+        <tbody>
+          <tr>
+            <th>Admin Name</th>
+            <td>#{admin_name}</td>
+          </tr>
+          <tr>
+            <th>Admin Email</th>
+            <td>#{admin_email}</td>
+          </tr>
+          <tr>
+            <th>Camera</th>
+            <td>#{camera_name}</td>
+          </tr>
+          <tr>
+            <th>From Date</th>
+            <td>#{start_date}</td>
+          </tr>
+          <tr>
+            <th>To Date</th>
+            <td>#{end_date}</td>
+          </tr>
+          <tr>
+            <th>Image Count</th>
+            <td>#{image_count}</td>
+          </tr>
+        </tbody>
+      </table>
+    </p>"
+  end
+
   def get_dropbox_url(dropbox_url, snapshot_count) when snapshot_count > 0 do
     "<p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'>
       You can see required files at <a style='color:#428bca; text-decoration:none;' href='#{dropbox_url}'>DropBox</a>

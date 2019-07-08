@@ -905,6 +905,6 @@ defmodule EvercamMediaWeb.SnapshotController do
   defp send_email_about_deletion_request_details(exid, name, timezone, params) do
     start_date = Util.convert_unix_to_iso(params["from_date"], timezone)
     end_date = Util.convert_unix_to_iso(params["to_date"], timezone)
-    EvercamMedia.UserMailer.cr_deletion_request(params["admin_fullname"], params["admin_email"], exid, name, start_date, end_date)
+    EvercamMedia.UserMailer.cr_deletion_request(params["admin_fullname"], params["admin_email"], exid, name, start_date, end_date, params["image_count"])
   end
 end
