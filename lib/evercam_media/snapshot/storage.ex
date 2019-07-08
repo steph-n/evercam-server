@@ -453,6 +453,7 @@ defmodule EvercamMedia.Snapshot.Storage do
 
   defp get_latest_directory_name(directory, url, type, attribute) do
     request_from_seaweedfs(url, type, attribute)
+    |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
     |> Enum.sort
     |> case do
       [] -> {:error}
