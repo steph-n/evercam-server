@@ -106,6 +106,7 @@ defmodule EvercamMediaWeb.SnapshotController do
         Storage.seaweedfs_load_range(camera_exid, from, to)
         |> Enum.map(fn(snapshot) -> snapshot.created_at end)
         |> Storage.delete_jpegs_with_timestamps(camera_exid)
+        send_email_about_deletion_request_details(camera.exid, camera.name, camera.timezone, params)
       end
       conn
       |> json(%{status: true})
@@ -899,5 +900,11 @@ defmodule EvercamMediaWeb.SnapshotController do
     date
     |> Calendar.DateTime.Parse.unix!
     |> Calendar.Strftime.strftime!("%H")
+  end
+
+  defp send_email_about_deletion_request_details(exid, name, timezone, params) do
+    start_date = Util.convert_unix_to_iso(params["from_date"], timezone)
+    end_date = Util.convert_unix_to_iso(params["to_date"], timezone)
+    EvercamMedia.UserMailer.cr_deletion_request(params["admin_fullname"], params["admin_email"], exid, name, start_date, end_date, params["image_count"])
   end
 end
