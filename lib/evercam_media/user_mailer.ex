@@ -8,6 +8,16 @@ defmodule EvercamMedia.UserMailer do
   @no_reply "Evercam <no-reply@evercam.io>"
   @year Calendar.DateTime.now_utc |> Calendar.Strftime.strftime!("%Y")
 
+  def cr_deletion_request(admin_name, admin_email, camera_exid, camera_name, start_date, end_date) do
+    new()
+    |> from(@from)
+    |> to("marco@evercam.io")
+    |> bcc("junaid@evercam.io")
+    |> subject("Cloud Recordings has been deleted for \"#{camera_name}\"")
+    |> render_body("cr_deletion.html", %{camera_name: camera_name, camera_exid: camera_exid, admin_email: admin_email, admin_name: admin_name, start_date: start_date, end_date: end_date, year: @year})
+    |> EvercamMedia.Mailer.deliver
+  end
+
   def cr_settings_changed(current_user, camera, cloud_recording, old_cloud_recording, user_request_ip) do
     new()
     |> from(@from)
