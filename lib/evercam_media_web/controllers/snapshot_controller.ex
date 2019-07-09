@@ -765,16 +765,31 @@ defmodule EvercamMediaWeb.SnapshotController do
 
   def check_recording_day(false, _, _, _, _, days), do: days
   def check_recording_day(true, camera_exid, timezone, year, month, days) do
-    Enum.reduce(days, [], fn(day, days_list) ->
-      from = construct_timestamp(year, month, "#{day}", "00:00:00", timezone)
-      to = construct_timestamp(year, month, "#{day}", "23:59:59", timezone)
-      case Storage.hours(camera_exid, from, to, timezone) do
-        [] -> days_list
-        _ -> days_list ++ [day]
+    saved_recording_days =
+      case ConCache.get(:camera_recording_days, camera_exid) do
+        nil -> %{}
+        saved_recording_days -> saved_recording_days
       end
-    end)
-    |> IO.inspect
-    # |> save_meta(%{}, camera_exid, year, month)
+    spawn fn -> update_recording_days(saved_recording_days, days, camera_exid, timezone, year, month) end
+
+    case saved_recording_days[:"#{year}_#{month}"] do
+      nil -> days
+      days_list -> days_list
+    end
+  end
+
+  defp update_recording_days(saved_recording_days, days, camera_exid, timezone, year, month) do
+    recording_days =
+      Enum.reduce(days, [], fn(day, days_list) ->
+        from = construct_timestamp(year, month, "#{day}", "00:00:00", timezone)
+        to = construct_timestamp(year, month, "#{day}", "23:59:59", timezone)
+        case Storage.hours(camera_exid, from, to, timezone) do
+          [] -> days_list
+          _ -> days_list ++ [day]
+        end
+      end)
+    update_days =  put_in(saved_recording_days, [:"#{year}_#{month}"], recording_days)
+    ConCache.put(:camera_recording_days, camera_exid, update_days)
   end
 
   defp save_meta(days, meta, camera_exid, year, month) do
