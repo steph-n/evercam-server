@@ -41,6 +41,24 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     end)
   end
 
+  def add_requestees(iso_datetime) do
+    iso_datetime
+    |> Calendar.DateTime.Parse.rfc3339_utc
+    |> elem(1)
+    |> CameraShareRequest.get_all_pending_requests
+    |> Enum.each(fn(request) ->
+      Logger.info "Email: #{request.email}, Created At: #{request.created_at}"
+      case Zoho.get_contact(request.email) do
+        {:ok, _contact} -> Logger.info "Contact '#{request.email}' already exists in zoho."
+        {:nodata, _message} ->
+          Logger.info "Start insert requestee '#{request.email}' to zoho."
+          {:ok, _contact} = Zoho.insert_requestee(request.email)
+          :timer.sleep(5000)
+        {:error} -> Logger.error "Error to insert requestee"
+      end
+    end)
+  end
+
   def correct_contacts_info() do
     User
     |> Repo.all
