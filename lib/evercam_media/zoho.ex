@@ -123,6 +123,38 @@ defmodule EvercamMedia.Zoho do
     end
   end
 
+  def insert_requestee(requestee_email, owner_email \\ nil) do
+    url = "#{@zoho_url}Contacts"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+    domain = requestee_email |> String.split("@") |> List.last |> String.split(".") |> List.first
+    last_name = requestee_email |> String.split("@") |> List.first
+    account_name =
+      case get_account(domain) do
+        {:ok, account} -> account["Account_Name"]
+        _ -> get_account_by_owner_email(owner_email)
+      end
+
+    contact_xml =
+      %{"data" =>
+        [%{
+          "Contact_lead_source" => "Evercam User",
+          "Account_Name" => account_name,
+          "First_Name" => "",
+          "Last_Name" => last_name,
+          "Email" => "#{requestee_email}",
+          "Evercam_Status" => "Shared-Non-Registered"
+        }]
+      }
+
+    case HTTPoison.post(url, Poison.encode!(contact_xml), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 201}} ->
+        json_response = Poison.decode!(body)
+        contact = Map.get(json_response, "data") |> List.first
+        {:ok, contact["details"]}
+      error -> {:error, error}
+    end
+  end
+
   def update_contact(id, request_params) do
     url = "#{@zoho_url}Contacts/#{id}"
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]

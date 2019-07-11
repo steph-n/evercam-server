@@ -596,7 +596,7 @@ defmodule EvercamMediaWeb.UserController do
     spawn fn ->
       contact =
         case Zoho.get_contact(user.email) do
-          {:ok, contact} -> contact
+          {:ok, contact} -> update_contact(contact, user)
           {:nodata, _message} ->
             {:ok, contact} = Zoho.insert_contact(user)
             Map.put(contact, "Full_Name", User.get_fullname(user))
@@ -614,4 +614,16 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
   defp add_contact_to_zoho(_, _, _), do: :noop
+
+  defp update_contact(contact, user) do
+    xml_data =
+      [%{
+        "First_Name" => "#{user.firstname}",
+        "Last_Name" => "#{user.lastname}",
+        "Evercam_Signup_Date" => Calendar.Strftime.strftime!(user.created_at, "%Y-%m-%dT%H:%M:%S+00:00"),
+        "Evercam_Status" => "Share-Accepted"
+      }]
+
+    Zoho.update_contact(contact["id"], xml_data)
+  end
 end

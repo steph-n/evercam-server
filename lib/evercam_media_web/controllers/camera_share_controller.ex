@@ -111,6 +111,7 @@ defmodule EvercamMediaWeb.CameraShareController do
                 {:ok, camera_share_request} ->
                   Application.get_env(:evercam_media, :run_spawn)
                   |> create_camera_share_request(caller, camera, camera_share_request, extra, next_datetime, requester_ip, conn)
+                  add_requestee_to_zoho(Application.get_env(:evercam_media, :run_spawn), zoho_camera, camera, email)
                   {shares, [camera_share_request | share_requests], changes, next_datetime}
                 {:error, changeset} ->
                   {shares, share_requests, [attach_email_to_message(changeset, email) | changes], next_datetime}
@@ -303,6 +304,18 @@ defmodule EvercamMediaWeb.CameraShareController do
     end
   end
   defp add_contact_to_zoho(_, _, _, _, _), do: :noop
+
+  defp add_requestee_to_zoho(true, zoho_camera, evercam_camera, requestee) do
+    spawn fn ->
+      case Zoho.get_contact(requestee) do
+        {:ok, contact} -> contact
+        {:nodata, _message} ->
+          {:ok, contact} = Zoho.insert_requestee(requestee, evercam_camera.owner.email)
+        {:error} -> nil
+      end
+    end
+  end
+  defp add_requestee_to_zoho(_, _, _, _), do: :noop
 
   defp ensure_list(email) do
     case is_binary(email) do
