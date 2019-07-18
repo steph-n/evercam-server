@@ -134,12 +134,15 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
 
   defp upload_image(status, image_path, upload_image_path) when status in [true, "true"] do
     client = ElixirDropbox.Client.new(System.get_env["DROP_BOX_TOKEN"])
-    case ElixirDropbox.Files.upload(client, upload_image_path, image_path) do
-      {{:status_code, _}, {:error, error}} -> Logger.debug "Error while uploading. Error: #{inspect error}"
-      _ -> :noop
-    end
+    {:ok, file_size} = get_file_size(image_path)
+    %{"session_id" => session_id} = ElixirDropbox.Files.UploadSession.start(client, false, image_path)
+    ElixirDropbox.Files.UploadSession.finish(client, session_id, upload_image_path, image_path, file_size) |> handle_upload_response
   end
   defp upload_image(_status, _image_path, _upload_image_path), do: :noop
+
+  defp handle_upload_response({{:status_code, status_code}, {:ok, %{ "error" => %{ ".tag" => tag, "lookup_failed" => lookup_failed}, "error_summary" => error_summary }}}), do:
+    Logger.info "status_code: #{status_code} error_tag: #{tag} lookup_failed: #{lookup_failed} error_summary: #{error_summary}"
+  defp handle_upload_response(_), do: :noop
 
   defp save_current_jpeg_time(name, path) do
     File.write!("#{path}CURRENT", name)
@@ -169,5 +172,12 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     %{year: year, month: month, day: day, hour: hour, minute: minute, second: second} = date
     Calendar.DateTime.from_erl!({{year, month, day}, {hour, minute, second}}, timezone)
     |> Calendar.DateTime.shift_zone!("UTC")
+  end
+
+  defp get_file_size(image_path) do
+    case File.stat(image_path) do
+      {:ok, %File.Stat{size: size}} -> {:ok, size}
+      {:error, reason} -> {:error, reason}
+    end
   end
 end
