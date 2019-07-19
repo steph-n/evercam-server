@@ -5,11 +5,11 @@ defmodule EvercamMediaWeb.UserChannel do
   def join("users:" <> username, _params, socket) do
     caller_username = Util.deep_get(socket, [:assigns, :current_user, :username], "")
 
-    if username == caller_username do
-      send(self(), {:after_join, username})
-      {:ok, socket}
-    else
-      {:error, "Unauthorized."}
+    case String.equivalent?(username, caller_username) do
+      true ->
+        send(self(), {:after_join, username})
+        {:ok, socket}
+      _ -> {:error, "Unauthorized."}
     end
   end
 

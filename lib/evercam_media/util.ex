@@ -254,20 +254,20 @@ defmodule EvercamMedia.Util do
   end
 
   def get_rtmp_url(camera, requester \\ "Anonymous") do
-    if Camera.rtsp_url(camera) != "" do
-      base_url = EvercamMediaWeb.Endpoint.url |> String.replace("http", "rtmp") |> String.replace("4000", "1935")
-      "#{base_url}/live/#{url_token(camera)}?stream_token=#{streaming_token(camera, requester)}"
-    else
-      ""
+    case String.equivalent?(Camera.rtsp_url(camera),  "") do
+      true -> ""
+      false ->
+        base_url = EvercamMediaWeb.Endpoint.url |> String.replace("http", "rtmp") |> String.replace("4000", "1935")
+        "#{base_url}/live/#{url_token(camera)}?stream_token=#{streaming_token(camera, requester)}"
     end
   end
 
   def get_hls_url(camera, requester \\ "Anonymous") do
-    if Camera.rtsp_url(camera) != "" do
-      base_url = EvercamMediaWeb.Endpoint.static_url
-      "#{base_url}/live/#{url_token(camera)}/index.m3u8?stream_token=#{streaming_token(camera, requester)}"
-    else
-      ""
+    case String.equivalent?(Camera.rtsp_url(camera), "") do
+      true -> ""
+      false ->
+        base_url = EvercamMediaWeb.Endpoint.static_url
+        "#{base_url}/live/#{url_token(camera)}/index.m3u8?stream_token=#{streaming_token(camera, requester)}"
     end
   end
 

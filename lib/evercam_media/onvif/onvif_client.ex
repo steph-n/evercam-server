@@ -18,17 +18,18 @@ defmodule EvercamMedia.ONVIFClient do
                 {ns, _} -> ns
                   _ -> "env"
                 end
-        if response.status_code == 200 do
-          case "/#{soap_ns}:Envelope/#{soap_ns}:Body/#{namespace}:#{operation}Response" |> to_charlist |> :xmerl_xpath.string(xml) do
-            [] -> {:error, 405, "/#{soap_ns}:Envelope/#{soap_ns}:Body" |> to_charlist |> :xmerl_xpath.string(xml) |> parse_elements}
-            xpath_string -> {:ok, parse_elements xpath_string}
-          end
-        else
-          Logger.error "Error invoking #{operation}. URL: #{url} auth: #{auth}. Request: #{inspect onvif_request}. Response #{inspect response}."
-          case "/html" |> to_charlist |> :xmerl_xpath.string(xml) do
-            [] ->  {:error, response.status_code, "/#{soap_ns}:Envelope/#{soap_ns}:Body" |> to_charlist |> :xmerl_xpath.string(xml) |> parse_elements}
-            contents -> {:error, response.status_code, contents |> parse_elements}
-          end
+        case response.status_code == 200 do
+          true ->
+            case "/#{soap_ns}:Envelope/#{soap_ns}:Body/#{namespace}:#{operation}Response" |> to_charlist |> :xmerl_xpath.string(xml) do
+              [] -> {:error, 405, "/#{soap_ns}:Envelope/#{soap_ns}:Body" |> to_charlist |> :xmerl_xpath.string(xml) |> parse_elements}
+              xpath_string -> {:ok, parse_elements xpath_string}
+            end
+          false ->
+            Logger.error "Error invoking #{operation}. URL: #{url} auth: #{auth}. Request: #{inspect onvif_request}. Response #{inspect response}."
+            case "/html" |> to_charlist |> :xmerl_xpath.string(xml) do
+              [] ->  {:error, response.status_code, "/#{soap_ns}:Envelope/#{soap_ns}:Body" |> to_charlist |> :xmerl_xpath.string(xml) |> parse_elements}
+              contents -> {:error, response.status_code, contents |> parse_elements}
+            end
         end
       {:error, %HTTPoison.Error{reason: reason}} -> {:error, 500, reason}
     end
@@ -177,16 +178,16 @@ defmodule EvercamMedia.ONVIFClient do
 
           elements ->
             Enum.reduce(elements, %{}, fn(x, acc) ->
-              if is_map(x) do
-                Map.merge(acc, x, fn(_key, v1, v2) ->
-                  case v1 do
-                    nil -> v2
-                    v when is_list(v) -> v ++ [v2]
-                    _ -> [v1, v2]
-                  end
-                end)
-              else
-                acc
+              case is_map(x) do
+                true ->
+                  Map.merge(acc, x, fn(_key, v1, v2) ->
+                    case v1 do
+                      nil -> v2
+                      v when is_list(v) -> v ++ [v2]
+                      _ -> [v1, v2]
+                    end
+                  end)
+                _ -> acc
               end
             end)
         end

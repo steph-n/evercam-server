@@ -223,8 +223,7 @@ defmodule EvercamMediaWeb.ArchiveController do
     current_user = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
 
-    with :ok <- valid_params(conn, params),
-         :ok <- ensure_camera_exists(camera, exid, conn),
+    with :ok <- ensure_camera_exists(camera, exid, conn),
          :ok <- ensure_can_list(current_user, camera, conn)
     do
       update_clip(conn, current_user, camera, params, archive_id)
@@ -277,15 +276,15 @@ defmodule EvercamMediaWeb.ArchiveController do
     %{assigns: %{version: version}} = conn
     requester = conn.assigns[:current_user]
 
-    if requester do
-      archive =
-        Archive
-        |> Archive.with_status_if_given(@status.pending)
-        |> Archive.get_one_with_associations
+    case requester do
+      nil -> render_error(conn, 401, "Unauthorized.")
+      _ ->
+        archive =
+          Archive
+          |> Archive.with_status_if_given(@status.pending)
+          |> Archive.get_one_with_associations
 
-      render(conn, "show.#{version}.json", %{archive: archive})
-    else
-      render_error(conn, 401, "Unauthorized.")
+        render(conn, "show.#{version}.json", %{archive: archive})
     end
   end
 
@@ -577,10 +576,9 @@ defmodule EvercamMediaWeb.ArchiveController do
   defp ensure_camera_exists(_camera, _exid, _conn), do: :ok
 
   defp ensure_can_list(current_user, camera, conn) do
-    if current_user && Permission.Camera.can_list?(current_user, camera) do
-      :ok
-    else
-      render_error(conn, 401, "Unauthorized.")
+    case Permission.Camera.can_list?(current_user, camera) do
+      true -> :ok
+      _ -> render_error(conn, 401, "Unauthorized.")
     end
   end
 
@@ -605,17 +603,6 @@ defmodule EvercamMediaWeb.ArchiveController do
       false -> render_error(conn, 403, "Forbidden.")
     end
   end
-
-  defp valid_params(conn, params) do
-    if present?(params["id"]) && present?(params["archive_id"]) do
-      :ok
-    else
-      render_error(conn, 400, "Parameters are invalid!")
-    end
-  end
-
-  defp present?(param) when param in [nil, ""], do: false
-  defp present?(_param), do: true
 
   defp archive_exists(conn, archive_id) do
     case Archive.by_exid(archive_id) do

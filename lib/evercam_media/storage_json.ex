@@ -16,10 +16,12 @@ defmodule EvercamMedia.StorageJson do
   end
 
   def init(args) do
-    spawn(fn ->
-      check_for_online_json_file()
-      |> whats_next(args)
-    end)
+    if Application.get_env(:evercam_media, :start_camera_workers) do
+      spawn(fn ->
+        check_for_online_json_file()
+        |> whats_next(args)
+      end)
+    end
     {:ok, 1}
   end
 
@@ -123,7 +125,7 @@ defmodule EvercamMedia.StorageJson do
       {:ok, response} -> response
       {:error, error} ->
         seaweedfs_save(data, tries + 1)
-        Logger.info "[seaweedfs_save] [#{inspect error}]"
+        Logger.info "[seaweedfs_save_storage_json] [#{inspect error}]"
     end
   end
 end

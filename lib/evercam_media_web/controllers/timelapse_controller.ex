@@ -130,10 +130,9 @@ defmodule EvercamMediaWeb.TimelapseController do
   end
 
   defp user_can_list(conn, user, camera) do
-    if !Permission.Camera.can_list?(user, camera) do
-      render_error(conn, 403, "Forbidden.")
-    else
-      :ok
+    case Permission.Camera.can_list?(user, camera) do
+      true -> :ok
+      _ -> render_error(conn, 403, "Forbidden.")
     end
   end
 

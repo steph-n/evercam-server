@@ -184,23 +184,24 @@ defmodule EvercamMediaWeb.UserController do
             {:ok, token} -> {:success, user, token}
             {:error, changeset} -> {:invalid_token, changeset}
           end
-          if !has_share_request_key?(share_request_key) do
-            created_at =
-              user.created_at
-              |> Calendar.Strftime.strftime!("%Y-%m-%d %T UTC")
+          case has_share_request_key?(share_request_key) do
+            false ->
+              created_at =
+                user.created_at
+                |> Calendar.Strftime.strftime!("%Y-%m-%d %T UTC")
 
-            code =
-              :crypto.hash(:sha, user.username <> created_at)
-              |> Base.encode16
-              |> String.downcase
+              code =
+                :crypto.hash(:sha, user.username <> created_at)
+                |> Base.encode16
+                |> String.downcase
 
-            EvercamMedia.UserMailer.confirm(user, code)
-            Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
-          else
-            share_request = CameraShareRequest.by_key_and_status(share_request_key)
-            create_share_for_request(share_request, user, conn)
-            Intercom.update_user(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
-            add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), share_request, user)
+              EvercamMedia.UserMailer.confirm(user, code)
+              Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
+            true ->
+              share_request = CameraShareRequest.by_key_and_status(share_request_key)
+              create_share_for_request(share_request, user, conn)
+              Intercom.update_user(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
+              add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), share_request, user)
           end
           share_requests = CameraShareRequest.by_email(user.email)
           multiple_share_create(share_requests, user, conn)
@@ -506,18 +507,16 @@ defmodule EvercamMediaWeb.UserController do
   defp ensure_user_exists(_user, _id, _conn), do: :ok
 
   defp ensure_can_view(current_user, user, conn) do
-    if current_user && Permission.User.can_view?(current_user, user) do
-      :ok
-    else
-      render_error(conn, 403, "Unauthorized.")
+    case Permission.User.can_view?(current_user, user) do
+      true -> :ok
+      _ -> render_error(conn, 403, "Unauthorized.")
     end
   end
 
   defp password(password, user, conn) do
-    if Comeonin.Bcrypt.checkpw(password, user.password) do
-      :ok
-    else
-      render_error(conn, 400, "Invalid password.")
+    case Comeonin.Bcrypt.checkpw(password, user.password) do
+      true -> :ok
+      _ -> render_error(conn, 400, "Invalid password.")
     end
   end
 
@@ -548,20 +547,20 @@ defmodule EvercamMediaWeb.UserController do
 
   defp create_share_for_request(nil, _user, conn), do: render_error(conn, 400, "Camera share request does not exist.")
   defp create_share_for_request(share_request, user, conn) do
-    if share_request.email != user.email do
-      render_error(conn, 400, "The email address specified does not match the share request email.")
-    else
-      share_request
-      |> CameraShareRequest.changeset(%{status: 1})
-      |> Repo.update
-      |> case do
-        {:ok, share_request} ->
-          CameraShare.create_share(share_request.camera, user, share_request.user, share_request.rights, share_request.message)
-          Camera.invalidate_camera(share_request.camera)
-          accepted_request_notification(share_request)
-        {:error, changeset} ->
-          render_error(conn, 400, Util.parse_changeset(changeset))
-      end
+    case String.equivalent?(share_request.email, user.email) do
+      true ->
+        share_request
+        |> CameraShareRequest.changeset(%{status: 1})
+        |> Repo.update
+        |> case do
+          {:ok, share_request} ->
+            CameraShare.create_share(share_request.camera, user, share_request.user, share_request.rights, share_request.message)
+            Camera.invalidate_camera(share_request.camera)
+            accepted_request_notification(share_request)
+          {:error, changeset} ->
+            render_error(conn, 400, Util.parse_changeset(changeset))
+        end
+      _ -> render_error(conn, 400, "The email address specified does not match the share request email.")
     end
   end
 

@@ -7,11 +7,11 @@ defmodule EvercamMediaWeb.CameraChannel do
     camera = Camera.get_full(camera_exid)
     user = Util.deep_get(socket, [:assigns, :current_user], nil)
 
-    if Permission.Camera.can_snapshot?(user, camera) do
-      send(self(), {:after_join, camera_exid})
-      {:ok, socket}
-    else
-      {:error, "Unauthorized."}
+    case Permission.Camera.can_snapshot?(user, camera) do
+      true ->
+        send(self(), {:after_join, camera_exid})
+        {:ok, socket}
+      _ -> {:error, "Unauthorized."}
     end
   end
 

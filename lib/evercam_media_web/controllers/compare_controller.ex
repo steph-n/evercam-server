@@ -329,10 +329,9 @@ defmodule EvercamMediaWeb.CompareController do
   defp ensure_camera_exists(_camera, _exid, _conn), do: :ok
 
   defp ensure_can_list(current_user, camera, conn) do
-    if current_user && Permission.Camera.can_list?(current_user, camera) do
-      :ok
-    else
-      render_error(conn, 401, "Unauthorized.")
+    case Permission.Camera.can_list?(current_user, camera) do
+      true -> :ok
+      _ -> render_error(conn, 401, "Unauthorized.")
     end
   end
 
@@ -353,10 +352,9 @@ defmodule EvercamMediaWeb.CompareController do
       case compare.public do
         true -> {:ok, compare}
         _ ->
-          if current_user && Permission.Camera.can_list?(current_user, camera) do
-            {:ok, compare}
-          else
-            render_error(conn, 403, "Forbidden.")
+          case Permission.Camera.can_list?(current_user, camera) do
+            true -> {:ok, compare}
+            _ -> render_error(conn, 403, "Forbidden.")
           end
       end
     end
