@@ -67,6 +67,8 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     iterate(status, config, url, next_start_date, end_date, path, upload_path)
   end
   defp iterate(_status, config, _url, start_date, end_date, path, upload_path) do
+    client = ElixirDropbox.Client.new(System.get_env["DROP_BOX_TOKEN"])
+    commit_if_1000(1000, client, path)
     :timer.sleep(:timer.seconds(5))
     snapshot_count = get_count(path)
     create_video_mp4(config.create_mp4, config, path, upload_path)
