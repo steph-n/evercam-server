@@ -1,7 +1,7 @@
 defmodule EvercamMedia.Snapshot.Storage do
   require Logger
   alias EvercamMedia.Util
-  import EvercamMedia.TimelapseRecording.S3, only: [do_save: 3, do_load: 1]
+  import EvercamMedia.TimelapseRecording.S3, only: [do_save: 3, do_load: 1, delete_object: 1]
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
   @seaweedfs Application.get_env(:evercam_media, :seaweedfs_url)
@@ -23,6 +23,9 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
+  ####################################
+  ###### Save and Get snapshots ######
+  ####################################
   def latest(camera_exid) do
     Path.wildcard("#{@root_dir}/#{camera_exid}/snapshots/*")
     |> Enum.reject(fn(x) -> String.match?(x, ~r/thumbnail.jpg/) end)
@@ -34,6 +37,57 @@ defmodule EvercamMedia.Snapshot.Storage do
       last = Path.wildcard("#{hour}/??_??_???.jpg") |> List.last
       Enum.max_by([acc, "#{last}"], fn(x) -> String.slice(x, -27, 27) end)
     end)
+  end
+
+  def load(camera_exid, timestamp, notes) when notes in [nil, ""] do
+    with {:error, _error} <- load(camera_exid, timestamp, "Evercam Proxy"),
+         {:error, _error} <- load(camera_exid, timestamp, "Archives"),
+         {:error, _error} <- load(camera_exid, timestamp, "Evercam Timelapse"),
+         {:error, _error} <- load(camera_exid, timestamp, "Evercam SnapMail"),
+         {:error, error} <- load(camera_exid, timestamp, "Evercam Thumbnail") do
+      {:error, error}
+    else
+      {:ok, image, _notes} -> {:ok, image, ""}
+    end
+  end
+  def load(camera_exid, timestamp, "Evercam SnapMail" = notes) do
+    file_name = construct_file_name(timestamp)
+    path =
+      timestamp
+      |> Calendar.DateTime.Parse.unix!
+      |> Calendar.Strftime.strftime!("#{camera_exid}/snapmails/%Y/%m/%d/%H/")
+
+    case do_load("#{path}#{file_name}") do
+      {:ok, snapshot} -> {:ok, snapshot, notes}
+      {:error, _code, _message} -> {:error, :not_found}
+    end
+  end
+  def load(camera_exid, timestamp, notes) do
+    img_datetime = Calendar.DateTime.Parse.unix!(timestamp)
+    app_name = notes_to_app_name(notes)
+    directory_path = construct_directory_path(camera_exid, timestamp, app_name, "")
+    file_name = construct_file_name(timestamp)
+    url = point_to_seaweed(img_datetime) <> directory_path <> file_name
+
+    case HTTPoison.get(url, [], hackney: [pool: :seaweedfs_download_pool]) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: snapshot}} ->
+        {:ok, snapshot, notes}
+      _error ->
+        {:error, :not_found}
+    end
+  end
+
+  def save(camera_exid, timestamp, image, "Evercam SnapMail") do
+    save_snapmail_to_s3("#{camera_exid}", timestamp, image)
+    update_cache_thumbnail("#{camera_exid}", timestamp, image)
+  end
+  def save(camera_exid, timestamp, image, notes) do
+    try do
+      seaweedfs_save("#{camera_exid}", timestamp, image, notes)
+      update_cache_thumbnail("#{camera_exid}", timestamp, image, Calendar.DateTime.now!("UTC"))
+    catch _type, _error ->
+      :noop
+    end
   end
 
   # Temporary solution for extractor to sync
@@ -57,40 +111,6 @@ defmodule EvercamMedia.Snapshot.Storage do
     case HTTPoison.post("#{@seaweedfs_new}#{file_path}", {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
       {:ok, response} -> response
       {:error, error} -> Logger.info "[seaweedfs_save] [#{file_path}] [#{camera_exid}] [#{inspect error}]"
-    end
-  end
-
-  def get_days_meta(camera_exid) do
-    hackney = [pool: :seaweedfs_download_pool]
-    file_path = "#{@seaweedfs_new}/#{camera_exid}/days.json"
-
-    case HTTPoison.get(file_path, ["Accept": "application/json"], hackney: hackney) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Jason.decode!(body)
-      _ -> %{}
-    end
-  end
-
-  def save_days_meta(camera_exid, metadata) do
-    hackney = [pool: :seaweedfs_upload_pool]
-    file_path = "/#{camera_exid}/days.json"
-    case HTTPoison.post("#{@seaweedfs_new}#{file_path}", {:multipart, [{file_path, Jason.encode!(metadata), []}]}, [], hackney: hackney) do
-      {:ok, response} -> response
-      {:error, error} -> Logger.info "[save_days_meta] [#{camera_exid}] [#{inspect error}]"
-    end
-  end
-
-  def seaweedfs_thumbnail_export(file_path, image) do
-    path = String.replace_leading(file_path, "/storage", "")
-    hackney = [pool: :seaweedfs_upload_pool]
-    url = "#{@seaweedfs}#{path}"
-    case HTTPoison.head(url, [], hackney: hackney) do
-      {:ok, %HTTPoison.Response{status_code: 200}} ->
-        HTTPoison.put!(url, {:multipart, [{path, image, []}]}, [], hackney: hackney)
-      {:ok, %HTTPoison.Response{status_code: 404}} ->
-        HTTPoison.post!(url, {:multipart, [{path, image, []}]}, [], hackney: hackney)
-      error ->
-        raise "Upload for file path '#{file_path}' failed with: #{inspect error}"
     end
   end
 
@@ -305,113 +325,47 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
 
   def seaweed_thumbnail_load(camera_exid) do
-    url = "#{@seaweedfs_new}/#{camera_exid}/snapshots/thumbnail.jpg"
     case ConCache.get(:camera_thumbnail, camera_exid) do
       nil ->
-        case HTTPoison.get(url, [], hackney: [pool: :seaweedfs_download_pool]) do
-          {:ok, %HTTPoison.Response{status_code: 200, body: snapshot, headers: header}} ->
-            {_, last_modified_date} = List.keyfind(header, "Last-Modified", 0)
-            thumbnail_timestamp =
-              last_modified_date
-              |> Timex.parse!("{RFC1123}")
-              |> Timex.format!("{ISO:Extended:Z}")
-              |> Calendar.DateTime.Parse.rfc3339_utc
-              |> elem(1)
-              |> Calendar.DateTime.Format.unix
-            ConCache.put(:camera_thumbnail, camera_exid, {Calendar.DateTime.now!("UTC"), thumbnail_timestamp, snapshot})
-            {:ok, thumbnail_timestamp, snapshot}
-          _error -> {:error, Util.unavailable}
+        check_camera_last_image(camera_exid)
+        case ConCache.get(:camera_thumbnail, camera_exid) do
+          nil -> {:error, Util.unavailable}
+          {_last_save_date, timestamp, img} -> {:ok, timestamp, img}
         end
       {_last_save_date, timestamp, img} -> {:ok, timestamp, img}
     end
   end
 
-  def import_thumbnail_from_old_server() do
-    Camera.all |> Enum.each(fn(c) ->
-      nov_url = "#{@seaweedfs_new}/#{c.exid}/snapshots/thumbnail.jpg"
-      oct_url = "#{@seaweedfs}/#{c.exid}/snapshots/thumbnail.jpg"
-      case HTTPoison.get(nov_url, [], hackney: [pool: :seaweedfs_download_pool]) do
-        {:ok, %HTTPoison.Response{status_code: 200, body: _snapshot, headers: _header}} ->
-          Logger.info "Alreday have latest thumbnail of camera: #{c.exid}"
-        _error ->
-          case HTTPoison.get(oct_url, [], hackney: [pool: :seaweedfs_download_pool]) do
-            {:ok, %HTTPoison.Response{status_code: 200, body: snapshot, headers: _header}} ->
-              Logger.info "Save thumbnail from oct server. Camera: #{c.exid}"
-              file_path = "/#{c.exid}/snapshots/thumbnail.jpg"
-              case HTTPoison.post(nov_url, {:multipart, [{file_path, snapshot, []}]}, [], hackney: [pool: :seaweedfs_upload_pool]) do
-                {:ok, _} -> :noop
-                {:error, error} -> Logger.info "[thumbnail_import_error] [#{c.exid}] [#{inspect error}]"
-              end
-            _error -> Logger.info "No thumbnail."
-          end
-      end
+  defp save_snapmail_to_s3(camera_exid, timestamp, image) do
+    path =
+      timestamp
+      |> Calendar.DateTime.Parse.unix!
+      |> Calendar.Strftime.strftime!("#{camera_exid}/snapmails/%Y/%m/%d/%H/")
+
+    filename = construct_file_name(timestamp)
+    do_save("#{path}#{filename}", image, [content_type: "image/jpeg"])
+  end
+
+  def update_cache_thumbnail(camera_exid, timestamp, image, thumbnail_save_date \\ nil) do
+    {last_save_date, _, _img} = ConCache.dirty_get_or_store(:camera_thumbnail, camera_exid, fn() ->
+      {Calendar.DateTime.now!("UTC"), timestamp, image}
     end)
-  end
-
-  def import_oldest_from_old_server() do
-    Camera.all |> Enum.each(fn(c) ->
-      oldest_image_name =
-        "#{@seaweedfs}/#{c.exid}/snapshots/?limit=1"
-        |> request_from_seaweedfs("Files", "name")
-        |> Enum.sort(&(&2 > &1))
-        |> List.first
-
-      case oldest_image_name  do
-        nil -> Logger.info "No image found for camera: #{c.exid}"
-        file_id when file_id == "thumbnail.jpg" -> Logger.info "Found thumbnail for camera: #{c.exid}"
-        _ ->
-          Logger.info "Oldest image found for camera: #{c.exid}, image: #{oldest_image_name}"
-          oct_url = "#{@seaweedfs}/#{c.exid}/snapshots/#{oldest_image_name}"
-          case HTTPoison.get(oct_url, [], hackney: [pool: :seaweedfs_download_pool]) do
-            {:ok, %HTTPoison.Response{status_code: 200, body: snapshot}} ->
-              nov_url = "#{@seaweedfs_new}/#{c.exid}/snapshots/#{oldest_image_name}"
-              file_path = "/#{c.exid}/snapshots/#{oldest_image_name}"
-              case HTTPoison.post(nov_url, {:multipart, [{file_path, snapshot, []}]}, [], hackney: [pool: :seaweedfs_upload_pool]) do
-                {:ok, _} -> Logger.info "Save oldest image for camera: #{c.exid}, #{nov_url}"
-                {:error, error} -> Logger.info "[import_oldest_from_old_server] [#{c.exid}] [#{inspect error}]"
-              end
-            _error ->
-              Logger.info "Failed to get oldest snapshot for camera: #{c.exid}"
-          end
+    new_save_date =
+      case thumbnail_save_date do
+        nil -> last_save_date
+        datetime -> datetime
       end
-    end)
+    ConCache.dirty_put(:camera_thumbnail, camera_exid, {new_save_date, timestamp, image})
   end
 
-  def disk_thumbnail_load(camera_exid) do
-    "#{@root_dir}/#{camera_exid}/snapshots/thumbnail.jpg"
-    |> File.open([:read, :binary, :raw], fn(file) -> IO.binread(file, :all) end)
-    |> case do
-      {:ok, content} -> {:ok, content}
-      {:error, _error} -> {:error, Util.unavailable}
-    end
-  end
-
-  def thumbnail_options(camera_exid) do
-    hackney = [pool: :seaweedfs_upload_pool]
-    url = "#{@seaweedfs}/#{camera_exid}/snapshots/thumbnail.jpg"
-    case HTTPoison.head(url, [], hackney: hackney) do
-      {:ok, %HTTPoison.Response{headers: head, status_code: 200}} -> {:ok, head}
-      error ->
-        Logger.debug "Upload for file path '#{url}' failed with: #{inspect error}"
-    end
-  end
-
-  def copy_oldest_image(camera_exid, source, erl_date) do
-    {:ok, datetime} = Calendar.DateTime.from_erl(erl_date, "UTC")
-    unix_timestamp =  datetime |> Calendar.DateTime.Format.unix
-    case HTTPoison.get(source, [], hackney: [pool: :seaweedfs_download_pool]) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: snapshot}} ->
-        save_oldest_snapshot(camera_exid, snapshot, unix_timestamp)
-        {:ok}
-      _error -> {:error}
-    end
-  end
+  ########################################
+  ###### End Save and Get snapshots ######
+  ########################################
 
   ########################################
   ###### Load latest image to cache ######
   ########################################
   def check_camera_last_image(camera_id) do
-    Logger.info "Load thumbnail to cache."
     with {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs_new, "#{camera_id}/snapshots/recordings"),
          {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs_new, "#{camera_id}/snapshots/archives"),
          {:error, _} <- load_latest_snapshot_to_cache(@seaweedfs_1, "#{camera_id}/snapshots/recordings"),
@@ -439,9 +393,12 @@ defmodule EvercamMedia.Snapshot.Storage do
       case HTTPoison.get("#{weed_url}/#{path}/#{year}/#{month}/#{day}/#{hour}/#{last_image}", [], hackney: hackney) do
         {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
           [minute, second, _] = String.split(last_image, "_")
-          erl_date = {{to_integer(year), to_integer(month), to_integer(day)}, {to_integer(hour), to_integer(minute), to_integer(second)}}
-          {:ok, datetime} = Calendar.DateTime.from_erl(erl_date, "UTC")
-          {:ok, body, datetime |> Calendar.DateTime.Format.unix}
+          datetime =
+            {{to_integer(year), to_integer(month), to_integer(day)}, {to_integer(hour), to_integer(minute), to_integer(second)}}
+            |> Calendar.DateTime.from_erl("UTC")
+            |> elem(1)
+            |> Calendar.DateTime.Format.unix
+          {:ok, body, datetime}
         {:ok, %HTTPoison.Response{status_code: 404}} -> {:error, "not found"}
         {:error, %HTTPoison.Error{reason: reason}} ->
           {:error, reason}
@@ -602,41 +559,6 @@ defmodule EvercamMedia.Snapshot.Storage do
     end
   end
 
-  ##########################
-  #### End oldest Image ####
-  ##########################
-
-  defp to_integer(nil), do: ""
-  defp to_integer(value) do
-    case Integer.parse(value) do
-      {number, ""} -> number
-      _ -> :error
-    end
-  end
-
-  def save(camera_exid, timestamp, image, "Evercam SnapMail") do
-    save_snapmail_to_s3("#{camera_exid}", timestamp, image)
-    update_cache_thumbnail("#{camera_exid}", timestamp, image)
-  end
-  def save(camera_exid, timestamp, image, notes) do
-    try do
-      seaweedfs_save("#{camera_exid}", timestamp, image, notes)
-      update_cache_thumbnail("#{camera_exid}", timestamp, image, Calendar.DateTime.now!("UTC"))
-    catch _type, _error ->
-      :noop
-    end
-  end
-
-  defp save_snapmail_to_s3(camera_exid, timestamp, image) do
-    path =
-      timestamp
-      |> Calendar.DateTime.Parse.unix!
-      |> Calendar.Strftime.strftime!("#{camera_exid}/snapmails/%Y/%m/%d/%H/")
-
-    filename = construct_file_name(timestamp)
-    do_save("#{path}#{filename}", image, [content_type: "image/jpeg"])
-  end
-
   defp oldest_directory_name(cloud_recording, directory, url, type \\ "Directories", attribute \\ "Name")
   defp oldest_directory_name(%CloudRecording{storage_duration: -1}, directory, url, type, attribute) do
     {structure, attr} =
@@ -670,17 +592,13 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
   defp exist_oldest_directory([], _directory, _bool, _url, _type, _attribute), do: :noop
 
-  def update_cache_thumbnail(camera_exid, timestamp, image, thumbnail_save_date \\ nil) do
-    {last_save_date, _, _img} = ConCache.dirty_get_or_store(:camera_thumbnail, camera_exid, fn() ->
-      {Calendar.DateTime.now!("UTC"), timestamp, image}
-    end)
-    new_save_date =
-      case thumbnail_save_date do
-        nil -> last_save_date
-        datetime -> datetime
-      end
-    ConCache.dirty_put(:camera_thumbnail, camera_exid, {new_save_date, timestamp, image})
-  end
+  ##########################
+  #### End oldest Image ####
+  ##########################
+
+  #################################
+  ###### Archive Storage fun ######
+  #################################
 
   def load_archive_thumbnail(camera_exid, archive_id) do
     file_path = "#{camera_exid}/clips/#{archive_id}/thumb-#{archive_id}.jpg"
@@ -751,47 +669,17 @@ defmodule EvercamMedia.Snapshot.Storage do
     archive_path = "#{camera_exid}/clips/#{archive_id}/#{archive_id}.mp4"
     archive_thumbail_path = "#{camera_exid}/clips/#{archive_id}/thumb-#{archive_id}.jpg"
     Logger.info "[#{camera_exid}] [archive_delete] [#{archive_id}]"
-    EvercamMedia.TimelapseRecording.S3.delete_object(["#{archive_path}", "#{archive_thumbail_path}"])
+    delete_object(["#{archive_path}", "#{archive_thumbail_path}"])
     Logger.info "[archive_delete] [#{camera_exid}] [#{archive_id}]"
   end
 
-  def load(camera_exid, timestamp, notes) when notes in [nil, ""] do
-    with {:error, _error} <- load(camera_exid, timestamp, "Evercam Proxy"),
-         {:error, _error} <- load(camera_exid, timestamp, "Archives"),
-         {:error, _error} <- load(camera_exid, timestamp, "Evercam Timelapse"),
-         {:error, _error} <- load(camera_exid, timestamp, "Evercam SnapMail"),
-         {:error, error} <- load(camera_exid, timestamp, "Evercam Thumbnail") do
-      {:error, error}
-    else
-      {:ok, image, _notes} -> {:ok, image, ""}
-    end
-  end
-  def load(camera_exid, timestamp, "Evercam SnapMail" = notes) do
-    file_name = construct_file_name(timestamp)
-    path =
-      timestamp
-      |> Calendar.DateTime.Parse.unix!
-      |> Calendar.Strftime.strftime!("#{camera_exid}/snapmails/%Y/%m/%d/%H/")
+  #################################
+  #### End Archive Storage fun ####
+  #################################
 
-    case do_load("#{path}#{file_name}") do
-      {:ok, snapshot} -> {:ok, snapshot, notes}
-      {:error, _code, _message} -> {:error, :not_found}
-    end
-  end
-  def load(camera_exid, timestamp, notes) do
-    img_datetime = Calendar.DateTime.Parse.unix!(timestamp)
-    app_name = notes_to_app_name(notes)
-    directory_path = construct_directory_path(camera_exid, timestamp, app_name, "")
-    file_name = construct_file_name(timestamp)
-    url = point_to_seaweed(img_datetime) <> directory_path <> file_name
-
-    case HTTPoison.get(url, [], hackney: [pool: :seaweedfs_download_pool]) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: snapshot}} ->
-        {:ok, snapshot, notes}
-      _error ->
-        {:error, :not_found}
-    end
-  end
+  #################################
+  #### Delete Storage function ####
+  #################################
 
   def delete_jpegs_with_timestamps(timestamps, camera_exid) do
     Enum.each(timestamps, fn(timestamp) ->
@@ -805,14 +693,6 @@ defmodule EvercamMedia.Snapshot.Storage do
         HTTPoison.delete!("#{url}?recursive=true", [], hackney: hackney)
       end
     end)
-  end
-
-  defp create_jpeg_url(seaweedfs, timestamp, camera_exid) do
-    directory_path =
-      timestamp
-      |> Calendar.DateTime.Parse.unix!
-      |> Calendar.Strftime.strftime!("%Y/%m/%d/%H/%M_%S_000.jpg")
-    "#{seaweedfs}/#{camera_exid}/snapshots/recordings/#{directory_path}"
   end
 
   def cleanup_all do
@@ -878,6 +758,22 @@ defmodule EvercamMedia.Snapshot.Storage do
     request_from_seaweedfs("#{@seaweedfs_new}/", "Directories", "Name")
     |> Enum.filter(fn(exid) -> Camera.by_exid(exid) == nil end)
     |> Enum.each(fn(exid) -> delete_everything_for(exid) end)
+  end
+
+  #####################################
+  #### End Delete Storage function ####
+  #####################################
+
+  ##############################
+  ###### Private function ######
+  ##############################
+
+  defp create_jpeg_url(seaweedfs, timestamp, camera_exid) do
+    directory_path =
+      timestamp
+      |> Calendar.DateTime.Parse.unix!
+      |> Calendar.Strftime.strftime!("%Y/%m/%d/%H/%M_%S_000.jpg")
+    "#{seaweedfs}/#{camera_exid}/snapshots/recordings/#{directory_path}"
   end
 
   def construct_directory_path(camera_exid, timestamp, app_dir, root_dir \\ @root_dir) do
@@ -1023,6 +919,18 @@ defmodule EvercamMedia.Snapshot.Storage do
       _ -> false
     end
   end
+
+  defp to_integer(nil), do: ""
+  defp to_integer(value) do
+    case Integer.parse(value) do
+      {number, ""} -> number
+      _ -> :error
+    end
+  end
+
+  ##############################
+  #### End Private function ####
+  ##############################
 
   ######################################
   ## Timelapse functions to save/load ##

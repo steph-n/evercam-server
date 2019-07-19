@@ -111,7 +111,7 @@ defmodule EvercamMediaWeb.CameraShareController do
                 {:ok, camera_share_request} ->
                   Application.get_env(:evercam_media, :run_spawn)
                   |> create_camera_share_request(caller, camera, camera_share_request, extra, next_datetime, requester_ip, conn)
-                  add_requestee_to_zoho(Application.get_env(:evercam_media, :run_spawn), zoho_camera, camera, email)
+                  add_requestee_to_zoho(Application.get_env(:evercam_media, :run_spawn), camera, email)
                   {shares, [camera_share_request | share_requests], changes, next_datetime}
                 {:error, changeset} ->
                   {shares, share_requests, [attach_email_to_message(changeset, email) | changes], next_datetime}
@@ -152,22 +152,22 @@ defmodule EvercamMediaWeb.CameraShareController do
          {:ok, camera_share} <- share_exists(conn, sharee, camera)
     do
       share_changeset = CameraShare.changeset(camera_share, %{rights: rights})
-      if share_changeset.valid? do
-        CameraShare.update_share(sharee, camera, rights)
+      case share_changeset.valid? do
+        true ->
+          CameraShare.update_share(sharee, camera, rights)
 
-        extra =
-          %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
-          |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
-        Util.log_activity(caller, camera, "updated share", extra)
-        Camera.invalidate_user(sharee)
-        Camera.invalidate_camera(camera)
-        camera_share =
-          camera_share
-          |> Repo.preload([camera: :access_rights], force: true)
-          |> Repo.preload([camera: [access_rights: :access_token]], force: true)
-        render(conn, "show.json", %{camera_share: camera_share})
-      else
-        render_error(conn, 400, Util.parse_changeset(share_changeset))
+          extra =
+            %{ with: sharee.email, agent: get_user_agent(conn, params["agent"]) }
+            |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+          Util.log_activity(caller, camera, "updated share", extra)
+          Camera.invalidate_user(sharee)
+          Camera.invalidate_camera(camera)
+          camera_share =
+            camera_share
+            |> Repo.preload([camera: :access_rights], force: true)
+            |> Repo.preload([camera: [access_rights: :access_token]], force: true)
+          render(conn, "show.json", %{camera_share: camera_share})
+        _ -> render_error(conn, 400, Util.parse_changeset(share_changeset))
       end
     end
   end
@@ -305,17 +305,17 @@ defmodule EvercamMediaWeb.CameraShareController do
   end
   defp add_contact_to_zoho(_, _, _, _, _), do: :noop
 
-  defp add_requestee_to_zoho(true, zoho_camera, evercam_camera, requestee) do
+  defp add_requestee_to_zoho(true, evercam_camera, requestee) do
     spawn fn ->
       case Zoho.get_contact(requestee) do
-        {:ok, contact} -> contact
+        {:ok, _} -> :noop
         {:nodata, _message} ->
-          {:ok, contact} = Zoho.insert_requestee(requestee, evercam_camera.owner.email)
+          {:ok, _contact} = Zoho.insert_requestee(requestee, evercam_camera.owner.email)
         {:error} -> nil
       end
     end
   end
-  defp add_requestee_to_zoho(_, _, _, _), do: :noop
+  defp add_requestee_to_zoho(_, _, _), do: :noop
 
   defp ensure_list(email) do
     case is_binary(email) do
@@ -376,10 +376,9 @@ defmodule EvercamMediaWeb.CameraShareController do
   defp user_can_list(conn, user, camera, user_id) do
     user_id = String.downcase(user_id)
 
-    if !Permission.Camera.can_list?(user, camera) && (user.email != user_id && user.username != user_id) do
-      render_error(conn, 401, "Unauthorized.")
-    else
-      :ok
+    case {Permission.Camera.can_list?(user, camera), (user.email != user_id && user.username != user_id)} do
+      {false, false} -> render_error(conn, 401, "Unauthorized.")
+      _ -> :ok
     end
   end
 

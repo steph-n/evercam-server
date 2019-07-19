@@ -31,10 +31,9 @@ defmodule EvercamMedia.Validation.Log do
     from = params["from"]
     to = params["to"]
 
-    if present?(from) && present?(to) && less_or_higher?(from, to) do
-      {:invalid, "From can't be higher than to."}
-    else
-      :ok
+    case {present?(from), present?(to), less_or_higher?(from, to)} do
+      {true, true, true} -> {:invalid, "From can't be higher than to."}
+      _ -> :ok
     end
   end
 

@@ -14,10 +14,9 @@ defmodule EvercamMedia.Snapshot.Error do
       %RuntimeError{} ->
         :not_a_jpeg
       error when is_map(error) ->
-        if is_tuple(Map.get(error, :reason)) do
-          Map.get(error, :reason) |> elem(0)
-        else
-          Map.get(error, :reason)
+        case is_tuple(Map.get(error, :reason)) do
+          true -> Map.get(error, :reason) |> elem(0)
+          false -> Map.get(error, :reason)
         end
       _ ->
         error

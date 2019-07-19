@@ -109,14 +109,16 @@ defmodule EvercamMediaWeb.StreamController do
   defp check_port(camera, _) do
     host = Camera.host(camera)
     port = Camera.port(camera, "external", "rtsp")
-    if !Util.port_open?(host, "#{port}") do
-      raise "Invalid RTSP port to request the video stream"
+    case Util.port_open?(host, "#{port}") do
+      false -> raise "Invalid RTSP port to request the video stream"
+      _ -> :noop
     end
   end
 
   defp check_auth(camera, username, password) do
-    if Camera.username(camera) != username || Camera.password(camera) != password do
-      raise "Invalid credentials used to request the video stream"
+    case (Camera.username(camera) != username || Camera.password(camera) != password) do
+      true -> raise "Invalid credentials used to request the video stream"
+      _ -> :noop
     end
   end
 

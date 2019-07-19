@@ -10,8 +10,17 @@ defmodule EvercamMediaWeb.ControllerHelpers do
     |> render("error.json", %{message: message})
   end
 
+  def has_list_rights(true, _), do: :ok
+  def has_list_rights(false, conn), do: render_error(conn, 403, "Unauthorized.")
+
+  def has_edit_rights(true, _), do: :ok
+  def has_edit_rights(false, conn), do: render_error(conn, 403, "Unauthorized.")
+
+  def has_delete_rights(true, _), do: :ok
+  def has_delete_rights(false, conn), do: render_error(conn, 403, "Unauthorized.")
+
   def authorized(conn, nil), do: render_error(conn, 401, "Unauthorized.")
-  def authorized(_conn, _current_user), do: :ok
+  def authorized(_, _), do: :ok
 
   def user_request_ip(conn, requester_ip \\ "")
   def user_request_ip(conn, requester_ip) when requester_ip in [nil, ""] do

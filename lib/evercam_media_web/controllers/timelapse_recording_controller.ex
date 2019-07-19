@@ -81,12 +81,12 @@ defmodule EvercamMediaWeb.TimelapseRecordingController do
   defp ensure_camera_exists(_camera, _id, _conn), do: :ok
 
   defp ensure_can_edit(current_user, camera, conn) do
-    if Permission.Camera.can_edit?(current_user, camera) do
-      :ok
-    else
-      conn
-      |> put_status(403)
-      |> render(ErrorView, "error.json", %{message: "You don't have sufficient rights for this."})
+    case Permission.Camera.can_edit?(current_user, camera) do
+      true -> :ok
+      _ ->
+        conn
+        |> put_status(403)
+        |> render(ErrorView, "error.json", %{message: "You don't have sufficient rights for this."})
     end
   end
 

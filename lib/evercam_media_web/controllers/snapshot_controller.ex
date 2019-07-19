@@ -630,12 +630,12 @@ defmodule EvercamMediaWeb.SnapshotController do
 
   def snapshot_with_user(camera_exid, user, store_snapshot, notes \\ "") do
     camera = Camera.get_full(camera_exid)
-    if Permission.Camera.can_snapshot?(user, camera) do
-      construct_args(camera, store_snapshot, notes)
-      |> Map.put(:description, "Live")
-      |> fetch_snapshot
-    else
-      {403, %{message: "Forbidden"}}
+    case Permission.Camera.can_snapshot?(user, camera) do
+      true ->
+        construct_args(camera, store_snapshot, notes)
+        |> Map.put(:description, "Live")
+        |> fetch_snapshot
+      false -> {403, %{message: "Forbidden"}}
     end
   end
 
@@ -658,8 +658,8 @@ defmodule EvercamMediaWeb.SnapshotController do
     |> handle_test_response
   end
 
-  def snapshot_thumbnail(camera, user, update_thumbnail?) do
-    if update_thumbnail?, do: spawn(fn -> update_thumbnail(camera) end)
+  def snapshot_thumbnail(camera, user, do_update_thumbnail) do
+    spawn(fn -> update_thumbnail(do_update_thumbnail, camera) end)
     with true <- Permission.Camera.can_snapshot?(user, camera),
          {:ok, timestamp, image} <- Storage.thumbnail_load(camera.exid)
     do
@@ -670,13 +670,16 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
 
-  defp update_thumbnail(nil), do: :noop
-  defp update_thumbnail(camera) do
-    if camera.is_online && !Util.camera_recording?(camera) do
-      store_snapshot = save_thumbnail(camera.cloud_recordings)
-      construct_args(camera, store_snapshot, "Evercam Thumbnail")
-      |> Map.put(:description, "Thumbnail")
-      |> fetch_snapshot(3)
+  defp update_thumbnail(_, nil), do: :noop
+  defp update_thumbnail(false, _), do: :noop
+  defp update_thumbnail(true, camera) do
+    case {camera.is_online, Util.camera_recording?(camera)} do
+      {true, false} ->
+        store_snapshot = save_thumbnail(camera.cloud_recordings)
+        construct_args(camera, store_snapshot, "Evercam Thumbnail")
+        |> Map.put(:description, "Thumbnail")
+        |> fetch_snapshot(3)
+      _ -> :noop
     end
   end
 
@@ -792,12 +795,6 @@ defmodule EvercamMediaWeb.SnapshotController do
     ConCache.put(:camera_recording_days, camera_exid, update_days)
   end
 
-  defp save_meta(days, meta, camera_exid, year, month) do
-    meta_data = Map.merge(meta, %{"#{year}_#{month}": days})
-    Storage.save_days_meta(camera_exid, meta_data)
-    days
-  end
-
   defp save_thumbnail(nil), do: true
   defp save_thumbnail(cr) do
     case cr.status do
@@ -872,21 +869,19 @@ defmodule EvercamMediaWeb.SnapshotController do
     |> Calendar.DateTime.shift_zone!("Etc/UTC")
   end
 
-  defp update_camera_status_online(camera_exid) when camera_exid in [nil, ""], do: :noop
-  defp update_camera_status_online(camera_exid) do
-    camera = Camera.get_full(camera_exid)
-    if camera do
-      case camera.is_online do
-        false ->
-          timestamp = Calendar.DateTime.Format.unix(Calendar.DateTime.now_utc)
-          DBHandler.update_camera_status(camera.exid, timestamp, true)
-          Camera.invalidate_camera(camera)
-          camera.exid
-          |> String.to_atom
-          |> Process.whereis
-          |> WorkerSupervisor.update_worker(camera)
-        true -> ""
-      end
+  def update_camera_status_online(camera_exid) when camera_exid in [nil, ""], do: :noop
+  def update_camera_status_online(camera_exid) do
+    with camera <- Camera.get_full(camera_exid),
+         false <- camera.is_online do
+      timestamp = Calendar.DateTime.Format.unix(Calendar.DateTime.now_utc)
+      DBHandler.update_camera_status(camera.exid, timestamp, true)
+      Camera.invalidate_camera(camera)
+      camera.exid
+      |> String.to_atom
+      |> Process.whereis
+      |> WorkerSupervisor.update_worker(camera)
+    else
+      _ -> :noop
     end
   end
 

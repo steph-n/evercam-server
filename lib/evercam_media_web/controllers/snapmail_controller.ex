@@ -84,10 +84,9 @@ defmodule EvercamMediaWeb.SnapmailController do
     with :ok <- authorized(conn, current_user),
          {:ok, snapmail} <- snapmail_exist(conn, exid)
     do
-      if snapmail.user_id == current_user.id do
-        render(conn, "show.json", %{snapmail: snapmail})
-      else
-        render_error(conn, 401, "Unauthorized.")
+      case snapmail.user_id == current_user.id do
+        true -> render(conn, "show.json", %{snapmail: snapmail})
+        false -> render_error(conn, 401, "Unauthorized.")
       end
     end
   end
@@ -284,10 +283,9 @@ defmodule EvercamMediaWeb.SnapmailController do
   defp ensure_camera_exists(_camera, _exid, _conn), do: :ok
 
   defp ensure_can_list(current_user, camera, conn) do
-    if current_user && Permission.Camera.can_list?(current_user, camera) do
-      :ok
-    else
-      render_error(conn, 401, "Unauthorized.")
+    case Permission.Camera.can_list?(current_user, camera) do
+      true -> :ok
+      _ -> render_error(conn, 401, "Unauthorized.")
     end
   end
 

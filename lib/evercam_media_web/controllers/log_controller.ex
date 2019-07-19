@@ -69,10 +69,9 @@ defmodule EvercamMediaWeb.LogController do
   defp ensure_camera_exists(_camera, _id, _conn), do: :ok
 
   defp ensure_can_edit(current_user, camera, conn) do
-    if current_user && Permission.Camera.can_edit?(current_user, camera) do
-      :ok
-    else
-      render_error(conn, 401, "Unauthorized.")
+    case Permission.Camera.can_edit?(current_user, camera) do
+      true -> :ok
+      _ -> render_error(conn, 401, "Unauthorized.")
     end
   end
 
@@ -117,10 +116,20 @@ defmodule EvercamMediaWeb.LogController do
   defp parse_from(:v2, from), do: from |> Util.datetime_from_iso
 
   defp parse_limit(limit) when limit in [nil, ""], do: @default_limit
-  defp parse_limit(limit), do: if to_integer(limit) < 1, do: @default_limit, else: to_integer(limit)
+  defp parse_limit(limit) do
+    case to_integer(limit) do
+      num when num < 1 -> @default_limit
+      num -> num
+    end
+  end
 
   defp parse_page(page) when page in [nil, ""], do: 0
-  defp parse_page(page), do: if to_integer(page) < 0, do: 0, else: to_integer(page)
+  defp parse_page(page) do
+    case to_integer(page) do
+      num when num < 0 -> 0
+      num -> num
+    end
+  end
 
   defp parse_types(types) when types in [nil, ""], do: nil
   defp parse_types(types), do: types |> String.split(",", trim: true) |> Enum.map(&String.trim/1)

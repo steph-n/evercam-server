@@ -24,11 +24,13 @@ defmodule EvercamMedia.ShareRequestReminder do
       |> Calendar.DateTime.to_erl
       |> elem(1)
     {hour, _minute, _second} = camera_time
-    if hour == 9 do
-      case Calendar.DateTime.diff(current_date, share_request.created_at) do
-        {:ok, total_seconds, _, :after} -> can_send_reminder(share_request, current_date, total_seconds)
-        _ -> 0
-      end
+    case hour do
+      9 ->
+        case Calendar.DateTime.diff(current_date, share_request.created_at) do
+          {:ok, total_seconds, _, :after} -> can_send_reminder(share_request, current_date, total_seconds)
+          _ -> 0
+        end
+      _ -> :noop
     end
   end
 

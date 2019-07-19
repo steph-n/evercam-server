@@ -158,27 +158,27 @@ defmodule EvercamMediaWeb.CameraController do
     %{assigns: %{version: version}} = conn
     requester = conn.assigns[:current_user]
 
-    if requester do
-      requested_user =
-        case requester do
-          %User{} -> requester
-          %AccessToken{} -> User.by_username(params["user_id"])
-        end
+    case requester do
+      nil -> render_error(conn, 404, "Not found.")
+      called_user ->
+        requested_user =
+          case called_user do
+            %User{} -> called_user
+            %AccessToken{} -> User.by_username(params["user_id"])
+          end
 
-      include_shared? =
-        case params["include_shared"] do
-          "false" -> false
-          "true" -> true
-          _ -> true
-        end
+        include_shared? =
+          case params["include_shared"] do
+            "false" -> false
+            "true" -> true
+            _ -> true
+          end
 
-      cameras = ConCache.get_or_store(:cameras, "#{requested_user.username}_#{include_shared?}", fn() ->
-        Camera.for(requested_user, include_shared?)
-        |> Enum.sort_by(fn(camera) -> String.downcase(camera.name) end)
-      end)
-      render(conn, "index.#{version}.json", %{cameras: cameras, user: requester})
-    else
-      render_error(conn, 404, "Not found.")
+        cameras = ConCache.get_or_store(:cameras, "#{requested_user.username}_#{include_shared?}", fn() ->
+          Camera.for(requested_user, include_shared?)
+          |> Enum.sort_by(fn(camera) -> String.downcase(camera.name) end)
+        end)
+        render(conn, "index.#{version}.json", %{cameras: cameras, user: called_user})
     end
   end
 
@@ -216,10 +216,9 @@ defmodule EvercamMediaWeb.CameraController do
       |> String.replace_trailing(".json", "")
       |> Camera.get_full
 
-    if Permission.Camera.can_list?(current_user, camera) do
-      render(conn, "show.#{version}.json", %{camera: camera, user: current_user})
-    else
-      render_error(conn, 404, "Not found.")
+    case Permission.Camera.can_list?(current_user, camera) do
+      true -> render(conn, "show.#{version}.json", %{camera: camera, user: current_user})
+      _ -> render_error(conn, 404, "Not found.")
     end
   end
 
@@ -298,7 +297,8 @@ defmodule EvercamMediaWeb.CameraController do
     old_camera = Camera.get_full(exid)
 
     with :ok <- camera_exists(conn, exid, old_camera),
-         :ok <- user_has_rights(conn, caller, old_camera)
+         do_edit <- Permission.Camera.can_edit?(caller, old_camera),
+         :ok <- has_edit_rights(do_edit, conn)
     do
       camera_changeset = camera_update_changeset(old_camera, params, caller.email)
       with true <- camera_changeset.changes == %{} do
@@ -370,7 +370,8 @@ defmodule EvercamMediaWeb.CameraController do
     camera = Camera.get_full(exid)
 
     with :ok <- camera_exists(conn, exid, camera),
-         true <- user_has_delete_rights(conn, caller, camera)
+         do_delete <- Permission.Camera.can_delete?(caller, camera),
+         :ok <- has_delete_rights(do_delete, conn)
     do
       admin_user = User.by_username_or_email("howrya@evercam.io")
       camera_params = %{
@@ -499,7 +500,10 @@ defmodule EvercamMediaWeb.CameraController do
   defp validate(key, value) when value in [nil, ""], do: invalid(key)
 
   defp validate("address", value) do
-    if Camera.valid?("address", value), do: :ok, else: invalid("address")
+    case Camera.valid?("address", value) do
+      true -> :ok
+      _ -> invalid("address")
+    end
   end
 
   defp validate("port", value) when is_integer(value) and value >= 1 and value <= 65_535, do: :ok
@@ -529,10 +533,9 @@ defmodule EvercamMediaWeb.CameraController do
   defp user_exists(_conn, _user_id, _user), do: :ok
 
   defp has_rights(conn, user, camera) do
-    if Camera.is_owner?(user, camera) do
-      :ok
-    else
-      render_error(conn, 403, "Unauthorized.")
+    case Camera.is_owner?(user, camera) do
+      true -> :ok
+      _ -> render_error(conn, 403, "Unauthorized.")
     end
   end
 
@@ -559,22 +562,6 @@ defmodule EvercamMediaWeb.CameraController do
     |> Camera.changeset(%{owner_id: user.id})
     |> Repo.update!
     |> Repo.preload(:owner, force: true)
-  end
-
-  defp user_has_rights(conn, user, camera) do
-    if !Permission.Camera.can_edit?(user, camera) do
-      render_error(conn, 403, "Unauthorized.")
-    else
-      :ok
-    end
-  end
-
-  defp user_has_delete_rights(conn, user, camera) do
-    if !Permission.Camera.can_delete?(user, camera) do
-      render_error(conn, 403, "Unauthorized.")
-    else
-      true
-    end
   end
 
   defp camera_update_changeset(camera, params, caller_email) do
@@ -676,13 +663,11 @@ defmodule EvercamMediaWeb.CameraController do
     put_in(params, [:config, "snapshots", key], value)
   end
   defp add_parameter(params, "auth", key, value) do
-    params =
-      if is_nil(params[:config]["auth"]) do
-        put_in(params, [:config, "auth"], %{"basic" => %{}})
-      else
-        params
-      end
-    put_in(params, [:config, "auth", "basic", key], value)
+    case is_nil(params[:config]["auth"]) do
+      true -> put_in(params, [:config, "auth"], %{"basic" => %{}})
+      _ -> params
+    end
+    |> put_in([:config, "auth", "basic", key], value)
   end
 
   defp add_location_detail(params, _, value) when value in [nil, ""], do: params
