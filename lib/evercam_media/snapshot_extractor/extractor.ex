@@ -188,10 +188,11 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
 
   defp commit_if_1000(1000, client, path) do
     entries =
-      check_1000_chunk(path)
+      path
+      |> check_1000_chunk()
       |> Enum.map(fn entry ->
-        [session_id, offset, upload_image_path] = entry |> String.split(" ")
-        %{ "cursor" => %{ "session_id" => session_id, "offset" => String.to_integer(offset)}, "commit" => %{ "path" => upload_image_path }}
+        [session_id, offset, upload_image_path] = String.split(entry, " ")
+        %{"cursor" => %{"session_id" => session_id, "offset" => String.to_integer(offset)}, "commit" => %{"path" => upload_image_path}}
       end)
     ElixirDropbox.Files.UploadSession.finish_batch(client, entries)
     File.rm_rf!("#{path}SESSION")
