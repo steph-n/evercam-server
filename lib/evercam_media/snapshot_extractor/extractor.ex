@@ -116,15 +116,15 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     Porcelain.shell("ffmpeg -rtsp_transport tcp -stimeout 10000000 -i '#{stream_url}' -vframes 1 -y #{images_path}").out
     spawn(fn ->
       File.exists?(images_path)
-      |> upload_and_inject_image(config, images_path, upload_image_path, start_date, timezone)
+      |> upload_and_inject_image(config, images_path, upload_image_path, start_date, timezone, path)
     end)
   end
 
-  defp upload_and_inject_image(true, config, image_path, upload_image_path, start_date, timezone) do
-    upload_image(config.jpegs_to_dropbox, image_path, upload_image_path)
+  defp upload_and_inject_image(true, config, image_path, upload_image_path, start_date, timezone, path) do
+    upload_image(config.jpegs_to_dropbox, image_path, upload_image_path, path)
     inject_to_cr(config.inject_to_cr, config.exid, image_path, start_date, timezone)
   end
-  defp upload_and_inject_image(_, _config, _image_path, _upload_image_path, _start_date, _timezone), do: :noop
+  defp upload_and_inject_image(_, _config, _image_path, _upload_image_path, _start_date, _timezone, _path), do: :noop
 
   defp inject_to_cr(status, exid, image_path, start_date, timezone)  when status in [true, "true"] do
     {:ok, image} = File.read("#{image_path}")
@@ -132,17 +132,14 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
   end
   defp inject_to_cr(_, _exid, _image_path, _start_date, _timezone), do: :noop
 
-  defp upload_image(status, image_path, upload_image_path) when status in [true, "true"] do
+  defp upload_image(status, image_path, upload_image_path, path) when status in [true, "true"] do
     client = ElixirDropbox.Client.new(System.get_env["DROP_BOX_TOKEN"])
     {:ok, file_size} = get_file_size(image_path)
-    %{"session_id" => session_id} = ElixirDropbox.Files.UploadSession.start(client, false, image_path)
-    ElixirDropbox.Files.UploadSession.finish(client, session_id, upload_image_path, image_path, file_size) |> handle_upload_response
+    %{"session_id" => session_id} = ElixirDropbox.Files.UploadSession.start(client, true, image_path)
+    write_sessional_values(session_id, file_size, upload_image_path, path)
+    check_1000_chunk(path) |> length() |> commit_if_1000(client, path)
   end
   defp upload_image(_status, _image_path, _upload_image_path), do: :noop
-
-  defp handle_upload_response({{:status_code, status_code}, {:ok, %{ "error" => %{ ".tag" => tag, "lookup_failed" => lookup_failed}, "error_summary" => error_summary }}}), do:
-    Logger.info "status_code: #{status_code} error_tag: #{tag} lookup_failed: #{lookup_failed} error_summary: #{error_summary}"
-  defp handle_upload_response(_), do: :noop
 
   defp save_current_jpeg_time(name, path) do
     File.write!("#{path}CURRENT", name)
@@ -175,9 +172,29 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
   end
 
   defp get_file_size(image_path) do
-    case File.stat(image_path) do
-      {:ok, %File.Stat{size: size}} -> {:ok, size}
-      {:error, reason} -> {:error, reason}
-    end
+    File.stat(image_path) |> stats()
   end
+
+  defp stats({:ok, %File.Stat{size: size}}), do: {:ok, size}
+  defp stats({:error, reason}), do: {:error, reason}
+
+  defp write_sessional_values(session_id, file_size, upload_image_path, path) do
+    File.write!("#{path}SESSION", "#{session_id} #{file_size} #{upload_image_path}\n", [:append])
+  end
+
+  defp check_1000_chunk(path) do
+    File.read!("#{path}SESSION") |> String.split("\n", trim: true)
+  end
+
+  defp commit_if_1000(1000, client, path) do
+    entries =
+      check_1000_chunk(path)
+      |> Enum.map(fn entry ->
+        [session_id, offset, upload_image_path] = entry |> String.split(" ")
+        %{ "cursor" => %{ "session_id" => session_id, "offset" => String.to_integer(offset)}, "commit" => %{ "path" => upload_image_path }}
+      end)
+    ElixirDropbox.Files.UploadSession.finish_batch(client, entries)
+    File.rm_rf!("#{path}SESSION")
+  end
+  defp commit_if_1000(_, _client, _path), do: :noop
 end
