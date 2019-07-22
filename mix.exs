@@ -123,7 +123,7 @@ defmodule EvercamMedia.Mixfile do
       {:ex_json_schema, "~> 0.5"},
       {:geoip, "~> 0.2"},
       {:poolboy, "~> 1.5.1"},
-      {:evercam_models, github: "evercam/evercam_models", branch: "remove_4k_recording_module"}
+      {:evercam_models, github: "evercam/evercam_models"}
     ]
   end
 end
