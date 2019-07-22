@@ -43,7 +43,8 @@ config :evercam_media,
   hls_url: "http://localhost:8080/hls"
 
 config :elixir_dropbox,
-  upload_url: "https://content.dropboxapi.com/2/"
+  upload_url: "https://content.dropboxapi.com/2/",
+  base_url: "https://api.dropboxapi.com/2"
 
 config :evercam_media,
   storage_dir: "storage"
