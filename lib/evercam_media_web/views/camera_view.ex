@@ -132,8 +132,7 @@ defmodule EvercamMediaWeb.CameraView do
           h264: Camera.rtsp_url(camera, "internal", "h264", false),
         },
       },
-      cloud_recordings: cloud_recording(camera.cloud_recordings),
-      timelapse_recordings: timelapse_recording(camera.timelapse_recordings)
+      cloud_recordings: cloud_recording(camera.cloud_recordings)
     }
   end
 
@@ -154,16 +153,6 @@ defmodule EvercamMediaWeb.CameraView do
       storage_duration: cloud_recording.storage_duration,
       status: cloud_recording.status,
       schedule: cloud_recording.schedule
-    }
-  end
-
-  defp timelapse_recording(nil), do: nil
-  defp timelapse_recording(timelapse_recording) do
-    %{
-      frequency: timelapse_recording.frequency,
-      storage_duration: timelapse_recording.storage_duration,
-      status: timelapse_recording.status,
-      schedule: timelapse_recording.schedule
     }
   end
 

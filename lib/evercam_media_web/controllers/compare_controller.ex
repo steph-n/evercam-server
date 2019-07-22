@@ -2,7 +2,7 @@ defmodule EvercamMediaWeb.CompareController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
   alias EvercamMedia.Util
-  alias EvercamMedia.TimelapseRecording.S3
+  alias EvercamMedia.S3
   alias EvercamMedia.Snapshot.Storage
 
   def swagger_definitions do

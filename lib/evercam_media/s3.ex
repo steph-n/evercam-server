@@ -1,4 +1,4 @@
-defmodule EvercamMedia.TimelapseRecording.S3 do
+defmodule EvercamMedia.S3 do
   @moduledoc """
   TODO
   """

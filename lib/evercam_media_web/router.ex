@@ -148,8 +148,6 @@ end
       get "/cameras/:id/apps/cloud-recording", CloudRecordingController, :show
       options "/cameras/:id/apps/cloud-recording", CloudRecordingController, :nothing
       post "/cameras/:id/apps/cloud-recording", CloudRecordingController, :create
-      get "/cameras/:id/apps/timelapse-recording", TimelapseRecordingController, :show
-      post "/cameras/:id/apps/timelapse-recording", TimelapseRecordingController, :create
 
       # Share and share-request route
       get "/cameras/:id/shares", CameraShareController, :show
@@ -369,8 +367,6 @@ end
 
       get "/cameras/:id/apps/cloud-recording", CloudRecordingController, :show
       post "/cameras/:id/apps/cloud-recording", CloudRecordingController, :create
-      get "/cameras/:id/apps/timelapse-recording", TimelapseRecordingController, :show
-      post "/cameras/:id/apps/timelapse-recording", TimelapseRecordingController, :create
 
       get "/cameras/:id/shares", CameraShareController, :show
       post "/cameras/:id/shares", CameraShareController, :create

@@ -4,7 +4,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   alias EvercamMedia.Util
   alias EvercamMedia.Snapshot.Storage
   import Ecto.Changeset
-  import EvercamMedia.TimelapseRecording.S3, only: [load_compare_thumbnail: 2, do_load: 1, get_presigned_url_to_object: 1]
+  import EvercamMedia.S3, only: [load_compare_thumbnail: 2, do_load: 1, get_presigned_url_to_object: 1]
   require Logger
 
   @status %{pending: 0, processing: 1, completed: 2, failed: 3}

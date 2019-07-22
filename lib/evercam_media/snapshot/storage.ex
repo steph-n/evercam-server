@@ -1,7 +1,7 @@
 defmodule EvercamMedia.Snapshot.Storage do
   require Logger
   alias EvercamMedia.Util
-  import EvercamMedia.TimelapseRecording.S3, only: [do_save: 3, do_load: 1, delete_object: 1]
+  import EvercamMedia.S3, only: [do_save: 3, do_load: 1, delete_object: 1]
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
   @seaweedfs Application.get_env(:evercam_media, :seaweedfs_url)

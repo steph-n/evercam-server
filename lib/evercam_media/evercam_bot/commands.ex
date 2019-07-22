@@ -53,7 +53,7 @@ defmodule EvercamMedia.EvercamBot.Commands do
         camera_exid = Enum.at(text, 1)
         compare = Compare.get_last_by_camera(id)
 
-        case EvercamMedia.TimelapseRecording.S3.do_load("#{camera_exid}/compares/#{compare.exid}/#{compare.exid}.mp4") do
+        case EvercamMedia.S3.do_load("#{camera_exid}/compares/#{compare.exid}/#{compare.exid}.mp4") do
           {:ok, response} -> send_file(response, update)
           {:error, response} -> send_message "#{camera_exid}: #{response.message}"
         end
@@ -64,7 +64,7 @@ defmodule EvercamMedia.EvercamBot.Commands do
         camera_exid = Enum.at(text, 1)
         archive = Archive.get_last_by_camera(id)
 
-        case EvercamMedia.TimelapseRecording.S3.do_load("#{camera_exid}/clips/#{archive.exid}/#{archive.exid}.mp4") do
+        case EvercamMedia.S3.do_load("#{camera_exid}/clips/#{archive.exid}/#{archive.exid}.mp4") do
           {:ok, response} -> send_file(response, update)
           {:error, response} -> send_message "#{camera_exid}: #{response.message}"
         end

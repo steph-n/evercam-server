@@ -92,7 +92,7 @@ defmodule EvercamMediaWeb.ProjectController do
       Overlay.delete_by_id(overlay.id)
       spawn(fn ->
         ["mapping/#{overlay.path |> String.split("/") |> List.last}"]
-        |> EvercamMedia.TimelapseRecording.S3.delete_object
+        |> EvercamMedia.S3.delete_object
       end)
       json(conn, %{})
     end

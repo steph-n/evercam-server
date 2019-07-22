@@ -5,7 +5,6 @@ defmodule EvercamMediaWeb.SnapshotController do
   alias EvercamMedia.Snapshot.DBHandler
   alias EvercamMedia.Snapshot.Error
   alias EvercamMedia.Snapshot.Storage
-  alias EvercamMedia.TimelapseRecording.S3
   alias EvercamMedia.Validation
   alias EvercamMedia.Util
   alias EvercamMedia.Snapshot.WorkerSupervisor
@@ -411,77 +410,6 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
 
-  def timelapse_days(conn, %{"id" => camera_exid, "year" => year, "month" => month}) do
-    current_user = conn.assigns[:current_user]
-    camera = Camera.get_full(camera_exid)
-
-    with :ok <- ensure_params(:day, conn, {year, month, "01"}),
-         :ok <- ensure_camera_exists(conn, camera_exid, camera),
-         :ok <- ensure_authorized(conn, current_user, camera)
-      do
-
-      days = S3.days(camera_exid, year, month)
-      json(conn, %{days: days})
-    end
-  end
-
-  def timelapse_snapshots_info(conn, %{"id" => camera_exid, "year" => year, "month" => month, "day" => day}) do
-    %{assigns: %{version: version}} = conn
-    current_user = conn.assigns[:current_user]
-    camera = Camera.get_full(camera_exid)
-
-    with :ok <- ensure_params(:day, conn, {year, month, day}),
-         :ok <- ensure_camera_exists(conn, camera_exid, camera),
-         :ok <- ensure_authorized(conn, current_user, camera)
-      do
-      timezone = Camera.get_timezone(camera)
-
-      from = construct_timestamp(year, month, day, "00:00:00", timezone)
-      to = construct_timestamp(year, month, day, "23:59:59", timezone)
-
-      {{fyear, fmonth, fday}, {_, _, _}} = from |> Calendar.DateTime.to_erl
-      {{tyear, tmonth, tday}, {_, _, _}} = to |> Calendar.DateTime.to_erl
-
-      snapshots =
-        cond do
-          "#{fyear}#{fmonth}#{fday}" == "#{tyear}#{tmonth}#{tday}" ->
-            S3.snapshots_info(camera_exid, fyear, fmonth, fday, version)
-          true ->
-            fro_snapshots =
-              S3.snapshots_info(camera_exid, fyear, fmonth, fday, version)
-              |> Enum.reject(fn(snapshot) -> check_snap_date(:after, snapshot.created_at, from) == false end)
-
-            to_snapshots =
-              S3.snapshots_info(camera_exid, tyear, tmonth, tday, version)
-              |> Enum.reject(fn(snapshot) -> check_snap_date(:before, snapshot.created_at, to) == false end)
-            fro_snapshots ++ to_snapshots
-        end
-
-      json(conn, %{snapshots: snapshots})
-    end
-  end
-
-  def timelapse_show(conn, %{"id" => camera_exid, "timestamp" => timestamp}) do
-    %{assigns: %{version: version}} = conn
-    camera = Camera.get_full(camera_exid)
-    timestamp = convert_timestamp(timestamp)
-    timezone = Camera.get_timezone(camera)
-
-    with true <- Permission.Camera.can_list?(conn.assigns[:current_user], camera),
-         {:ok, image} <- S3.load(camera_exid, timestamp) do
-      data = "data:image/jpeg;base64,#{Base.encode64(image)}"
-
-      conn
-      |> json(%{snapshots: [%{created_at: get_snapshot_timestamp(version, timestamp, timezone), data: data}]})
-    else
-      false -> render_error(conn, 403, "Forbidden.")
-      {:error, code, message} -> render_error(conn, code, message)
-      {:error, error} ->
-        Logger.error "[#{camera_exid}] [show_snapshot] [error] [#{inspect error}]"
-        render_error(conn, 500, "We dropped the ball.")
-    end
-  end
-
   swagger_path :day do
     get "/cameras/{id}/recordings/snapshots/{year}/{month}/{day}"
     summary "Check availability of recording."
@@ -831,19 +759,6 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
   defp save_latest_image(_, _, _, _), do: :noop
-
-  defp check_snap_date(:after, snapshot_dt, datetime) do
-    case Calendar.DateTime.diff(Calendar.DateTime.Parse.unix!(snapshot_dt), datetime) do
-      {:ok, _, _, :after} -> true
-      _ -> false
-    end
-  end
-  defp check_snap_date(:before, snapshot_dt, datetime) do
-    case Calendar.DateTime.diff(Calendar.DateTime.Parse.unix!(snapshot_dt), datetime) do
-      {:ok, _, _, :before} -> true
-      _ -> false
-    end
-  end
 
   def exec_with_timeout(function, timeout \\ 5) do
     try do

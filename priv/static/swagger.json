@@ -5056,10 +5056,6 @@
           "type": "string",
           "description": ""
         },
-        "timelapse_recordings": {
-          "type": "string",
-          "description": ""
-        },
         "thumbnail_url": {
           "type": "string",
           "description": ""

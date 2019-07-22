@@ -4,7 +4,6 @@ defmodule EvercamMediaWeb.CameraController do
   alias Evercam.Repo
   alias EvercamMedia.Snapshot.Storage
   alias EvercamMedia.Snapshot.WorkerSupervisor
-  alias EvercamMedia.TimelapseRecording.TimelapseRecordingSupervisor
   alias EvercamMedia.Snapshot.CamClient
   alias EvercamMedia.Zoho
   alias EvercamMedia.Util
@@ -21,7 +20,6 @@ defmodule EvercamMediaWeb.CameraController do
           vendor_id :string, ""
           updated_at :string, "", format: "ISO8601", example: "2019-02-18T09:00:00.000+00:00"
           timezone :string, ""
-          timelapse_recordings :string, ""
           thumbnail_url :string, ""
           rights :string, "", example: "snapshot,list,edit,delete,view,grant~snapshot,grant~view,grant~edit,grant~delete,grant~list"
           proxy_url (Schema.new do
@@ -446,7 +444,6 @@ defmodule EvercamMediaWeb.CameraController do
             camera
             |> Repo.preload(:owner, force: true)
             |> Repo.preload(:projects, force: true)
-            |> Repo.preload(:timelapse_recordings, force: true)
             |> Repo.preload(:cloud_recordings, force: true)
             |> Repo.preload(:vendor_model, force: true)
             |> Repo.preload([vendor_model: :vendor], force: true)
@@ -548,11 +545,6 @@ defmodule EvercamMediaWeb.CameraController do
       |> String.to_atom
       |> Process.whereis
       |> WorkerSupervisor.update_worker(camera)
-
-      "timelapse_#{exid}"
-      |> String.to_atom
-      |> Process.whereis
-      |> TimelapseRecordingSupervisor.update_worker(camera)
     end
   end
   defp update_camera_worker(_mode, _exid), do: :noop
