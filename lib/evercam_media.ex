@@ -29,7 +29,6 @@ defmodule EvercamMedia do
       supervisor(EvercamMedia.Snapshot.WorkerSupervisor, []),
       supervisor(EvercamMedia.Snapmail.SnapmailerSupervisor, []),
       supervisor(EvercamMedia.SnapshotExtractor.ExtractorSupervisor, []),
-      supervisor(EvercamMedia.Timelapse.TimelapserSupervisor, []),
       supervisor(EvercamMedia.EvercamBot.TelegramSupervisor, []),
       :hackney_pool.child_spec(:snapshot_pool, [timeout: 5000, max_connections: 1000]),
       :hackney_pool.child_spec(:seaweedfs_upload_pool, [timeout: 5000, max_connections: 1000]),

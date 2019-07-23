@@ -170,16 +170,6 @@ end
       options "/cameras/:id/compares/:compare_id", CompareController, :nothing
       delete "/cameras/:id/compares/:compare_id", CompareController, :delete_compare
 
-      # Timelapses route
-      ### Not moved to ISO due to not using
-      get "/timelapses", TimelapseController, :user_all
-      get "/cameras/:id/timelapses", TimelapseController, :all
-      get "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :show
-      post "/cameras/:id/timelapses", TimelapseController, :create
-      patch "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :update
-      options "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :nothing
-      delete "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :delete
-
       # Local recording route
       get "/cameras/:id/nvr/recordings/:year/:month/days", CloudRecordingController, :nvr_days
       get "/cameras/:id/nvr/recordings/:year/:month/:day/hours", CloudRecordingController, :nvr_hours
@@ -215,13 +205,6 @@ end
       delete "/cameras/:id/recordings/snapshots", SnapshotController, :delete
       get "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :days
       options "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :nothing
-
-      get "/cameras/:id/timelapse/recordings/snapshots/:year/:month/days", SnapshotController, :timelapse_days
-      options "/cameras/:id/timelapse/recordings/snapshots/:year/:month/days", SnapshotController, :nothing
-      get "/cameras/:id/timelapse/recordings/snapshots/:year/:month/:day", SnapshotController, :timelapse_snapshots_info
-      options "/cameras/:id/timelapse/recordings/snapshots/:year/:month/:day", SnapshotController, :nothing
-      get "/cameras/:id/timelapse/recordings/snapshots/:timestamp", SnapshotController, :timelapse_show
-      options "/cameras/:id/timelapse/recordings/snapshots/:timestamp", SnapshotController, :nothing
 
       get "/cameras/:id/recordings/snapshots/:year/:month/:day", SnapshotController, :day
       options "/cameras/:id/recordings/snapshots/:year/:month/:day", SnapshotController, :nothing
@@ -345,13 +328,6 @@ end
       get "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :days
       options "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :nothing
 
-      get "/cameras/:id/timelapse/recordings/snapshots/:year/:month/days", SnapshotController, :timelapse_days
-      options "/cameras/:id/timelapse/recordings/snapshots/:year/:month/days", SnapshotController, :nothing
-      get "/cameras/:id/timelapse/recordings/snapshots/:year/:month/:day", SnapshotController, :timelapse_snapshots_info
-      options "/cameras/:id/timelapse/recordings/snapshots/:year/:month/:day", SnapshotController, :nothing
-      get "/cameras/:id/timelapse/recordings/snapshots/:timestamp", SnapshotController, :timelapse_show
-      options "/cameras/:id/timelapse/recordings/snapshots/:timestamp", SnapshotController, :nothing
-
       get "/cameras/:id/recordings/snapshots/:year/:month/:day", SnapshotController, :day
       options "/cameras/:id/recordings/snapshots/:year/:month/:day", SnapshotController, :nothing
       get "/cameras/:id/recordings/snapshots/:year/:month/:day/hours", SnapshotController, :hours
@@ -400,14 +376,6 @@ end
       patch "/snapmails/:id/unsubscribe/:email", SnapmailController, :unsubscribe
       options "/snapmails/:id/unsubscribe/:email", SnapmailController, :nothing
       delete "/snapmails/:id", SnapmailController, :delete_snapmail
-
-      get "/timelapses", TimelapseController, :user_all
-      get "/cameras/:id/timelapses", TimelapseController, :all
-      get "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :show
-      post "/cameras/:id/timelapses", TimelapseController, :create
-      patch "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :update
-      options "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :nothing
-      delete "/cameras/:id/timelapses/:timelapse_id", TimelapseController, :delete
 
       get "/cameras/:id/nvr/recordings/:year/:month/days", CloudRecordingController, :nvr_days
       get "/cameras/:id/nvr/recordings/:year/:month/:day/hours", CloudRecordingController, :nvr_hours
