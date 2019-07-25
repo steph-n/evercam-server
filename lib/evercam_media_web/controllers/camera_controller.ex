@@ -703,7 +703,7 @@ defmodule EvercamMediaWeb.CameraController do
     Storage.delete_everything_for(camera.exid)
   end
 
-  defp create_thumbnail(camera, mac_address) do
+  defp create_thumbnail(camera) do
     args = %{
       camera_exid: camera.exid,
       url: Camera.snapshot_url(camera),
@@ -720,10 +720,10 @@ defmodule EvercamMediaWeb.CameraController do
       {:ok, data} ->
         Util.broadcast_snapshot(args[:camera_exid], data, timestamp)
         Storage.save(args[:camera_exid], args[:timestamp], data, args[:notes])
-        Camera.update_status(camera, true, mac_address)
+        Camera.update_status(camera, true)
       {:error, error} ->
         Logger.error "[#{camera.exid}] [create_thumbnail] [error] [#{inspect error}]"
-        Camera.update_status(camera, false, mac_address)
+        Camera.update_status(camera, false)
     end
   end
 
@@ -731,8 +731,7 @@ defmodule EvercamMediaWeb.CameraController do
     try do
       spawn fn ->
         WorkerSupervisor.start_worker(camera)
-        mac_address = insert_mac_address(camera)
-        create_thumbnail(camera, mac_address)
+        create_thumbnail(camera)
         EvercamMedia.UserMailer.camera_create_notification(user, camera)
       end
     catch _type, error ->
@@ -741,12 +740,4 @@ defmodule EvercamMediaWeb.CameraController do
     end
   end
   defp send_email_notification(_mode, _user, _camera), do: :noop
-
-  defp insert_mac_address(camera) do
-    with {:ok, response} <- EvercamMedia.ONVIFClient.request(Camera.get_camera_info(camera.exid), "device_service", "GetNetworkInterfaces") do
-      response |> Map.get("NetworkInterfaces") |> Map.get("Info") |> Map.get("HwAddress")
-    else
-      {:error, _, _} -> nil
-    end
-  end
 end
