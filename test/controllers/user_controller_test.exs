@@ -4,8 +4,8 @@ defmodule EvercamMedia.UserControllerTest do
 
   setup do
     country = Repo.insert!(%Country{name: "Something", iso3166_a2: "smt"})
-    user = Repo.insert!(%User{firstname: "John", lastname: "Doe", username: "johndoe", email: "john@doe.com", password: Comeonin.Bcrypt.hashpwsalt("password123"), api_id: UUID.uuid4(:hex) |> String.slice(0..8), api_key: UUID.uuid4(:hex), country_id: country.id})
-    user_evercam = Repo.insert!(%User{firstname: "Evercam", lastname: "Admin", username: "evercam", email: "admin@evercam.io", password: Comeonin.Bcrypt.hashpwsalt("password123"), api_id: UUID.uuid4(:hex) |> String.slice(0..8), api_key: UUID.uuid4(:hex), country_id: country.id})
+    user = Repo.insert!(%User{firstname: "John", lastname: "Doe", username: "johndoe", email: "john@doe.com", password: Bcrypt.hash_pwd_salt("password123", [12, true]), api_id: UUID.uuid4(:hex) |> String.slice(0..8), api_key: UUID.uuid4(:hex), country_id: country.id})
+    user_evercam = Repo.insert!(%User{firstname: "Evercam", lastname: "Admin", username: "evercam", email: "admin@evercam.io", password: Bcrypt.hash_pwd_salt("password123", [12, true]), api_id: UUID.uuid4(:hex) |> String.slice(0..8), api_key: UUID.uuid4(:hex), country_id: country.id})
     camera = Repo.insert!(%Camera{owner_id: user_evercam.id, name: "Herbst Wicklow Camera", exid: "evercam-remembrance-camera", is_public: false, config: %{"external_host" => "192.168.1.100", "external_http_port" => "80"}})
     share_request = Repo.insert!(%CameraShareRequest{camera_id: camera.id, user_id: user.id, key: UUID.uuid4(:hex), email: "legend@john.com", status: -1, rights: "list,snapshot"})
 

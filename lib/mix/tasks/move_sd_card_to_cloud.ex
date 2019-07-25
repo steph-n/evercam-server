@@ -41,7 +41,6 @@ defmodule EvercamMedia.MoveSdCardToCloud do
 
     add_date_to_xml(xm_s_date, xm_e_date)
     |> fetch_local_urls(auth, host_port)
-    |> IO.inspect
     |> extract_jpegs_and_inject(auth, host_port, camera_exid, timezone)
 
     case start_date + @days_in_sec > end_date do

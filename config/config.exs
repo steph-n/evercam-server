@@ -64,11 +64,6 @@ config :evercam_media, EvercamMedia.Mailer,
   api_key: "sandbox",
   domain: "sandbox"
 
-config :new_relic,
-  application_name: System.get_env("NEWRELIC_APP_NAME"),
-  license_key: System.get_env("NEWRELIC_LICENSE_KEY"),
-  poll_interval: 60_000
-
 config :ex_aws,
   access_key_id: System.get_env["AWS_ACCESS_KEY_ID"],
   secret_access_key: System.get_env["SECRET_ACCESS_KEY"],

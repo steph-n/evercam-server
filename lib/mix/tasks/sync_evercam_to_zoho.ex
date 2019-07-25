@@ -1,4 +1,7 @@
 defmodule EvercamMedia.SyncEvercamToZoho do
+  @moduledoc """
+  Tasks for sync evercam data to Zoho.
+  """
   alias EvercamMedia.Zoho
   alias Evercam.Repo
   import Ecto.Query

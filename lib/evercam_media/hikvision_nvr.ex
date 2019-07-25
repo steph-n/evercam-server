@@ -223,7 +223,7 @@ defmodule EvercamMedia.HikvisionNVR do
       %HTTPoison.AsyncHeaders{headers: _headers, id: id} ->
         Logger.debug "Collect response headers"
         collect_response(id, par, data)
-      %HTTPoison.AsyncChunk{chunk: chunk, id: id,} ->
+      %HTTPoison.AsyncChunk{chunk: chunk, id: id} ->
         save_temporary(chunk)
         collect_response(id, par, data) # <> chunk
       %HTTPoison.AsyncEnd{id: _id} ->

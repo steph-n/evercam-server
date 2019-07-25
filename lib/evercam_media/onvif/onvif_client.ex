@@ -59,7 +59,7 @@ defmodule EvercamMedia.ONVIFClient do
         "trcv" -> "http://www.onvif.org/ver10/receiver/wsdl"
        end
 
-    {wsse_username, wsse_password, wsse_nonce, wsse_created} = get_wsse_header_data(username,password)
+    {wsse_username, wsse_password, wsse_nonce, wsse_created} = get_wsse_header_data(username, password)
 
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     <SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://www.w3.org/2003/05/soap-envelope\"
@@ -118,11 +118,11 @@ defmodule EvercamMedia.ONVIFClient do
     :io_lib.format("~4..0B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0BZ", [year, month, day, hour, minute, second]) |> List.flatten |> to_string
   end
 
-  defp generate_nonce(0,l) do
+  defp generate_nonce(0, l) do
     l ++ [:rand.uniform(255)]
   end
 
-  defp generate_nonce(n,l) do
+  defp generate_nonce(n, l) do
     generate_nonce(n - 1, l ++ [:rand.uniform(255)])
   end
 
@@ -140,7 +140,7 @@ defmodule EvercamMedia.ONVIFClient do
 
     cond do
       is_bitstring(response) == true -> response
-      Map.size(response) == 0 -> :ok
+      Kernel.map_size(response) == 0 -> :ok
       true -> response
     end
   end
@@ -149,7 +149,7 @@ defmodule EvercamMedia.ONVIFClient do
     cond do
       Record.is_record(element, :xmlElement) ->
         name = case xmlElement(element, :name) |> to_string |> String.split(":") do
-                 [_ns,name] -> name
+                 [_ns, name] -> name
                  [name] -> name
                end
         content = xmlElement(element, :content)

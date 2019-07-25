@@ -513,8 +513,10 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
 
+  defp password(password, _, conn) when password in [nil, ""], do: render_error(conn, 400, "Invalid password.")
+
   defp password(password, user, conn) do
-    case Comeonin.Bcrypt.checkpw(password, user.password) do
+    case Bcrypt.verify_pass(password, user.password) do
       true -> :ok
       _ -> render_error(conn, 400, "Invalid password.")
     end

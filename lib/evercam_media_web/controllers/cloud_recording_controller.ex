@@ -315,7 +315,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     starttime_str = starttime |> String.replace("T", " ") |> String.replace("Z", "")
     cond do
       starttime_str == last_recording_time -> times_list
-      true -> [["#{starttime_str}",0,"#{last_recording_time}"]] ++ times_list
+      true -> [["#{starttime_str}", 0, "#{last_recording_time}"]] ++ times_list
     end
   end
 
@@ -323,7 +323,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   defp get_off_times_list(times_list, endtime) do
     last_recording_time = List.last(List.last(times_list))
     endtime_str = endtime |> String.replace("T", " ") |> String.replace("Z", "")
-    times_list ++ [["#{last_recording_time}",0,"#{endtime_str}"]]
+    times_list ++ [["#{last_recording_time}", 0, "#{endtime_str}"]]
   end
 
   defp get_timespan_chunk(starttime, endtime, times_list, seconds) when seconds > 0 do
@@ -331,13 +331,13 @@ defmodule EvercamMediaWeb.CloudRecordingController do
       seconds > 59 ->
         starttime_str = starttime |> Calendar.Strftime.strftime!("%Y-%m-%d %H:%M:%S")
         endtime_str = starttime |> Calendar.DateTime.advance!(59) |> Calendar.Strftime.strftime!("%Y-%m-%d %H:%M:%S")
-        times_list = times_list ++ [["#{starttime_str}",1,"#{endtime_str}"]]
+        times_list = times_list ++ [["#{starttime_str}", 1, "#{endtime_str}"]]
         adv_starttime = Calendar.DateTime.advance!(starttime, 60)
         get_timespan_chunk(adv_starttime, endtime, times_list, seconds - 60)
       true ->
         starttime_str = starttime |> Calendar.Strftime.strftime!("%Y-%m-%d %H:%M:%S")
         endtime_str = endtime |> Calendar.Strftime.strftime!("%Y-%m-%d %H:%M:%S")
-        times_list ++ [["#{starttime_str}",1,"#{endtime_str}"]]
+        times_list ++ [["#{starttime_str}", 1, "#{endtime_str}"]]
     end
   end
   defp get_timespan_chunk(_starttime, _endtime, times_list, _seconds), do: times_list
