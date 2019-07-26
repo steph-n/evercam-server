@@ -640,13 +640,6 @@
             "description": "Timezone, for example \"Europe/Dublin\""
           },
           {
-            "type": "string",
-            "required": false,
-            "name": "mac_address",
-            "in": "query",
-            "description": "Mac address of the camera being requested"
-          },
-          {
             "type": "boolean",
             "required": false,
             "name": "is_online",
@@ -1403,13 +1396,6 @@
             "name": "timezone",
             "in": "query",
             "description": "Timezone, for example \"Europe/Dublin\""
-          },
-          {
-            "type": "string",
-            "required": false,
-            "name": "mac_address",
-            "in": "query",
-            "description": "Mac address of the camera being requested"
           },
           {
             "type": "boolean",
@@ -5099,10 +5085,6 @@
           "description": ""
         },
         "model_id": {
-          "type": "string",
-          "description": ""
-        },
-        "mac_address": {
           "type": "string",
           "description": ""
         },

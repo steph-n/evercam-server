@@ -34,7 +34,6 @@ defmodule EvercamMediaWeb.CameraController do
           name :string, ""
           model_name :string, ""
           model_id :string, ""
-          mac_address :string, ""
           location (Schema.new do
             properties do
               lng :integer, ""
@@ -267,7 +266,6 @@ defmodule EvercamMediaWeb.CameraController do
       vendor :query, :string, "Vendor name, for example hikvision"
       model :query, :string, "Model name of the camera being requested"
       timezone :query, :string, "Timezone, for example \"Europe/Dublin\""
-      mac_address :query, :string, "Mac address of the camera being requested"
       is_online :query, :boolean, ""
       discoverable :query, :boolean, ""
       location_lng :query, :string, "Longitude, for example 31.422117"
@@ -407,7 +405,6 @@ defmodule EvercamMediaWeb.CameraController do
       vendor :query, :string, "Vendor name, for example hikvision"
       model :query, :string, "Model name of the camera being requested"
       timezone :query, :string, "Timezone, for example \"Europe/Dublin\""
-      mac_address :query, :string, "Mac address of the camera being requested"
       is_online :query, :boolean, ""
       discoverable :query, :boolean, ""
       location_lng :query, :string, "Longitude, for example 31.422117"
@@ -588,7 +585,6 @@ defmodule EvercamMediaWeb.CameraController do
     |> add_parameter("field", :name, params["name"])
     |> add_parameter("field", :exid, params["id"])
     |> add_parameter("field", :timezone, params["timezone"])
-    |> add_parameter("field", :mac_address, params["mac_address"])
     |> add_parameter("field", :is_online, params["is_online"])
     |> add_parameter("field", :discoverable, params["discoverable"])
     |> add_parameter("field", :location_lng, params["location_lng"])

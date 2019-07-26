@@ -100,7 +100,6 @@ defmodule EvercamMediaWeb.CameraView do
     %{
       cam_username: Camera.username(camera),
       cam_password: Camera.password(camera),
-      mac_address: Camera.get_mac_address(camera),
       external: %{
         host: Camera.host(camera, "external"),
         http: %{
