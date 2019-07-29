@@ -91,7 +91,7 @@ defmodule EvercamMedia.Mixfile do
       {:distillery, "~> 2.1"},
       {:geo, "~> 3.0"},
       {:geo_postgis, "~> 3.0"},
-      {:httpoison, "~> 1.3", override: true},
+      {:httpoison, "~> 1.5"},
       {:jsx, "~> 2.8.2", override: true},
       {:swoosh, "~> 0.20.0", override: true},
       {:phoenix_swoosh, "~> 0.2"},
