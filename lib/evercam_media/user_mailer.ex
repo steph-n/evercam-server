@@ -204,24 +204,35 @@ defmodule EvercamMedia.UserMailer do
       Phoenix.View.render_to_string(EvercamMediaWeb.EmailView, "snapmail.html", id: id, recipient: "history_user", notify_time: notify_time, camera_images: camera_images, year: @year), "#{timestamp}")
   end
 
-  def snapshot_extraction_started(snapshot_extractor) do
+  def snapshot_extraction_started(snapshot_extractor, type) do
     from_d = get_formatted_date(snapshot_extractor.from_date)
     to_d = get_formatted_date(snapshot_extractor.to_date)
     new()
     |> from(@no_reply)
     |> to(snapshot_extractor.requestor)
-    |> subject("Snapshot Extraction (Local) started")
-    |> render_body("snapshot_extractor_alert.html", %{snapshot_extractor: snapshot_extractor, from_d: from_d, to_d: to_d, interval: parse_interval(Integer.floor_div(snapshot_extractor.interval, 60)), year: @year})
+    |> bcc(["marco@evercam.io", "junaid@evercam.io"])
+    |> subject("Snapshot Extraction (#{type}) started")
+    |> render_body("snapshot_extractor_alert.html", %{snapshot_extractor: snapshot_extractor, from_d: from_d, to_d: to_d, interval: humanize_interval(snapshot_extractor.interval), year: @year})
     |> EvercamMedia.Mailer.deliver
   end
 
+  def snapshot_extraction_completed(snapshot_extractor, count, expected_count, execution_time) do
+    url = get_dropbox_url(snapshot_extractor)
+    new()
+    |> from(@no_reply)
+    |> to(snapshot_extractor.requestor)
+    |> bcc(["marco@evercam.io", "junaid@evercam.io"])
+    |> subject("Snapshot Extraction (Cloud) Completed")
+    |> render_body("snapshot_extractor_complete.html", %{camera: snapshot_extractor.camera.name, count: count, expected_count: expected_count, dropbox_url: url, execution_time: execution_time, year: @year, type: "cloud"})
+    |> EvercamMedia.Mailer.deliver
+  end
   def snapshot_extraction_completed(snapshot_extractor, snap_count) do
     url = get_dropbox_url(snapshot_extractor)
     new()
     |> from(@no_reply)
     |> to(snapshot_extractor.requestor)
     |> subject("Snapshot Extraction (Local) Completed")
-    |> render_body("snapshot_extractor_complete.html", %{camera: snapshot_extractor.camera.name, count: snap_count, dropbox_url: url, year: @year})
+    |> render_body("snapshot_extractor_complete.html", %{camera: snapshot_extractor.camera.name, count: snap_count, dropbox_url: url, year: @year, type: "local"})
     |> EvercamMedia.Mailer.deliver
   end
 
@@ -295,9 +306,23 @@ defmodule EvercamMedia.UserMailer do
     }
   end
 
-  defp parse_interval(60), do: "1 Frame Every hour"
-  defp parse_interval(interval) when interval < 60, do: "1 Frame Every #{interval} min"
-  defp parse_interval(interval) when interval > 60, do: "1 Frame Every #{Integer.floor_div(interval, 60)} hours"
+  defp humanize_interval(5),     do: "1 Frame Every 5 sec"
+  defp humanize_interval(10),    do: "1 Frame Every 10 sec"
+  defp humanize_interval(15),    do: "1 Frame Every 15 sec"
+  defp humanize_interval(20),    do: "1 Frame Every 20 sec"
+  defp humanize_interval(30),    do: "1 Frame Every 30 sec"
+  defp humanize_interval(60),    do: "1 Frame Every 1 min"
+  defp humanize_interval(300),   do: "1 Frame Every 5 min"
+  defp humanize_interval(600),   do: "1 Frame Every 10 min"
+  defp humanize_interval(900),   do: "1 Frame Every 15 min"
+  defp humanize_interval(1200),  do: "1 Frame Every 20 min"
+  defp humanize_interval(1800),  do: "1 Frame Every 30 min"
+  defp humanize_interval(3600),  do: "1 Frame Every hour"
+  defp humanize_interval(7200),  do: "1 Frame Every 2 hour"
+  defp humanize_interval(21600), do: "1 Frame Every 6 hour"
+  defp humanize_interval(43200), do: "1 Frame Every 12 hour"
+  defp humanize_interval(86400), do: "1 Frame Every 24 hour"
+  defp humanize_interval(1),     do: "All"
 
   defp get_formatted_date(datetime) do
     datetime |> Calendar.Strftime.strftime!("%A, %d %b %Y %H:%M")

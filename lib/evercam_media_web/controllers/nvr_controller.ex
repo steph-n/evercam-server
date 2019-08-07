@@ -140,7 +140,7 @@ defmodule EvercamMediaWeb.NVRController do
         {:ok, snapshot_extractor} ->
           full_snapshot_extractor = Repo.preload(snapshot_extractor, :camera, force: true)
           extraction_pid = spawn(fn ->
-            EvercamMedia.UserMailer.snapshot_extraction_started(full_snapshot_extractor)
+            EvercamMedia.UserMailer.snapshot_extraction_started(full_snapshot_extractor, "Local")
             start_snapshot_extractor(config, full_snapshot_extractor.id)
           end)
           :ets.insert(:extractions, {exid, extraction_pid})

@@ -7,6 +7,7 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
   require Logger
   import EvercamMedia.SnapshotExtractor.ExtractorSchedule, only: [scheduled_now?: 3]
   import EvercamMedia.Snapshot.Storage, only: [seaweedfs_save_sync: 4]
+  import Commons
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 
@@ -97,15 +98,6 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     SnapshotExtractor.update_snapshot_extactor(snapshot_extractor, params)
   end
 
-  defp get_count(images_path) do
-    case File.exists?(images_path) do
-      true ->
-        Enum.count(File.ls!(images_path))
-      _ ->
-        0
-    end
-  end
-
   defp extract_image(config, url, start_date, path, upload_path, timezone) do
     image_name = start_date |> Calendar.DateTime.Format.rfc3339
     saved_file_name = start_date |> DateTime.to_unix
@@ -143,10 +135,6 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
   end
   defp upload_image(_status, _image_path, _upload_image_path), do: :noop
 
-  defp save_current_jpeg_time(name, path) do
-    File.write!("#{path}CURRENT", name)
-  end
-
   defp nvr_url(ip, port, username, password, channel) do
     "rtsp://#{username}:#{password}@#{ip}:#{port}/Streaming/tracks/#{channel}"
   end
@@ -163,41 +151,9 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     |> Enum.each(fn(pid) -> Porcelain.shell("kill -9 #{pid}") end)
   end
 
-  defp clean_images(images_directory) do
-    File.rm_rf!(images_directory)
-  end
-
   defp shift_zone_to_utc(date, timezone) do
     %{year: year, month: month, day: day, hour: hour, minute: minute, second: second} = date
     Calendar.DateTime.from_erl!({{year, month, day}, {hour, minute, second}}, timezone)
     |> Calendar.DateTime.shift_zone!("UTC")
   end
-
-  defp get_file_size(image_path) do
-    File.stat(image_path) |> stats()
-  end
-
-  defp stats({:ok, %File.Stat{size: size}}), do: {:ok, size}
-  defp stats({:error, reason}), do: {:error, reason}
-
-  defp write_sessional_values(session_id, file_size, upload_image_path, path) do
-    File.write!("#{path}SESSION", "#{session_id} #{file_size} #{upload_image_path}\n", [:append])
-  end
-
-  defp check_1000_chunk(path) do
-    File.read!("#{path}SESSION") |> String.split("\n", trim: true)
-  end
-
-  defp commit_if_1000(1000, client, path) do
-    entries =
-      path
-      |> check_1000_chunk()
-      |> Enum.map(fn entry ->
-        [session_id, offset, upload_image_path] = String.split(entry, " ")
-        %{"cursor" => %{"session_id" => session_id, "offset" => String.to_integer(offset)}, "commit" => %{"path" => upload_image_path}}
-      end)
-    ElixirDropbox.Files.UploadSession.finish_batch(client, entries)
-    File.rm_rf!("#{path}SESSION")
-  end
-  defp commit_if_1000(_, _client, _path), do: :noop
 end

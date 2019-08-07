@@ -53,7 +53,7 @@
         <table style="font-family: Arial, Helvetica, sans-serif; width: 100%; margin: 0; padding: 0;"><tr style="font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0;">
           <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
-            <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Extractor has been Completed with <%= @count %> images for <%= @camera %>.</p>
+            <%= raw extraction_details(@type, @count, @camera, @expected_count, @execution_time) %>
             <%= raw get_dropbox_url(@dropbox_url, @count) %>
             <br>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>

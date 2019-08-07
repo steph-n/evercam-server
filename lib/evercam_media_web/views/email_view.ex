@@ -126,4 +126,12 @@ defmodule EvercamMediaWeb.EmailView do
   defp offline_message(str_time) do
     "<br><p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'>This is the last image we received from the camera on #{str_time}:</p>"
   end
+
+  def extraction_details("local", count, camera, nil, nil) do
+    '<p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Extractor has been Completed with #{count} images for #{camera}.</p>'
+  end
+  def extraction_details("cloud", count, camera, expected_count, execution_time) do
+    '<p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Extractor has been Completed with #{count} out of #{expected_count} images for #{camera}.</p>
+              The whole process took #{execution_time} minutes!'
+  end
 end

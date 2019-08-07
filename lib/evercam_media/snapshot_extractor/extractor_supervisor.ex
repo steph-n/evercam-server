@@ -3,6 +3,7 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
   use Supervisor
   require Logger
   alias EvercamMedia.SnapshotExtractor.Extractor
+  alias EvercamMedia.SnapshotExtractor.CloudExtractor
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 
@@ -12,39 +13,74 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
 
   def init(:ok) do
     Task.start_link(&initiate_workers/0)
-    children = [worker(Extractor, [], restart: :permanent)]
-    supervise(children, strategy: :simple_one_for_one, max_restarts: 1_000_000)
+    extractor_children = [worker(Extractor, [], restart: :permanent)]
+    supervise(extractor_children, strategy: :simple_one_for_one, max_restarts: 1_000_000)
+    cloud_extractor_childern = [worker(CloudExtractor, [], restart: :permanent)]
+    supervise(cloud_extractor_childern, strategy: :simple_one_for_one, max_restarts: 1_000_000)
   end
 
   def initiate_workers do
     Logger.info "Initiate workers for extractor."
+    #..Starting Local extractions.
     SnapshotExtractor.by_status(11)
     |> Enum.each(fn(extractor) ->
       extraction_pid = spawn(fn ->
         extractor
-        |> start_extraction()
+        |> start_extraction(:local)
       end)
       :ets.insert(:extractions, {extractor.camera.exid, extraction_pid})
     end)
+
+    #..Starting Cloud extractions.
+    SnapshotExtractor.by_status(1)
+    |> Enum.each(fn(extractor) ->
+      extraction_pid = spawn(fn ->
+        extractor
+        |> start_extraction(:cloud)
+      end)
+      :ets.insert(:extractions, {extractor.camera.exid <> "-cloud", extraction_pid})
+    end)
   end
 
-  def start_extraction(nil), do: :noop
-  def start_extraction(extractor) do
+  def start_extraction(nil, :local), do: :noop
+  def start_extraction(nil, :cloud), do: :noop
+  def start_extraction(extractor, :local) do
     Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
     Process.whereis(:snapshot_extractor)
-    |> get_process_pid
-    |> GenStage.cast({:snapshot_extractor, get_config(extractor)})
+    |> get_process_pid(EvercamMedia.SnapshotExtractor.Extractor)
+    |> GenStage.cast({:snapshot_extractor, get_config(extractor, :local)})
+  end
+  def start_extraction(extractor, :cloud) do
+    Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
+    Process.whereis(:snapshot_extractor)
+    |> get_process_pid(EvercamMedia.SnapshotExtractor.CloudExtractor)
+    |> GenStage.cast({:snapshot_extractor, get_config(extractor, :cloud)})
   end
 
-  defp get_process_pid(nil) do
-    case GenStage.start_link(EvercamMedia.SnapshotExtractor.Extractor, {}, name: :snapshot_extractor) do
+  defp get_process_pid(nil, module) do
+    case GenStage.start_link(module, {}, name: :snapshot_extractor) do
       {:ok, pid} -> pid
       {:error, {:already_started, pid}} -> pid
     end
   end
-  defp get_process_pid(pid), do: pid
+  defp get_process_pid(pid, _module), do: pid
 
-  def get_config(extractor) do
+  def get_config(extractor, :cloud) do
+  %{
+    id: extractor.id,
+    from_date: get_starting_date(extractor),
+    to_date: extractor.to_date,
+    interval: extractor.interval,
+    schedule: extractor.schedule,
+    camera_exid: extractor.camera.exid,
+    timezone: extractor.camera.timezone,
+    camera_name: extractor.camera.name,
+    requestor: extractor.requestor,
+    create_mp4: extractor.create_mp4,
+    jpegs_to_dropbox: extractor.jpegs_to_dropbox
+  }
+  end
+  def get_config(extractor, :local) do
     camera = Camera.by_exid_with_associations(extractor.camera.exid)
     host = Camera.host(camera, "external")
     port = Camera.port(camera, "external", "rtsp")
