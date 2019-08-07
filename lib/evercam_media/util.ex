@@ -336,4 +336,30 @@ defmodule EvercamMedia.Util do
       _ -> :error
     end
   end
+
+  def load_storage_servers([]) do
+    StorageServer.get_all_servers
+    |> Enum.map(fn(server) ->
+      :ets.insert_new(:storage_servers, {
+        server.server_name,
+        server.weed_mode,
+        get_server_date_unix(server.start_datetime),
+        get_server_date_unix(server.stop_datetime), [
+        %{
+          server_name: server.server_name,
+          url: "http://#{server.ip}:#{server.port}",
+          attribute: server.weed_attribute,
+          type: server.weed_type,
+          files: server.weed_files,
+          name: server.weed_name,
+          mode: server.weed_mode,
+          app_list: String.split(server.app_list, ",")
+        }]}
+      )
+    end)
+  end
+  def load_storage_servers(_), do: :noop
+
+  def get_server_date_unix(nil), do: nil
+  def get_server_date_unix(datetime), do: Calendar.DateTime.Format.unix(datetime)
 end

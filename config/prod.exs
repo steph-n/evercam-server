@@ -70,11 +70,6 @@ config :evercam_media,
   files_dir: "/data"
 
 config :evercam_media,
-  seaweedfs_url: System.get_env["SEAWEEDFS_URL"],
-  seaweedfs_url_1: System.get_env["SEAWEEDFS_URL_1"],
-  seaweedfs_url_new: System.get_env["SEAWEEDFS_URL_NEW"]
-
-config :evercam_media,
   EvercamMedia.Scheduler,
   overlap: false,
   jobs: [

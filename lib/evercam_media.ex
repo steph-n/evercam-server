@@ -1,6 +1,7 @@
 defmodule EvercamMedia do
   use Application
   require Logger
+  import EvercamMedia.Util, only: [load_storage_servers: 1]
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
@@ -36,8 +37,10 @@ defmodule EvercamMedia do
     ]
 
     :ets.new(:extractions, [:public, :named_table])
+    :ets.new(:storage_servers, [:set, :public, :named_table])
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
+    load_storage_servers([])
     opts = [strategy: :one_for_one, name: EvercamMedia.Supervisor]
     Supervisor.start_link(children, opts)
   end
