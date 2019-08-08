@@ -48,6 +48,28 @@ defmodule EvercamMediaWeb.UserView do
     }
   end
 
+  def render("remote_login.json", %{user: user}) do
+    %{
+      user: [
+        %{
+          id: user.username,
+          firstname: user.firstname,
+          lastname: user.lastname,
+          username: user.username,
+          telegram_username: user.telegram_username,
+          email: user.email,
+          country: User.get_country_attr(user, :iso3166_a2),
+          stripe_customer_id: user.stripe_customer_id,
+          created_at: Util.datetime_to_iso8601(user.created_at),
+          updated_at: Util.datetime_to_iso8601(user.updated_at),
+          confirmed_at: Util.datetime_to_iso8601(user.confirmed_at),
+          last_login_at: Util.datetime_to_iso8601(user.last_login_at),
+          token: user.access_tokens.request
+        }
+      ]
+    }
+  end
+
   def render("credentials.json", %{user: user}) do
     %{
       api_id: user.api_id,

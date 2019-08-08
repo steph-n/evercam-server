@@ -85,6 +85,8 @@ end
       pipe_through :auth
 
       # User Route
+      post "/auth/login", UserController, :remote_login
+      get "/auth/credentials", UserController, :remote_credentials
       get "/users/:id", UserController, :get_user
       get "/users/:id/credentials", UserController, :credentials
       get "/users/telegram/:id/credentials", UserController, :credentialstelegram

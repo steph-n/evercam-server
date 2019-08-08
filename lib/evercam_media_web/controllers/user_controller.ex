@@ -33,6 +33,29 @@ defmodule EvercamMediaWeb.UserController do
     }
   end
 
+  def remote_login(conn, params) do
+    user =
+      params["username"]
+      |> String.replace_trailing(".json", "")
+      |> User.by_username_or_email
+      |> Repo.preload(:access_tokens, force: true)
+
+    with :ok <- ensure_user_exists(user, params["username"], conn),
+         :ok <- password(params["password"], user, conn)
+    do
+      update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
+      render(conn, "remote_login.json", %{user: user})
+    end
+  end
+
+  def remote_credentials(conn, _) do
+    caller = conn.assigns[:current_user]
+
+    with :ok <- authorized(conn, caller) do
+      render(conn, "credentials.json", %{user: caller})
+    end
+  end
+
   swagger_path :get_user do
     get "/users/{id}"
     summary "Returns the single user's profile details."
