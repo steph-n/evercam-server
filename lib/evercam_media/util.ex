@@ -337,6 +337,9 @@ defmodule EvercamMedia.Util do
     end
   end
 
+  # def camera_use_synchronous_req(camera_exid) when camera_exid in ["angel-ibvua", "everc-fhlcr", "everc-dupzo", "colog-uyceb", "colog-ywtlq", "waxie-jolxd"], do: true
+  def camera_use_synchronous_req(_), do: true
+
   def load_storage_servers([]) do
     StorageServer.get_all_servers
     |> Enum.map(fn(server) ->

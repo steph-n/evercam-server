@@ -10,6 +10,7 @@ defmodule EvercamMedia.Snapshot.Poller do
   alias EvercamMedia.Snapshot.Worker
   alias EvercamMedia.Snapshot.StreamerSupervisor
   import EvercamMedia.Schedule, only: [scheduled_now?: 3]
+  import EvercamMedia.Util, only: [camera_use_synchronous_req: 1]
 
   ################
   ## Client API ##
@@ -133,8 +134,8 @@ defmodule EvercamMedia.Snapshot.Poller do
   #######################
 
   defp do_request(nil, state) do
-    case state.config.camera_exid do
-      "angel-ibvua" ->
+    case camera_use_synchronous_req(state.config.camera_exid) do
+      true ->
         ConCache.get(:do_camera_request, state.config.camera_exid)
         |> send_request(state)
       _ -> send_request(true, state)

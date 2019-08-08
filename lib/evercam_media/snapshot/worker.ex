@@ -8,6 +8,8 @@ defmodule EvercamMedia.Snapshot.Worker do
   use GenStage
   alias EvercamMedia.Snapshot.CamClient
 
+  import EvercamMedia.Util, only: [camera_use_synchronous_req: 1]
+
   ################
   ## Client API ##
   ################
@@ -224,8 +226,8 @@ defmodule EvercamMedia.Snapshot.Worker do
           end
           ConCache.put(:camera_lock, camera_exid, camera_exid)
 
-          case camera_exid do
-            "angel-ibvua" -> 600
+          case camera_use_synchronous_req(camera_exid) do
+            true -> 600
             _ -> 0
           end
           |> :timer.sleep

@@ -60,8 +60,9 @@ defmodule EvercamMedia.Snapshot.Streamer do
       true ->
         Logger.debug "[#{camera_exid}] Streaming ..."
         spawn fn ->
-          case {camera_exid, ConCache.get(:do_camera_request, camera_exid)} do
-            {"angel-ibvua", false} -> Logger.debug "Don't send snapshot request to camera #{camera.name}"
+          is_synchronous = Util.camera_use_synchronous_req(camera_exid)
+          case {is_synchronous, ConCache.get(:do_camera_request, camera_exid)} do
+            {true, false} -> Logger.debug "Streaming: Don't send snapshot request to camera #{camera.name}"
             _ -> stream(camera)
           end
         end
