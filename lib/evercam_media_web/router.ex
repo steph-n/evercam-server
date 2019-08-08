@@ -86,7 +86,9 @@ end
 
       # User Route
       post "/auth/login", UserController, :remote_login
+      options "/auth/login", UserController, :nothing
       get "/auth/credentials", UserController, :remote_credentials
+      options "/auth/credentials", UserController, :nothing
       get "/users/:id", UserController, :get_user
       get "/users/:id/credentials", UserController, :credentials
       get "/users/telegram/:id/credentials", UserController, :credentialstelegram
