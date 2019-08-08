@@ -100,7 +100,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     :ets.delete(:extractions, camera_exid <> "-cloud")
     case SnapshotExtractor.by_id(extractor.id) |> SnapshotExtractor.update_snapshot_extactor(%{status: 2, notes: "Extracted Images = #{count} -- Expected Count = #{expected_count}"}) do
       {:ok, full_extractor} ->
-        send_mail_end(Application.get_env(:evercam_media, :run_spawn), full_extractor, count, expected_count, execution_time)
+        send_mail_end(Application.get_env(:evercam_media, :run_spawn), full_extractor, count, expected_count + extractor.expected_count, execution_time)
       _ -> Logger.info "Status update failed!"
     end
   end

@@ -8,7 +8,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 
-  swagger_path :create do
+  swagger_path :cloud_extraction do
     post "/cameras/{id}/apps/cloud-recording/extract"
     summary "Create new cloud extraction of given camera."
     parameters do
@@ -61,7 +61,8 @@ defmodule EvercamMediaWeb.CloudRecordingController do
             camera_name: full_snapshot_extractor.camera.name,
             requestor: full_snapshot_extractor.requestor,
             create_mp4: full_snapshot_extractor.create_mp4,
-            jpegs_to_dropbox: full_snapshot_extractor.jpegs_to_dropbox
+            jpegs_to_dropbox: full_snapshot_extractor.jpegs_to_dropbox,
+            expected_count: 0
           }
           extraction_pid = spawn(fn ->
             EvercamMedia.UserMailer.snapshot_extraction_started(full_snapshot_extractor, "Cloud")

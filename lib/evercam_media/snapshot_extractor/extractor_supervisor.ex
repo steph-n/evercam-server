@@ -4,6 +4,7 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
   require Logger
   alias EvercamMedia.SnapshotExtractor.Extractor
   alias EvercamMedia.SnapshotExtractor.CloudExtractor
+  import Commons
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 
@@ -77,7 +78,8 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
     camera_name: extractor.camera.name,
     requestor: extractor.requestor,
     create_mp4: extractor.create_mp4,
-    jpegs_to_dropbox: extractor.jpegs_to_dropbox
+    jpegs_to_dropbox: extractor.jpegs_to_dropbox,
+    expected_count: get_count("#{@root_dir}/#{extractor.camera.exid}/extract/#{extractor.id}/") - 2
   }
   end
   def get_config(extractor, :local) do

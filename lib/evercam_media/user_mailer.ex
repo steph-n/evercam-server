@@ -232,7 +232,7 @@ defmodule EvercamMedia.UserMailer do
     |> from(@no_reply)
     |> to(snapshot_extractor.requestor)
     |> subject("Snapshot Extraction (Local) Completed")
-    |> render_body("snapshot_extractor_complete.html", %{camera: snapshot_extractor.camera.name, count: snap_count, dropbox_url: url, year: @year, type: "local"})
+    |> render_body("snapshot_extractor_complete.html", %{camera: snapshot_extractor.camera.name, count: snap_count, expected_count: nil, dropbox_url: url, year: @year, type: "local"})
     |> EvercamMedia.Mailer.deliver
   end
 
