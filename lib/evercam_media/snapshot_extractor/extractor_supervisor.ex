@@ -39,7 +39,7 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
         extractor
         |> start_extraction(:cloud)
       end)
-      :ets.insert(:extractions, {extractor.camera.exid <> "-cloud", extraction_pid})
+      :ets.insert(:extractions, {extractor.camera.exid <> "-cloud-#{extractor.id}", extraction_pid})
     end)
   end
 
@@ -47,24 +47,24 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
   def start_extraction(nil, :cloud), do: :noop
   def start_extraction(extractor, :local) do
     Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
-    Process.whereis(:snapshot_extractor)
-    |> get_process_pid(EvercamMedia.SnapshotExtractor.Extractor)
+    Process.whereis(:"snapshot_extractor_#{extractor.id}")
+    |> get_process_pid(EvercamMedia.SnapshotExtractor.Extractor, extractor.id)
     |> GenStage.cast({:snapshot_extractor, get_config(extractor, :local)})
   end
   def start_extraction(extractor, :cloud) do
     Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
-    Process.whereis(:snapshot_extractor)
-    |> get_process_pid(EvercamMedia.SnapshotExtractor.CloudExtractor)
+    Process.whereis(:"snapshot_extractor_#{extractor.id}")
+    |> get_process_pid(EvercamMedia.SnapshotExtractor.CloudExtractor, extractor.id)
     |> GenStage.cast({:snapshot_extractor, get_config(extractor, :cloud)})
   end
 
-  defp get_process_pid(nil, module) do
-    case GenStage.start_link(module, {}, name: :snapshot_extractor) do
+  defp get_process_pid(nil, module, id) do
+    case GenStage.start_link(module, {}, name: :"snapshot_extractor_#{id}") do
       {:ok, pid} -> pid
       {:error, {:already_started, pid}} -> pid
     end
   end
-  defp get_process_pid(pid, _module), do: pid
+  defp get_process_pid(pid, _module, _id), do: pid
 
   def get_config(extractor, :cloud) do
   %{

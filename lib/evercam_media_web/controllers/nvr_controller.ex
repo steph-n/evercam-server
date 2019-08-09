@@ -173,9 +173,10 @@ defmodule EvercamMediaWeb.NVRController do
 
   defp start_snapshot_extractor(config, id) do
     config = Map.put(config, :id, id)
-    case Process.whereis(:snapshot_extractor) do
+    name = :"snapshot_extractor_#{id}"
+    case Process.whereis(name) do
       nil ->
-        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.Extractor, {}, name: :snapshot_extractor)
+        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.Extractor, {}, name: name)
         pid
       pid -> pid
     end

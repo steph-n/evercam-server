@@ -66,9 +66,9 @@ defmodule EvercamMediaWeb.CloudRecordingController do
           }
           extraction_pid = spawn(fn ->
             EvercamMedia.UserMailer.snapshot_extraction_started(full_snapshot_extractor, "Cloud")
-            start_snapshot_extractor(config, full_snapshot_extractor.id)
+            start_snapshot_extractor(config)
           end)
-          :ets.insert(:extractions, {exid <> "-cloud", extraction_pid})
+          :ets.insert(:extractions, {exid <> "-cloud-#{full_snapshot_extractor.id}", extraction_pid})
           conn
           |> put_status(:created)
           |> put_view(SnapshotExtractorView)
@@ -389,11 +389,11 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     end
   end
 
-  defp start_snapshot_extractor(config, id) do
-    config = Map.put(config, :id, id)
-    case Process.whereis(:snapshot_extractor) do
+  defp start_snapshot_extractor(config) do
+    name = :"snapshot_extractor_#{config.id}"
+    case Process.whereis(name) do
       nil ->
-        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.CloudExtractor, {}, name: :snapshot_extractor)
+        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.CloudExtractor, {}, name: name)
         pid
       pid -> pid
     end
