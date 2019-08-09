@@ -123,38 +123,6 @@ defmodule EvercamMedia.Zoho do
     end
   end
 
-  def insert_requestee(requestee_email, owner_email \\ nil) do
-    url = "#{@zoho_url}Contacts"
-    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
-    domain = requestee_email |> String.split("@") |> List.last |> String.split(".") |> List.first
-    last_name = requestee_email |> String.split("@") |> List.first
-    account_name =
-      case get_account(domain) do
-        {:ok, account} -> account["Account_Name"]
-        _ -> get_account_by_owner_email(owner_email)
-      end
-
-    contact_xml =
-      %{"data" =>
-        [%{
-          "Contact_lead_source" => "Evercam User",
-          "Account_Name" => account_name,
-          "First_Name" => "",
-          "Last_Name" => last_name,
-          "Email" => "#{requestee_email}",
-          "Evercam_Status" => "Shared-Non-Registered"
-        }]
-      }
-
-    case HTTPoison.post(url, Poison.encode!(contact_xml), headers) do
-      {:ok, %HTTPoison.Response{body: body, status_code: 201}} ->
-        json_response = Poison.decode!(body)
-        contact = Map.get(json_response, "data") |> List.first
-        {:ok, contact["details"]}
-      error -> {:error, error}
-    end
-  end
-
   def update_contact(id, request_params) do
     url = "#{@zoho_url}Contacts/#{id}"
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
@@ -270,4 +238,93 @@ defmodule EvercamMedia.Zoho do
     clean_name = username |> EvercamMedia.Util.slugify |> String.replace(" ", "") |> String.replace("-", "") |> String.downcase
     "#{camera_exid}-#{clean_name}"
   end
+
+  def get_share_request(email) do
+    url = "#{@zoho_url}Share_Requests/search?criteria=(Email:equals:#{email})"
+    headers = ["Authorization": "#{@zoho_auth_token}"]
+
+    case HTTPoison.get(url, headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        json_response = Poison.decode!(body)
+        share_requests = Map.get(json_response, "data")
+        {:ok, share_requests}
+      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Share request does't exits."}
+      _ -> {:error}
+    end
+  end
+
+  def insert_requestee(share_request, camera, owner_email \\ nil) do
+    url = "#{@zoho_url}Share_Requests"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+    domain = share_request.email |> String.split("@") |> List.last |> String.split(".") |> List.first
+    account_name =
+      case get_account(domain) do
+        {:ok, account} -> %{"id" => account["id"], "name" => account["Account_Name"]}
+        _ -> get_account_for_requestee(owner_email)
+      end
+
+    contact =
+      case get_contact(share_request.user.email) do
+        {:ok, contact} -> %{"id" => contact["id"]}
+        {:nodata, _message} ->
+          {:ok, contact} = insert_contact(share_request.user)
+          %{"id" => contact["id"]}
+        {:error} -> %{}
+      end
+
+    contact_xml =
+      %{"data" =>
+        [%{
+          "Camera_Shared" => %{
+            "id" => camera["id"],
+            "name" => camera["Name"]
+          },
+          "Contact" => contact,
+          "Account" => account_name,
+          "Email" => "#{share_request.email}",
+          "Share_Text" => share_request.message,
+          "Share_Request_Rights" => get_share_rights(share_request.rights),
+          "Status" => "Shared-Non-Registered"
+        }]
+      }
+
+    case HTTPoison.post(url, Poison.encode!(contact_xml), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 201}} ->
+        json_response = Poison.decode!(body)
+        contact = Map.get(json_response, "data") |> List.first
+        {:ok, contact["details"]}
+      error -> {:error, error}
+    end
+  end
+
+  def update_share_requests(share_requests) do
+    url = "#{@zoho_url}Share_Requests"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+
+    xml_data =
+      Enum.map(share_requests, fn(req) ->
+        %{
+          "id" => req["id"],
+          "Status" => "Share-Accepted"
+        }
+      end)
+    contact_xml = %{ "data" => xml_data }
+    case HTTPoison.put(url, Poison.encode!(contact_xml), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
+      error -> {:error, error}
+    end
+  end
+
+  defp get_account_for_requestee(nil), do: %{}
+  defp get_account_for_requestee(owner_email) do
+    domain = owner_email |> String.split("@") |> List.last |> String.split(".") |> List.first
+    case get_account(domain) do
+      {:ok, account} -> %{"id" => account["id"], "name" => account["Account_Name"]}
+      _ -> %{}
+    end
+  end
+
+  defp get_share_rights("list,snapshot"), do: "Read Only"
+  defp get_share_rights("list,snapshot,share"), do: "Read Only + Share"
+  defp get_share_rights(_), do: "Full Rights"
 end

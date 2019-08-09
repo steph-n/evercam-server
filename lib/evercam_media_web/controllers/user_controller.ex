@@ -618,12 +618,13 @@ defmodule EvercamMediaWeb.UserController do
 
   defp add_contact_to_zoho(true, share_request, user) do
     spawn fn ->
+      update_share_requests(user.email)
       contact =
         case Zoho.get_contact(user.email) do
-          {:ok, contact} -> update_contact(contact, user)
+          {:ok, contact} -> contact
           {:nodata, _message} ->
             {:ok, contact} = Zoho.insert_contact(user)
-            Map.put(contact, "Full_Name", User.get_fullname(user))
+            contact
           {:error} -> nil
         end
       case {contact, share_request} do
@@ -631,7 +632,10 @@ defmodule EvercamMediaWeb.UserController do
         {_, nil} -> :noop
         {zoho_contact, request} ->
           case Zoho.get_camera(request.camera.exid) do
-            {:ok, zoho_camera} -> Zoho.associate_camera_contact(zoho_contact, zoho_camera)
+            {:ok, zoho_camera} ->
+              zoho_contact
+              |> Map.put("Full_Name", User.get_fullname(user))
+              |> Zoho.associate_camera_contact(zoho_camera)
             _ -> %{}
           end
       end
@@ -639,15 +643,10 @@ defmodule EvercamMediaWeb.UserController do
   end
   defp add_contact_to_zoho(_, _, _), do: :noop
 
-  defp update_contact(contact, user) do
-    xml_data =
-      [%{
-        "First_Name" => "#{user.firstname}",
-        "Last_Name" => "#{user.lastname}",
-        "Evercam_Signup_Date" => Calendar.Strftime.strftime!(user.created_at, "%Y-%m-%dT%H:%M:%S+00:00"),
-        "Evercam_Status" => "Share-Accepted"
-      }]
-
-    Zoho.update_contact(contact["id"], xml_data)
+  defp update_share_requests(email) do
+    case Zoho.get_share_request(email) do
+      {:ok, share_requests} -> EvercamMedia.Zoho.update_share_requests(share_requests)
+      _ -> :noop
+    end
   end
 end
