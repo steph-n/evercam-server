@@ -323,6 +323,7 @@ defmodule EvercamMedia.UserMailer do
   defp humanize_interval(43200), do: "1 Frame Every 12 hour"
   defp humanize_interval(86400), do: "1 Frame Every 24 hour"
   defp humanize_interval(1),     do: "All"
+  defp humanize_interval(0),     do: "All"
 
   defp get_formatted_date(datetime) do
     datetime |> Calendar.Strftime.strftime!("%A, %d %b %Y %H:%M")
