@@ -6,6 +6,7 @@ defmodule EvercamMediaWeb.UserController do
   alias EvercamMedia.Util
   alias EvercamMedia.Intercom
   alias EvercamMedia.Zoho
+  alias EvercamMediaWeb.JwtAuthToken
   require Logger
 
   def swagger_definitions do
@@ -39,12 +40,14 @@ defmodule EvercamMediaWeb.UserController do
       |> String.replace_trailing(".json", "")
       |> User.by_username_or_email
       |> Repo.preload(:access_tokens, force: true)
+    extra_claims = %{"user_id" => params["username"]}
 
     with :ok <- ensure_user_exists(user, params["username"], conn),
-         :ok <- password(params["password"], user, conn)
+         :ok <- password(params["password"], user, conn),
+         {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims)
     do
       update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
-      render(conn, "remote_login.json", %{user: user})
+      render(conn, "remote_login.json", %{token: token})
     end
   end
 
