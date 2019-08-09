@@ -50,14 +50,12 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     |> elem(1)
     |> CameraShareRequest.get_all_pending_requests
     |> Enum.each(fn(request) ->
-      Logger.info "Email: #{request.email}, Created At: #{request.created_at}"
-      case Zoho.get_contact(request.email) do
-        {:ok, _contact} -> Logger.info "Contact '#{request.email}' already exists in zoho."
-        {:nodata, _message} ->
-          Logger.info "Start insert requestee '#{request.email}' to zoho."
-          {:ok, _contact} = Zoho.insert_requestee(request.email)
+      Logger.info "Camera-exid: #{request.camera.exid}, Email: #{request.email}, Created At: #{request.created_at}"
+      case Zoho.get_camera(request.camera.exid) do
+        {:ok, zoho_camera} ->
+          Zoho.insert_requestee(request, zoho_camera, request.camera.owner.email)
           :timer.sleep(5000)
-        {:error} -> Logger.error "Error to insert requestee"
+        _ -> nil
       end
     end)
   end
