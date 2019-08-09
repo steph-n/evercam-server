@@ -95,11 +95,11 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   end
 
   def delete_cloud_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
-    with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid <> "-cloud"),
+    with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid <> "-cloud-#{extraction_id}"),
          true                     <- Process.exit(extraction_pid, :kill),
-         {:ok, _}                 <- File.rm_rf('#{@root_dir}/#{exid}/extract/'),
+         {:ok, _}                 <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
          {1, nil}                 <- SnapshotExtractor.delete_by_id(extraction_id),
-         true                     <- :ets.delete(:extractions, exid)
+         true                     <- :ets.delete(:extractions, exid <> "-cloud-#{extraction_id}")
    do
      json(conn, %{message: "Cloud Extraction has been deleted for camera: #{exid}"})
    else

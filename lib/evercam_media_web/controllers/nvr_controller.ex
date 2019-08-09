@@ -88,7 +88,7 @@ defmodule EvercamMediaWeb.NVRController do
   def delete_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
     with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid),
          true                     <- Process.exit(extraction_pid, :kill),
-         {:ok, _}                 <- File.rm_rf('#{@root_dir}/#{exid}/extract/'),
+         {:ok, _}                 <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
          {1, nil}                 <- SnapshotExtractor.delete_by_id(extraction_id),
          true                     <- :ets.delete(:extractions, exid)
    do
