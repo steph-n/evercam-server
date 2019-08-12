@@ -11,7 +11,7 @@ defmodule EvercamMediaWeb.JwtAuthPlug do
         user = User.by_username_or_email(claims["user_id"])
         conn |> assign(:current_user, user)
       { :error, error } ->
-        conn |> forbidden
+        conn |> forbidden(error)
     end
   end
 
@@ -23,10 +23,10 @@ defmodule EvercamMediaWeb.JwtAuthPlug do
     |> to_string
   end
 
-  defp forbidden(conn) do
+  defp forbidden(conn, error) do
     conn
     |> put_resp_content_type("application/json")
-    |> resp(401, Poison.encode!(%{message: "Invalid API keys"}))
+    |> resp(401, Poison.encode!(%{message: error[:message]}))
     |> send_resp
     |> halt
   end
