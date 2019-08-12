@@ -66,9 +66,9 @@ defmodule EvercamMediaWeb.CloudRecordingController do
           }
           extraction_pid = spawn(fn ->
             EvercamMedia.UserMailer.snapshot_extraction_started(full_snapshot_extractor, "Cloud")
-            start_snapshot_extractor(config, full_snapshot_extractor.id)
+            start_snapshot_extractor(config)
           end)
-          :ets.insert(:extractions, {exid <> "-cloud", extraction_pid})
+          :ets.insert(:extractions, {exid <> "-cloud-#{full_snapshot_extractor.id}", extraction_pid})
           conn
           |> put_status(:created)
           |> put_view(SnapshotExtractorView)
@@ -95,11 +95,11 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   end
 
   def delete_cloud_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
-    with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid <> "-cloud"),
+    with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid <> "-cloud-#{extraction_id}"),
          true                     <- Process.exit(extraction_pid, :kill),
-         {:ok, _}                 <- File.rm_rf('#{@root_dir}/#{exid}/extract/'),
+         {:ok, _}                 <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
          {1, nil}                 <- SnapshotExtractor.delete_by_id(extraction_id),
-         true                     <- :ets.delete(:extractions, exid)
+         true                     <- :ets.delete(:extractions, exid <> "-cloud-#{extraction_id}")
    do
      json(conn, %{message: "Cloud Extraction has been deleted for camera: #{exid}"})
    else
@@ -389,11 +389,11 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     end
   end
 
-  defp start_snapshot_extractor(config, id) do
-    config = Map.put(config, :id, id)
-    case Process.whereis(:snapshot_extractor) do
+  defp start_snapshot_extractor(config) do
+    name = :"snapshot_extractor_#{config.id}"
+    case Process.whereis(name) do
       nil ->
-        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.CloudExtractor, {}, name: :snapshot_extractor)
+        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.CloudExtractor, {}, name: name)
         pid
       pid -> pid
     end

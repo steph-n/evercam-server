@@ -97,7 +97,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     {:ok, secs, _msecs, :after} = Calendar.DateTime.diff(time_end, time_start)
     execution_time = humanize_time(secs)
     clean_images(images_directory)
-    :ets.delete(:extractions, camera_exid <> "-cloud")
+    :ets.delete(:extractions, camera_exid <> "-cloud-#{extractor.id}")
     case SnapshotExtractor.by_id(extractor.id) |> SnapshotExtractor.update_snapshot_extactor(%{status: 2, notes: "Extracted Images = #{count} -- Expected Count = #{expected_count}"}) do
       {:ok, full_extractor} ->
         send_mail_end(Application.get_env(:evercam_media, :run_spawn), full_extractor, count, expected_count + extractor.expected_count, execution_time)
@@ -152,8 +152,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
       {:ok, %HTTPoison.Response{body: "", status_code: 404}} ->
         add_up = the_most_nearest("#{filer.url}/#{camera_exid}/snapshots/recordings/#{year}/#{month}/#{day}/#{hour}/?limit=3600", starting)
         do_loop(starting + add_up, ending, interval, camera_exid, id, requestor)
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.info reason
+      {:error, %HTTPoison.Error{reason: _reason}} ->
         :timer.sleep(:timer.seconds(3))
         do_loop(starting, ending, interval, camera_exid, id, requestor)
     end
@@ -218,14 +217,16 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     File.write(image_save_path, response, [:binary]) |> File.close
 
     client = ElixirDropbox.Client.new(System.get_env["DROP_BOX_TOKEN"])
-    {:ok, file_size} = get_file_size(image_save_path) 
-    case ElixirDropbox.Files.UploadSession.start(client, true, image_save_path) do
-      {{:status_code, _status_code}, _} ->
+    {:ok, file_size} = get_file_size(image_save_path)
+
+    try do
+      %{"session_id" => session_id} = ElixirDropbox.Files.UploadSession.start(client, true, image_save_path)
+      write_sessional_values(session_id, file_size, "/#{construction}/#{camera_exid}/#{id}/#{starting}.jpg", path)
+      check_1000_chunk(path) |> length() |> commit_if_1000(client, path)
+    rescue
+      _ ->
         :timer.sleep(:timer.seconds(3))
         upload(200, response, starting, camera_exid, id, requestor)
-      %{"session_id" => session_id} ->
-        write_sessional_values(session_id, file_size, "/#{construction}/#{camera_exid}/#{id}/#{starting}.jpg", path)
-        check_1000_chunk(path) |> length() |> commit_if_1000(client, path)
     end
   end
   def upload(_, _response, _starting, _camera_exid, _id, _requestor), do: :noop

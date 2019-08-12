@@ -88,7 +88,7 @@ defmodule EvercamMediaWeb.NVRController do
   def delete_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
     with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid),
          true                     <- Process.exit(extraction_pid, :kill),
-         {:ok, _}                 <- File.rm_rf('#{@root_dir}/#{exid}/extract/'),
+         {:ok, _}                 <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
          {1, nil}                 <- SnapshotExtractor.delete_by_id(extraction_id),
          true                     <- :ets.delete(:extractions, exid)
    do
@@ -173,9 +173,10 @@ defmodule EvercamMediaWeb.NVRController do
 
   defp start_snapshot_extractor(config, id) do
     config = Map.put(config, :id, id)
-    case Process.whereis(:snapshot_extractor) do
+    name = :"snapshot_extractor_#{id}"
+    case Process.whereis(name) do
       nil ->
-        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.Extractor, {}, name: :snapshot_extractor)
+        {:ok, pid} = GenStage.start_link(EvercamMedia.SnapshotExtractor.Extractor, {}, name: name)
         pid
       pid -> pid
     end
