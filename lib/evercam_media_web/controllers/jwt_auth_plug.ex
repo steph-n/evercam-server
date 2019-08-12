@@ -23,11 +23,6 @@ defmodule EvercamMediaWeb.JwtAuthPlug do
     |> to_string
   end
 
-  defp success(conn, token_payload) do
-    assign(conn, :claims, token_payload.claims)
-    |> assign(:jwt, token_payload.token)
-  end
-
   defp forbidden(conn) do
     conn
     |> put_resp_content_type("application/json")
