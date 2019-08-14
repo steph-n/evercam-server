@@ -43,6 +43,3 @@ config :evercam_models, Evercam.SnapshotRepo,
   username: "postgres",
   password: "postgres",
   database: System.get_env["db"] || "evercam_dev"
-
-config :joken,
-  default_signer: System.get_env["WEB_APP_TOKEN"] || "secret"

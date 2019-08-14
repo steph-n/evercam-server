@@ -40,7 +40,14 @@ defmodule EvercamMediaWeb.UserController do
       |> String.replace_trailing(".json", "")
       |> User.by_username_or_email
       |> Repo.preload(:access_tokens, force: true)
-    extra_claims = %{"user_id" => params["username"]}
+    exp =
+      Calendar.DateTime.now_utc
+      |> Calendar.DateTime.advance!(60 * 60 * 24 * 7)
+      |> DateTime.to_unix
+    extra_claims = %{
+      "user_id" => params["username"],
+      "exp" => exp
+    }
 
     with :ok <- ensure_user_exists(user, params["username"], conn),
          :ok <- password(params["password"], user, conn),
