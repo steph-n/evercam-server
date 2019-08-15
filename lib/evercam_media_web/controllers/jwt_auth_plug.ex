@@ -6,12 +6,17 @@ defmodule EvercamMediaWeb.JwtAuthPlug do
 
   def call(conn, _opts) do
     jwt_string = jwt_from_cookie(conn)
-    case JwtAuthToken.verify_and_validate(jwt_string) do
-      { :ok, claims } ->
-        user = User.by_username_or_email(claims["user_id"])
-        conn |> assign(:current_user, user)
-      { :error, error } ->
-        conn |> forbidden(error)
+    case AccessToken.by_request_token(jwt_string) do
+      nil ->
+        conn |> forbidden(%{message: "Token is revoked"})
+      _ ->
+        case JwtAuthToken.verify_and_validate(jwt_string) do
+          { :ok, claims } ->
+            user = User.by_username_or_email(claims["user_id"])
+            conn |> assign(:current_user, user)
+          { :error, error } ->
+            conn |> forbidden(error)
+        end
     end
   end
 

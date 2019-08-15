@@ -75,6 +75,8 @@ end
 
       get "/auth/credentials", UserController, :remote_credentials
       options "/auth/credentials", UserController, :nothing
+      post "/auth/logout", UserController, :remote_logout
+      options "/auth/logout", UserController, :nothing
       get "/cameras", CameraController, :index
       options "/cameras", CameraController, :nothing
     end
