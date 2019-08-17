@@ -133,7 +133,7 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     write_sessional_values(session_id, file_size, upload_image_path, path)
     check_1000_chunk(path) |> length() |> commit_if_1000(client, path)
   end
-  defp upload_image(_status, _image_path, _upload_image_path), do: :noop
+  defp upload_image(_status, _image_path, _upload_image_path, _path), do: :noop
 
   defp nvr_url(ip, port, username, password, channel) do
     "rtsp://#{username}:#{password}@#{ip}:#{port}/Streaming/tracks/#{channel}"
