@@ -81,7 +81,7 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     Porcelain.shell("cat #{path}*.jpg | ffmpeg -f image2pipe -framerate 6 -i - -c:v h264_nvenc -r 6 -preset slow -bufsize 1000k -pix_fmt yuv420p -y #{path}#{config.exid}.mp4", [err: :out]).out
     spawn(fn ->
       File.exists?("#{path}#{config.exid}.mp4")
-      |> upload_image("#{path}#{config.exid}.mp4", "#{upload_path}#{config.exid}.mp4")
+      |> upload_image("#{path}#{config.exid}.mp4", "#{upload_path}#{config.exid}.mp4", path)
       clean_images(path)
       :ets.delete(:extractions, config.exid)
     end)
