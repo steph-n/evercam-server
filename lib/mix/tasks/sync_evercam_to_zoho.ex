@@ -71,7 +71,8 @@ defmodule EvercamMedia.SyncEvercamToZoho do
 
         zoho_response
         |> Map.get("data")
-        |> do_update_records
+        |> Enum.filter(fn(rec) -> rec["Account"]["name"] == "No Account" end)
+        |> loop_record
 
         update_records(info["more_records"], info["page"] + 1)
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "No record found."}
@@ -80,7 +81,27 @@ defmodule EvercamMedia.SyncEvercamToZoho do
   end
   def update_records(false, _), do: :noop
 
-  defp do_update_records(records) do
+  defp loop_record([record | rest]) do
+    domain = record["Email"] |> String.split("@") |> List.last |> String.split(".") |> List.first
+    case Zoho.get_account(domain) do
+      {:ok, account} ->
+        Logger.info "Update Share_Requests email: #{record["Email"]}, id: #{record["id"]}, Account Name: #{account["Account_Name"]}"
+        headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+        raw_xml = %{
+          "data" => [%{
+            "id" => record["id"],
+            "Account" => %{"id" => account["id"], "name" => account["Account_Name"]}
+          }]
+        }
+        HTTPoison.put("#{@zoho_url}Share_Requests", Poison.encode!(raw_xml), headers)
+      _ -> "Account not found. Site domain => #{domain}"
+    end
+    :timer.sleep(5000)
+    loop_record(rest)
+  end
+  defp loop_record([]), do: Logger.info "Completed"
+
+  def do_update_records(records) do
     url = "#{@zoho_url}Share_Requests"
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
 

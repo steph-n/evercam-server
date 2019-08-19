@@ -49,7 +49,7 @@ defmodule EvercamMedia.Zoho do
   end
 
   def get_account(domain) do
-    search_criteria = "(Website:starts_with:http://#{domain})or(Website:starts_with:http://www.#{domain})or(Website:starts_with:https://#{domain})or(Website:starts_with:https://www.#{domain})or(Website:starts_with:www.#{domain})or(Website:starts_with:#{domain})"
+    search_criteria = "(Email_Domain:starts_with:#{domain})or(Website:starts_with:http://#{domain})or(Website:starts_with:http://www.#{domain})or(Website:starts_with:https://#{domain})or(Website:starts_with:https://www.#{domain})or(Website:starts_with:www.#{domain})or(Website:starts_with:#{domain})"
     url = "#{@zoho_url}Accounts/search?criteria=(#{search_criteria})"
     headers = ["Authorization": "#{@zoho_auth_token}"]
 
