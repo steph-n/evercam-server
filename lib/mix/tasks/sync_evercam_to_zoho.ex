@@ -60,6 +60,46 @@ defmodule EvercamMedia.SyncEvercamToZoho do
     end)
   end
 
+  def update_records(true, page) do
+    url = "#{@zoho_url}Share_Requests?per_page=99&page=#{page}"
+    headers = ["Authorization": "#{@zoho_auth_token}"]
+
+    case HTTPoison.get(url, headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        zoho_response = Poison.decode!(body)
+        info = zoho_response |> Map.get("info")
+
+        zoho_response
+        |> Map.get("data")
+        |> do_update_records
+
+        update_records(info["more_records"], info["page"] + 1)
+      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "No record found."}
+      error -> IO.inspect error
+    end
+  end
+  def update_records(false, _), do: :noop
+
+  defp do_update_records(records) do
+    url = "#{@zoho_url}Share_Requests"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+
+    xml_data =
+      records
+      |> Enum.filter(fn(rec) -> rec["Account"]["name"] == "Evercam" end)
+      |> Enum.map(fn(req) ->
+        %{
+          "id" => req["id"],
+          "Account" => %{"id" => "432169000008646140", "name" => "No Account"}
+        }
+      end)
+    raw_xml = %{ "data" => xml_data }
+    case HTTPoison.put(url, Poison.encode!(raw_xml), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
+      error -> {:error, error}
+    end
+  end
+
   def correct_contacts_info() do
     User
     |> Repo.all

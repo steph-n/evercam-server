@@ -253,14 +253,14 @@ defmodule EvercamMedia.Zoho do
     end
   end
 
-  def insert_requestee(share_request, camera, owner_email \\ nil) do
+  def insert_requestee(share_request, camera, _owner_email \\ nil) do
     url = "#{@zoho_url}Share_Requests"
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
     domain = share_request.email |> String.split("@") |> List.last |> String.split(".") |> List.first
     account_name =
       case get_account(domain) do
         {:ok, account} -> %{"id" => account["id"], "name" => account["Account_Name"]}
-        _ -> get_account_for_requestee(owner_email)
+        _ -> %{"id" => "432169000008646140", "name" => "No Account"}
       end
 
     contact =
@@ -312,15 +312,6 @@ defmodule EvercamMedia.Zoho do
     case HTTPoison.put(url, Poison.encode!(contact_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
       error -> {:error, error}
-    end
-  end
-
-  defp get_account_for_requestee(nil), do: %{}
-  defp get_account_for_requestee(owner_email) do
-    domain = owner_email |> String.split("@") |> List.last |> String.split(".") |> List.first
-    case get_account(domain) do
-      {:ok, account} -> %{"id" => account["id"], "name" => account["Account_Name"]}
-      _ -> %{}
     end
   end
 
