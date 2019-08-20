@@ -83,7 +83,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     delete "/cameras/{id}/apps/cloud-recording/extract"
     summary "Delete the cloud extraction"
     parameters do
-      id :path, "Unique identifier for camera.", required: true
+      id :path, :string, "Unique identifier for camera.", required: true
       extraction_id :query, :integer, "Extraction ID for the deletion of cloud extraction.", required: true
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
@@ -91,7 +91,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     tag "Recordings"
     response 200, "Success"
     response 401, "Invalid API keys or Unauthorized"
-    response 404, "Snapmail not found"
+    response 404, "Snapshot extraction not found"
   end
 
   def delete_cloud_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
