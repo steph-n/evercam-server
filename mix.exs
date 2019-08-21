@@ -8,7 +8,7 @@ defmodule EvercamMedia.Mixfile do
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     compilers: [:phoenix, :phoenix_swagger] ++ Mix.compilers,
+     compilers: [:phoenix] ++ Mix.compilers,
      aliases: aliases(),
      deps: deps()]
   end
