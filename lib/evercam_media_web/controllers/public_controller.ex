@@ -7,19 +7,6 @@ defmodule EvercamMediaWeb.PublicController do
   @default_limit 100
   @maximum_limit 1000
 
-  def index(conn, %{"geojson" => "true"} = params) do
-    coordinates = parse_near_to(params["is_near_to"])
-    within_distance = parse_distance(params["within_distance"])
-
-    cameras =
-      Camera.public_cameras_query(coordinates, within_distance)
-      |> Camera.where_location_is_not_nil
-      |> Camera.get_query_with_associations
-
-    conn
-    |> render("geojson.json", %{cameras: cameras})
-  end
-
   def storage_stats(conn, _params) do
     spawn(fn ->
       EvercamMedia.StorageJson.start_link("refresh")
@@ -40,6 +27,18 @@ defmodule EvercamMediaWeb.PublicController do
     response 200, "Success"
   end
 
+  def index(conn, %{"geojson" => "true"} = params) do
+    coordinates = parse_near_to(params["is_near_to"])
+    within_distance = parse_distance(params["within_distance"])
+
+    cameras =
+      Camera.public_cameras_query(coordinates, within_distance)
+      |> Camera.where_location_is_not_nil
+      |> Camera.get_query_with_associations
+
+    conn
+    |> render("geojson.json", %{cameras: cameras})
+  end
   def index(conn, params) do
     %{assigns: %{version: version}} = conn
     coordinates = parse_near_to(params["is_near_to"])
