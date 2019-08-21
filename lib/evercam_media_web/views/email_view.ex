@@ -35,18 +35,22 @@ defmodule EvercamMediaWeb.EmailView do
     <br>"
   end
 
-  def snapmail_images(camera_images) do
+  def snapmail_images(camera_images, recipient) do
+    evercam_user = User.by_username_or_email(recipient)
     camera_images
     |> Enum.reduce("", fn(camera_image, mail_html) ->
       case !!camera_image.data do
         true ->
           "#{mail_html}<img class='last-snapmail-snapshot' id='#{camera_image.exid}' src='cid:#{camera_image.exid}.jpg' alt='Last Snapshot' style='width: 100% !important; max-width: 640px !important; height: auto; display:block; margin:0 auto;'><br>
-          <p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'><b>#{camera_image.name}</b> (#{camera_image.exid}) - See the live view on Evercam by <a style='color:#428bca; text-decoration:none;' href='https://dash.evercam.io/v2/cameras/#{camera_image.exid}'>clicking here</a></p><br>"
+          <p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'><b>#{camera_image.name}</b> #{parse_user(evercam_user, camera_image.exid)}</p><br>"
         _ ->
           "#{mail_html}<p style='line-height: 1.6; margin: 0 0 10px; padding: 0;'><span id='#{camera_image.exid}' class='failed-camera'>Could not retrieve live image from</span> <a target='_blank' href='https://dash.evercam.io/v2/cameras/#{camera_image.exid}'>#{camera_image.name}</a></p>"
       end
     end)
   end
+
+  defp parse_user(nil, _exid), do: ""
+  defp parse_user(_, exid), do: "- See the live view on Evercam by <a style='color:#428bca; text-decoration:none;' href='https://dash.evercam.io/v2/cameras/#{exid}'>clicking here</a>"
 
   def get_recordings_html(cloud_recordings, _) when cloud_recordings in [nil, ""], do: ""
   def get_recordings_html(cloud_recordings, label) do
