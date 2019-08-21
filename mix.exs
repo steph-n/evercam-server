@@ -8,7 +8,7 @@ defmodule EvercamMedia.Mixfile do
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     compilers: [:phoenix] ++ Mix.compilers,
+     compilers: [:phoenix, :phoenix_swagger] ++ Mix.compilers,
      aliases: aliases(),
      deps: deps()]
   end
@@ -117,8 +117,8 @@ defmodule EvercamMedia.Mixfile do
       {:ex_aws, "~> 1.1.5"},
       {:configparser_ex, "~> 0.2.1"},
       {:sweet_xml, "~> 0.6", optional: true},
-      {:phoenix_swagger, "~> 0.8.0"},
-      {:ex_json_schema, "~> 0.5"},
+      {:phoenix_swagger, github: "xerions/phoenix_swagger"},
+      {:ex_json_schema, "~> 0.6.1"},
       {:geoip, "~> 0.2"},
       {:poolboy, "~> 1.5.1"},
       {:evercam_models, github: "evercam/evercam_models"}
