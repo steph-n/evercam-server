@@ -231,7 +231,10 @@ defmodule EvercamMedia.Intercom do
   def intercom_activity(true, user, user_agent, requester_ip, status) do
     Task.start(fn ->
       case get_user(user.username) do
-        {:ok, _} -> Logger.info "User '#{user.username}' already present at Intercom."
+        {:ok, _} ->
+          Logger.info "User '#{user.username}' already present at Intercom."
+          company_domain = String.split(user.email, "@") |> List.last
+          sync_company_with_evercam(user, company_domain)
         {:error, _} -> create_user(user, user_agent, requester_ip, status)
       end
     end)
