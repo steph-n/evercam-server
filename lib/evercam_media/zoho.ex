@@ -66,7 +66,7 @@ defmodule EvercamMedia.Zoho do
   def search_account(domain) do
     url = "https://www.zohoapis.com/crm/v2/coql"
     headers = ["Authorization": "#{@zoho_auth_token}"]
-    query = "select Account_Name from Accounts where Website like(#{domain})"
+    query = "select Account_Name from Accounts where Email_Domain like '%#{domain}%'"
 
     case HTTPoison.post(url, Poison.encode!(%{select_query: query}), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
