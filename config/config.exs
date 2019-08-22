@@ -81,6 +81,9 @@ config :ex_aws, :hackney_opts,
 config :porcelain,
   goon_warn_if_missing: false
 
+config :joken,
+  default_signer: System.get_env["WEB_APP_TOKEN"] || "secret"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

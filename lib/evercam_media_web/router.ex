@@ -43,6 +43,11 @@ end
     plug EvercamMediaWeb.AuthenticationPlug
   end
 
+  pipeline :jwt_auth do
+    plug :accepts, ["json"]
+    plug EvercamMediaWeb.JwtAuthPlug
+  end
+
   pipeline :onvif do
     plug EvercamMediaWeb.ONVIFAccessPlug
   end
@@ -57,6 +62,24 @@ end
     get "/on_play", StreamController, :rtmp
     delete "/live/:token", StreamController, :close_stream
     options "/live/:token", StreamController, :nothing
+  end
+
+  scope "/v3", EvercamMediaWeb do
+    pipe_through :api_v2
+
+    post "/auth/login", UserController, :remote_login
+    options "/auth/login", UserController, :nothing
+
+    scope "/" do
+      pipe_through :jwt_auth
+
+      get "/auth/credentials", UserController, :remote_credentials
+      options "/auth/credentials", UserController, :nothing
+      post "/auth/logout", UserController, :remote_logout
+      options "/auth/logout", UserController, :nothing
+      get "/cameras", CameraController, :index
+      options "/cameras", CameraController, :nothing
+    end
   end
 
   scope "/v2", EvercamMediaWeb do
@@ -85,10 +108,6 @@ end
       pipe_through :auth
 
       # User Route
-      post "/auth/login", UserController, :remote_login
-      options "/auth/login", UserController, :nothing
-      get "/auth/credentials", UserController, :remote_credentials
-      options "/auth/credentials", UserController, :nothing
       get "/users/:id", UserController, :get_user
       get "/users/:id/credentials", UserController, :credentials
       get "/users/telegram/:id/credentials", UserController, :credentialstelegram

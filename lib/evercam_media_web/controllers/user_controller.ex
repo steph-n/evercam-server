@@ -6,6 +6,7 @@ defmodule EvercamMediaWeb.UserController do
   alias EvercamMedia.Util
   alias EvercamMedia.Intercom
   alias EvercamMedia.Zoho
+  alias EvercamMediaWeb.JwtAuthToken
   require Logger
 
   def swagger_definitions do
@@ -39,13 +40,34 @@ defmodule EvercamMediaWeb.UserController do
       |> String.replace_trailing(".json", "")
       |> User.by_username_or_email
       |> Repo.preload(:access_tokens, force: true)
+    exp =
+      Calendar.DateTime.now_utc
+      |> Calendar.DateTime.advance!(60 * 60 * 24 * 7)
+    extra_claims = %{
+      "user_id" => params["username"],
+      "exp" => exp |> DateTime.to_unix
+    }
 
     with :ok <- ensure_user_exists(user, params["username"], conn),
-         :ok <- password(params["password"], user, conn)
+         :ok <- password(params["password"], user, conn),
+         {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims)
     do
       update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
-      render(conn, "remote_login.json", %{user: user})
+      params =
+        %{}
+        |> add_parameter("is_revoked", false)
+        |> add_parameter("request", token)
+      changeset = AccessToken.changeset(%AccessToken{}, params)
+      case Repo.insert(changeset) do
+        {:ok, token} -> render(conn, "remote_login.json", %{token: token.request})
+        {:error, changeset} -> {:invalid_token, changeset}
+      end
     end
+  end
+
+  def remote_logout(conn, params) do
+    spawn(fn -> AccessToken.delete_by_token(params["token"]) end)
+    json(conn, %{})
   end
 
   def remote_credentials(conn, _) do
