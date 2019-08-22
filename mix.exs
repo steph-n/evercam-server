@@ -122,7 +122,7 @@ defmodule EvercamMedia.Mixfile do
       {:ex_json_schema, "~> 0.5"},
       {:geoip, "~> 0.2"},
       {:poolboy, "~> 1.5.1"},
-      {:evercam_models, github: "evercam/evercam_models", branch: "jwt-auth"},
+      {:evercam_models, github: "evercam/evercam_models"},
       {:joken, "~> 2.0"}
     ]
   end
