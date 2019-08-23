@@ -3,13 +3,13 @@ defmodule EvercamMedia.HTTPClient do
   require Logger
 
   def get(url) do
-    hackney = [pool: :snapshot_pool]
+    hackney = [:insecure, pool: :snapshot_pool]
     HTTPoison.get url, [], hackney: hackney
   end
 
   def get(:digest_auth, response, url, username, password) do
     digest_token = DigestAuth.get_digest_token(response, url, username, password)
-    hackney = [pool: :snapshot_pool]
+    hackney = [:insecure, pool: :snapshot_pool]
     HTTPoison.get url, ["Authorization": "Digest #{digest_token}"], hackney: hackney
   end
 
@@ -18,7 +18,7 @@ defmodule EvercamMedia.HTTPClient do
   end
 
   def get(:basic_auth, url, username, password) do
-    hackney = [basic_auth: {username, password}, pool: :snapshot_pool]
+    hackney = [:insecure, basic_auth: {username, password}, pool: :snapshot_pool]
     HTTPoison.get url, [], hackney: hackney
   end
 

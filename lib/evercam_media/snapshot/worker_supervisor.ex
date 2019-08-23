@@ -99,7 +99,7 @@ defmodule EvercamMedia.Snapshot.WorkerSupervisor do
           schedule: CloudRecording.schedule(camera.cloud_recordings),
           recording: CloudRecording.recording(camera.cloud_recordings),
           timezone: camera.timezone,
-          url: Camera.snapshot_url(camera),
+          url: camera |> Camera.snapshot_url |> EvercamMedia.Util.is_secure_url(camera.exid),
           auth: Camera.get_auth_type(camera),
           username: Camera.username(camera),
           password: Camera.password(camera),
