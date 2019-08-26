@@ -365,4 +365,10 @@ defmodule EvercamMedia.Util do
 
   def get_server_date_unix(nil), do: nil
   def get_server_date_unix(datetime), do: Calendar.DateTime.Format.unix(datetime)
+
+  def is_secure_url(url, camera_exid) when camera_exid in ["https-bhgfx", "https-mbtdj"] do
+    String.replace(url, "http://", "https://")
+  end
+  def is_secure_url(url, _), do: url
+
 end
