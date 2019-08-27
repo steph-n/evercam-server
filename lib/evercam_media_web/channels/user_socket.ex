@@ -6,6 +6,7 @@ defmodule EvercamMediaWeb.UserSocket do
   channel "users:*", EvercamMediaWeb.UserChannel
   channel "cameras:*", EvercamMediaWeb.CameraChannel
   channel "livetail:*", EvercamMediaWeb.LivetailChannel
+  channel "thumbnail:render", EvercamMediaWeb.ThumbnailChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -23,7 +24,7 @@ defmodule EvercamMediaWeb.UserSocket do
       socket
       |> assign(:ip, params["ip"])
       |> assign(:source, params["source"])
-    case Auth.validate(params["api_id"], params["api_key"], "") do
+    case Auth.validate(params["api_id"], params["api_key"], params["token"]) do
       {:valid, user} ->
         {:ok, assign(socket, :current_user, user)}
       _ ->

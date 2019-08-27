@@ -598,9 +598,9 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
 
-  defp update_thumbnail(_, nil), do: :noop
-  defp update_thumbnail(false, _), do: :noop
-  defp update_thumbnail(true, camera) do
+  def update_thumbnail(_, nil), do: :noop
+  def update_thumbnail(false, _), do: :noop
+  def update_thumbnail(true, camera) do
     case {camera.is_online, Util.camera_recording?(camera)} do
       {true, false} ->
         store_snapshot = save_thumbnail(camera.cloud_recordings)
