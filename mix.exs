@@ -89,7 +89,7 @@ defmodule EvercamMedia.Mixfile do
       {:dotenv, "~> 3.0.0", only: [:dev, :test]},
       {:ecto, "~> 3.1.7"},
       {:ecto_sql, "~> 3.1.6"},
-      {:distillery, "~> 2.1"},
+      {:distillery, github: "ijunaid8989/distillery"},
       {:geo, "~> 3.0"},
       {:geo_postgis, "~> 3.0"},
       {:httpoison, "~> 1.5"},
