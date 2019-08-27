@@ -173,7 +173,13 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
         recent_secs = (r_minute * 60) + r_second
         3600 - recent_secs
       files ->
-        files |> Enum.uniq |> Enum.sort |> Enum.filter(fn(file) -> file > on_miss end) |> List.first |> nearest_min_sec(on_miss)
+        files
+        |> Enum.uniq
+        |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
+        |> Enum.reject(fn(file_name) -> String.ends_with?(file_name, ".json") end)
+        |> Enum.sort |> Enum.filter(fn(file) -> file > on_miss end)
+        |> List.first
+        |> nearest_min_sec(on_miss)
     end
   end
 
