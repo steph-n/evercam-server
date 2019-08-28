@@ -14,16 +14,20 @@ defmodule EvercamMediaWeb.ThumbnailChannel do
   end
 
   def handle_in("thumbnail", %{"body" => body}, socket) do
-    camera = Camera.get_full(body)
-    spawn(fn -> EvercamMediaWeb.SnapshotController.update_thumbnail(true, camera) end)
+    body
+    |> String.split(",")
+    |> Enum.each(fn(exid) ->
+      camera = Camera.get_full(exid)
+      spawn(fn -> EvercamMediaWeb.SnapshotController.update_thumbnail(true, camera) end)
 
-    image =
-      case EvercamMedia.Snapshot.Storage.thumbnail_load(body) do
-        {:ok, timestamp, image} -> image
-        {:error, image} -> image
-      end
-    EvercamMediaWeb.Endpoint.broadcast("thumbnail:render",
-      "thumbnail", %{camera_exid: camera.exid, image: Base.encode64(image)})
+      image =
+        case EvercamMedia.Snapshot.Storage.thumbnail_load(exid) do
+          {:ok, _, image} -> image
+          {:error, image} -> image
+        end
+      EvercamMediaWeb.Endpoint.broadcast("thumbnail:render",
+        "thumbnail", %{camera_exid: camera.exid, image: Base.encode64(image)})
+    end)
     {:noreply, socket}
   end
 
