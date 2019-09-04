@@ -724,10 +724,10 @@ defmodule EvercamMediaWeb.CameraController do
       {:ok, data} ->
         Util.broadcast_snapshot(args[:camera_exid], data, timestamp)
         Storage.save(args[:camera_exid], args[:timestamp], data, args[:notes])
-        Camera.update_status(camera, true)
+        Camera.update_status(camera, "online")
       {:error, error} ->
         Logger.error "[#{camera.exid}] [create_thumbnail] [error] [#{inspect error}]"
-        Camera.update_status(camera, false)
+        Camera.update_status(camera, "offline")
     end
   end
 
