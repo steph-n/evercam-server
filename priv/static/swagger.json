@@ -640,10 +640,15 @@
             "description": "Timezone, for example \"Europe/Dublin\""
           },
           {
-            "type": "boolean",
-            "required": false,
-            "name": "is_online",
+            "type": "string",
+            "required": true,
+            "name": "status",
             "in": "query",
+            "enum": [
+              "online",
+              "offline",
+              "project_finished"
+            ],
             "description": ""
           },
           {
@@ -879,6 +884,9 @@
         "responses": {
           "504": {
             "description": "Camera does not respond with a jpeg"
+          },
+          "410": {
+            "description": "We are sorry to inform you that the project has been finished."
           },
           "401": {
             "description": "Invalid API keys"
@@ -1398,10 +1406,15 @@
             "description": "Timezone, for example \"Europe/Dublin\""
           },
           {
-            "type": "boolean",
-            "required": false,
-            "name": "is_online",
+            "type": "string",
+            "required": true,
+            "name": "status",
             "in": "query",
+            "enum": [
+              "online",
+              "offline",
+              "project_finished"
+            ],
             "description": ""
           },
           {
@@ -2298,6 +2311,9 @@
         ],
         "summary": "Returns the latest thumbnail jpeg image.",
         "responses": {
+          "410": {
+            "description": "We are sorry to inform you that the project has been finished."
+          },
           "404": {
             "description": "Camera didn't respond with a jpeg"
           },
@@ -3395,6 +3411,9 @@
         "responses": {
           "504": {
             "description": "Camera does not respond with a jpeg"
+          },
+          "410": {
+            "description": "We are sorry to inform you that the project has been finished."
           },
           "403": {
             "description": "Forbidden camera access"

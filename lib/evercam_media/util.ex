@@ -5,6 +5,17 @@ defmodule EvercamMedia.Util do
   import String, only: [to_integer: 1]
   import Ecto.Changeset, only: [get_field: 2, update_change: 3, put_change: 3]
 
+  def get_unfinished_only(list) do
+    for %{snapmail_cameras: cameras} = snapmail <- list do
+      cameras =
+        Enum.filter(cameras, & &1.camera.status != "project_finished")
+      %{snapmail | snapmail_cameras: cameras}
+    end
+    |> Enum.reject(fn(snapmail) ->
+      length(snapmail.snapmail_cameras) == 0
+    end)
+  end
+
   def deep_get(map, keys, default \\ nil), do: do_deep_get(map, keys, default)
 
   defp do_deep_get(nil, _, default), do: default

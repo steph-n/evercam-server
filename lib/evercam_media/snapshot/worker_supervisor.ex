@@ -81,7 +81,14 @@ defmodule EvercamMedia.Snapshot.WorkerSupervisor do
   """
   def initiate_workers do
     Logger.info "Initiate workers for snapshot recording."
-    Camera.all |> Enum.map(&(start_worker &1))
+    # Pass true (Camera.all(true)) if you only want unfinished projects, else false or nothing will be ok.
+    Camera.all(true) |> Enum.map(&(start_worker &1))
+  end
+
+  def delete_worker(nil), do: :noop
+  def delete_worker(worker_pid) do
+    Logger.info "Deleteing camera worker."
+    Supervisor.terminate_child(__MODULE__, worker_pid)
   end
 
   @doc """

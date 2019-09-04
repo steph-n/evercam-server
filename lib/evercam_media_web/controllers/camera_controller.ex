@@ -250,7 +250,7 @@ defmodule EvercamMediaWeb.CameraController do
       camera = change_camera_owner(user, camera)
       rights = CameraShare.rights_list("full") |> Enum.join(",")
       CameraShare.create_share(camera, old_owner, user, rights, "")
-      update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
+      update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, "")
       render(conn, "show.#{version}.json", %{camera: camera, user: current_user})
     end
   end
@@ -266,7 +266,7 @@ defmodule EvercamMediaWeb.CameraController do
       vendor :query, :string, "Vendor name, for example hikvision"
       model :query, :string, "Model name of the camera being requested"
       timezone :query, :string, "Timezone, for example \"Europe/Dublin\""
-      is_online :query, :boolean, ""
+      status :query, :string, "", required: true, enum: ["online","offline","project_finished"]
       discoverable :query, :boolean, ""
       location_lng :query, :string, "Longitude, for example 31.422117"
       location_lat :query, :string, "Latitude, for example 73.090051"
@@ -315,7 +315,7 @@ defmodule EvercamMediaWeb.CameraController do
                   Util.log_activity(caller, camera, "camera edited", extra)
                 _ -> :noop
               end
-              update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid)
+              update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, camera.status)
               update_camera_to_zoho(Application.get_env(:evercam_media, :run_spawn), camera, caller.email)
               render(conn, "show.#{version}.json", %{camera: camera, user: caller})
             {:error, changeset} ->
@@ -405,7 +405,7 @@ defmodule EvercamMediaWeb.CameraController do
       vendor :query, :string, "Vendor name, for example hikvision"
       model :query, :string, "Model name of the camera being requested"
       timezone :query, :string, "Timezone, for example \"Europe/Dublin\""
-      is_online :query, :boolean, ""
+      status :query, :string, "", required: true, enum: ["online","offline","project_finished"]
       discoverable :query, :boolean, ""
       location_lng :query, :string, "Longitude, for example 31.422117"
       location_lat :query, :string, "Latitude, for example 73.090051"
@@ -533,7 +533,15 @@ defmodule EvercamMediaWeb.CameraController do
     end
   end
 
-  defp update_camera_worker(true, exid) do
+  defp update_camera_worker(true, exid, "project_finished") do
+    spawn fn  ->
+      exid
+      |> String.to_atom
+      |> Process.whereis
+      |> WorkerSupervisor.delete_worker()
+    end
+  end
+  defp update_camera_worker(true, exid, _status) do
     spawn fn ->
       exid |> Camera.get_full |> Camera.invalidate_camera
       camera = exid |> Camera.get_full
@@ -544,7 +552,7 @@ defmodule EvercamMediaWeb.CameraController do
       |> WorkerSupervisor.update_worker(camera)
     end
   end
-  defp update_camera_worker(_mode, _exid), do: :noop
+  defp update_camera_worker(_mode, _exid, _status), do: :noop
 
   defp change_camera_owner(user, camera) do
     camera
@@ -585,7 +593,7 @@ defmodule EvercamMediaWeb.CameraController do
     |> add_parameter("field", :name, params["name"])
     |> add_parameter("field", :exid, params["id"])
     |> add_parameter("field", :timezone, params["timezone"])
-    |> add_parameter("field", :is_online, params["is_online"])
+    |> add_parameter("field", :status, params["status"])
     |> add_parameter("field", :discoverable, params["discoverable"])
     |> add_parameter("field", :location_lng, params["location_lng"])
     |> add_parameter("field", :location_lat, params["location_lat"])

@@ -297,7 +297,7 @@ defmodule EvercamMedia.UserMailer do
   defp construct_args(camera) do
     %{
       camera_exid: camera.exid,
-      is_online: camera.is_online,
+      status: camera.status,
       url: Camera.snapshot_url(camera),
       username: Camera.username(camera),
       password: Camera.password(camera),

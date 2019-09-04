@@ -32,7 +32,7 @@ defmodule EvercamMedia.Snapshot.DBHandler do
     {camera_exid, timestamp, image} = data
     Logger.debug "[#{camera_exid}] [snapshot_success]"
     spawn fn -> Storage.save(camera_exid, timestamp, image, "Evercam Proxy") end
-    spawn fn -> update_camera_status("#{camera_exid}", timestamp, true) end
+    spawn fn -> update_camera_status("#{camera_exid}", timestamp, "online") end
     Util.broadcast_snapshot(camera_exid, image, timestamp)
     {:noreply, [], state}
   end
@@ -56,21 +56,21 @@ defmodule EvercamMedia.Snapshot.DBHandler do
     old_error_total = ConCache.dirty_get_or_store(:snapshot_error, camera.exid, fn() -> 0 end)
     error_total = old_error_total + error_weight
     cond do
-      status == true && camera.is_online != status ->
-        change_camera_status(camera, timestamp, true)
+      status == "online" && camera.status != status ->
+        change_camera_status(camera, timestamp, "online")
         ConCache.dirty_put(:snapshot_error, camera.exid, 0)
         Logger.debug "[#{camera_exid}] [update_status] [online]"
-      status == true ->
+      status == "online" ->
         ConCache.dirty_put(:snapshot_error, camera.exid, 0)
-      status == false && camera.is_online != status && error_total >= 100 ->
+      status == "offline" && camera.status != status && error_total >= 100 ->
         ConCache.dirty_put(:snapshot_error, camera.exid, 0)
-        change_camera_status(camera, timestamp, false, error_code)
+        change_camera_status(camera, timestamp, "offline", error_code)
         Logger.info "[#{camera_exid}] [update_status] [offline] [#{error_code}]"
-      status == false && camera.is_online != status ->
+      status == "offline" && camera.status != status ->
         ConCache.dirty_put(:snapshot_error, camera.exid, error_total)
         Logger.info "[#{camera_exid}] [update_status] [error] [#{error_code}] [#{error_total}]"
         pause_camera_requests(camera, error_code, rem(error_total, 5))
-      status == false ->
+      status == "offline" ->
         spawn fn -> check_vh("offline", camera) end
         ConCache.dirty_put(:snapshot_error, camera.exid, error_total)
       true -> :noop
@@ -95,7 +95,7 @@ defmodule EvercamMedia.Snapshot.DBHandler do
     datetime = Calendar.DateTime.Parse.unix!(timestamp)
 
     try do
-      params = construct_camera(datetime, error_code, status, camera.is_online == status)
+      params = construct_camera(datetime, error_code, status, camera.status == status)
       camera =
         camera
         |> Camera.changeset(params)
@@ -113,11 +113,11 @@ defmodule EvercamMedia.Snapshot.DBHandler do
 
   def broadcast_change_to_users(camera) do
     User.with_access_to(camera)
-    |> Enum.each(fn(user) -> Util.broadcast_camera_status(camera.exid, camera.is_online, user.username) end)
+    |> Enum.each(fn(user) -> Util.broadcast_camera_status(camera.exid, camera.status, user.username) end)
   end
 
-  def log_camera_status(camera, true, datetime, nil), do: do_log_camera_status(camera, "online", datetime)
-  def log_camera_status(camera, false, datetime, error_code), do: do_log_camera_status(camera, "offline", datetime, %{reason: error_code})
+  def log_camera_status(camera, "online", datetime, nil), do: do_log_camera_status(camera, "online", datetime)
+  def log_camera_status(camera, "offline", datetime, error_code), do: do_log_camera_status(camera, "offline", datetime, %{reason: error_code})
 
   defp do_log_camera_status(camera, status, datetime, extra \\ nil) do
     case ConCache.get(:current_camera_status, camera.exid) do
@@ -146,11 +146,11 @@ defmodule EvercamMedia.Snapshot.DBHandler do
   end
 
   defp construct_camera(datetime, error_reason, online_status, online_status_unchanged)
-  defp construct_camera(datetime, error_reason, false, false) do
-    %{last_polled_at: datetime, offline_reason: error_reason, is_online: false, last_online_at: datetime}
+  defp construct_camera(datetime, error_reason, "offline", "offline") do
+    %{last_polled_at: datetime, offline_reason: error_reason, status: "offline", last_online_at: datetime}
   end
   defp construct_camera(datetime, _, status, _) do
-    %{last_polled_at: datetime, offline_reason: "", is_online: status}
+    %{last_polled_at: datetime, offline_reason: "", status: status}
   end
 
   defp check_vh("offline", camera), do: check_camera_status(camera)

@@ -91,7 +91,7 @@ defmodule EvercamMedia.Snapshot.Streamer do
     case response do
       {:ok, data} ->
         Util.broadcast_snapshot(camera.exid, data, timestamp)
-        DBHandler.update_camera_status(camera.exid, timestamp, true)
+        DBHandler.update_camera_status(camera.exid, timestamp, "online")
         spawn fn -> Storage.update_cache_thumbnail("#{camera.exid}", timestamp, data) end
       {:error, error} ->
         Error.parse(error) |> Error.handle(camera.exid, timestamp, error)
