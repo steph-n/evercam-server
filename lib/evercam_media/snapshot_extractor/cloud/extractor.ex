@@ -89,7 +89,11 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
       end
     end)
 
-    commit_if_1000(1000, ElixirDropbox.Client.new(System.get_env["DROP_BOX_TOKEN"]), images_directory)
+    with true <- session_file_exists?(images_directory) do
+      commit_if_1000(1000, ElixirDropbox.Client.new(System.get_env["DROP_BOX_TOKEN"]), images_directory)
+    else
+      _ -> Logger.info "Nofile has been extracted."
+    end
 
     time_end = Calendar.DateTime.now_utc
     count = get_count(images_directory) - 1
