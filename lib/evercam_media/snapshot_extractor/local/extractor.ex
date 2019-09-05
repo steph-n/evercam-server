@@ -69,7 +69,11 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
   end
   defp iterate(_status, config, _url, start_date, end_date, path, upload_path) do
     client = ElixirDropbox.Client.new(System.get_env["DROP_BOX_TOKEN"])
-    commit_if_1000(1000, client, path)
+    with true <- session_file_exists?(path) do
+      commit_if_1000(1000, client, path)
+    else
+      _ -> Logger.info "Nofile has been extracted."
+    end
     :timer.sleep(:timer.seconds(5))
     snapshot_count = get_count(path)
     create_video_mp4(config.create_mp4, config, path, upload_path)
@@ -81,7 +85,7 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     Porcelain.shell("cat #{path}*.jpg | ffmpeg -f image2pipe -framerate 6 -i - -c:v h264_nvenc -r 6 -preset slow -bufsize 1000k -pix_fmt yuv420p -y #{path}#{config.exid}.mp4", [err: :out]).out
     spawn(fn ->
       File.exists?("#{path}#{config.exid}.mp4")
-      |> upload_image("#{path}#{config.exid}.mp4", "#{upload_path}#{config.exid}.mp4")
+      |> upload_image("#{path}#{config.exid}.mp4", "#{upload_path}#{config.exid}.mp4", path)
       clean_images(path)
       :ets.delete(:extractions, config.exid)
     end)
@@ -133,7 +137,7 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
     write_sessional_values(session_id, file_size, upload_image_path, path)
     check_1000_chunk(path) |> length() |> commit_if_1000(client, path)
   end
-  defp upload_image(_status, _image_path, _upload_image_path), do: :noop
+  defp upload_image(_status, _image_path, _upload_image_path, _path), do: :noop
 
   defp nvr_url(ip, port, username, password, channel) do
     "rtsp://#{username}:#{password}@#{ip}:#{port}/Streaming/tracks/#{channel}"

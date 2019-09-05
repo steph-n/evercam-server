@@ -73,8 +73,8 @@ defmodule EvercamMedia.Snapshot.Deletion do
     :erlang.cancel_timer(timer)
     camera = Camera.get(state.config.camera_exid)
 
-    case camera.is_online do
-      true ->
+    case camera.status do
+      "online" ->
         Logger.debug "start deletion for camera: #{state.name}"
         state.config.camera_id
         |> CloudRecording.by_camera_id

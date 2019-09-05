@@ -2,6 +2,7 @@ defmodule EvercamMediaWeb.SnapmailController do
   use EvercamMediaWeb, :controller
   use PhoenixSwagger
   alias EvercamMedia.Snapmail.SnapmailerSupervisor
+  alias EvercamMedia.Util
 
   def swagger_definitions do
     %{
@@ -290,7 +291,7 @@ defmodule EvercamMediaWeb.SnapmailController do
   end
 
   defp get_by_user_camera(_conn, caller, _camera, nil) do
-    snapmails = Snapmail.by_user_id(caller.id)
+    snapmails = Snapmail.by_user_id(caller.id) |> Util.get_unfinished_only
     {:ok, snapmails}
   end
   defp get_by_user_camera(conn, _caller, nil, camera_id), do: render_error(conn, 404, "Camera '#{camera_id}' not found!")

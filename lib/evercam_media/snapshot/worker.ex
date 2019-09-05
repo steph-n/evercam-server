@@ -219,8 +219,8 @@ defmodule EvercamMedia.Snapshot.Worker do
         |> add_missing_params(timestamp, attempt)
         |> CamClient.fetch_snapshot
 
-      case {result, camera.is_online} do
-        {{:error, _error}, true} ->
+      case {result, camera.status} do
+        {{:error, _error}, "online"} ->
           if ConCache.get(:camera_lock, state.config.camera_exid) && attempt == 1 do
             Process.exit self(), :shutdown
           end

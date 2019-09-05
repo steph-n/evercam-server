@@ -83,7 +83,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     delete "/cameras/{id}/apps/cloud-recording/extract"
     summary "Delete the cloud extraction"
     parameters do
-      id :path, "Unique identifier for camera.", required: true
+      id :path, :string, "Unique identifier for camera.", required: true
       extraction_id :query, :integer, "Extraction ID for the deletion of cloud extraction.", required: true
       api_id :query, :string, "The Evercam API id for the requester."
       api_key :query, :string, "The Evercam API key for the requester."
@@ -91,7 +91,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
     tag "Recordings"
     response 200, "Success"
     response 401, "Invalid API keys or Unauthorized"
-    response 404, "Snapmail not found"
+    response 404, "Snapshot extraction not found"
   end
 
   def delete_cloud_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
@@ -155,7 +155,8 @@ defmodule EvercamMediaWeb.CloudRecordingController do
 
     with :ok <- ensure_camera_exists(camera, exid, conn),
          :ok <- ensure_can_edit(current_user, camera, conn),
-         :ok <- validate_params(params) |> ensure_params(conn)
+         :ok <- validate_params(params) |> ensure_params(conn),
+         :ok <- project_not_finished(camera.status, camera.name, conn)
     do
       cr_params = %{
         camera_id: camera.id,
@@ -546,6 +547,9 @@ defmodule EvercamMediaWeb.CloudRecordingController do
       Logger.error Exception.format_stacktrace System.stacktrace
     end
   end
+
+  defp project_not_finished("project_finished", camera_name, conn), do: render_error(conn, 410, "Project '#{camera_name}' has been finished, you cannot edit it's cloud recordings.")
+  defp project_not_finished(_status, _camera_name, _conn), do: :ok
 
   defp ensure_camera_exists(nil, exid, conn) do
     render_error(conn, 404, "Camera '#{exid}' not found!")

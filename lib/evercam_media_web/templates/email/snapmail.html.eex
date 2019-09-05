@@ -57,7 +57,7 @@
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Here's the snapshot from your camera.</p>
             <br>
-            <%= raw snapmail_images(@camera_images) %>
+            <%= raw snapmail_images(@camera_images, @recipient) %>
 
             <p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Thanks,</p><br>
             <p style="line-height: 1.6; margin: 0 0 0px; padding: 0;">The Evercam Team</p>

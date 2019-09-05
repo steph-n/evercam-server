@@ -91,7 +91,7 @@ defmodule EvercamMedia.Snapshot.Streamer do
     case response do
       {:ok, data} ->
         Util.broadcast_snapshot(camera.exid, data, timestamp)
-        DBHandler.update_camera_status(camera.exid, timestamp, true)
+        DBHandler.update_camera_status(camera.exid, timestamp, "online")
         spawn fn -> Storage.update_cache_thumbnail("#{camera.exid}", timestamp, data) end
       {:error, error} ->
         Error.parse(error) |> Error.handle(camera.exid, timestamp, error)
@@ -132,7 +132,7 @@ defmodule EvercamMedia.Snapshot.Streamer do
       camera_exid: camera.exid,
       description: "Live View (clients: #{parse_clients(camera.exid)})",
       timestamp: timestamp,
-      url: Camera.snapshot_url(camera),
+      url: camera |> Camera.snapshot_url |> EvercamMedia.Util.is_secure_url(camera.exid),
       vendor_exid: Camera.get_vendor_attr(camera, :exid),
       auth: Camera.get_auth_type(camera),
       username: Camera.username(camera),

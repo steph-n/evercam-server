@@ -81,7 +81,14 @@ defmodule EvercamMedia.Snapshot.WorkerSupervisor do
   """
   def initiate_workers do
     Logger.info "Initiate workers for snapshot recording."
-    Camera.all |> Enum.map(&(start_worker &1))
+    # Pass true (Camera.all(true)) if you only want unfinished projects, else false or nothing will be ok.
+    Camera.all(true) |> Enum.map(&(start_worker &1))
+  end
+
+  def delete_worker(nil), do: :noop
+  def delete_worker(worker_pid) do
+    Logger.info "Deleteing camera worker."
+    Supervisor.terminate_child(__MODULE__, worker_pid)
   end
 
   @doc """
@@ -99,7 +106,7 @@ defmodule EvercamMedia.Snapshot.WorkerSupervisor do
           schedule: CloudRecording.schedule(camera.cloud_recordings),
           recording: CloudRecording.recording(camera.cloud_recordings),
           timezone: camera.timezone,
-          url: Camera.snapshot_url(camera),
+          url: camera |> Camera.snapshot_url |> EvercamMedia.Util.is_secure_url(camera.exid),
           auth: Camera.get_auth_type(camera),
           username: Camera.username(camera),
           password: Camera.password(camera),

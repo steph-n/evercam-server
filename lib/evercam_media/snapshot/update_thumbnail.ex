@@ -73,8 +73,8 @@ defmodule EvercamMedia.Snapshot.UpdateThumbnail do
     :erlang.cancel_timer(timer)
     camera = Camera.get(state.config.camera_exid)
 
-    case {camera.is_online, state.config.recording} do
-      {true, "on"} -> Logger.debug "Camera recording process is running, Don't update thumbnail."
+    case {camera.status, state.config.recording} do
+      {"online", "on"} -> Logger.debug "Camera recording process is running, Don't update thumbnail."
       _ -> check_camera_last_image(state.config.camera_exid)
     end
 

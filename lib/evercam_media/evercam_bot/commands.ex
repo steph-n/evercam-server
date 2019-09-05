@@ -141,22 +141,23 @@ defmodule EvercamMedia.EvercamBot.Commands do
 
   defp get_message(nil), do: "Camera not found"
   defp get_message(camera) do
-    case camera.is_online do
-      true -> "#{camera.name} is online but we can not get the live view, here is the last thumbnail:"
-      false -> "#{camera.name} is offline, here is the last thumbnail:"
+    case camera.status do
+      "online" -> "#{camera.name} is online but we can not get the live view, here is the last thumbnail:"
+      "offline" -> "#{camera.name} is offline, here is the last thumbnail:"
+      "project_finished" -> "Camera not found"
     end
   end
 
   defp get_photo(nil, _user, _update), do: Logger.log :info, "Camera not found"
   defp get_photo(_camera, nil, _update), do: Logger.log :info, "User not found"
   defp get_photo(camera, user, update) do
-    case EvercamMediaWeb.SnapshotController.snapshot_with_user(camera.exid, user, false) do
+    case EvercamMediaWeb.SnapshotController.snapshot_with_user(camera, user, false) do
       {200, response} -> send_image(response[:image], update)
       {_, _} ->
         camera
         |> get_message
         |> send_message
-        case EvercamMediaWeb.SnapshotController.snapshot_thumbnail(camera.exid, user, camera.is_online) do
+        case EvercamMediaWeb.SnapshotController.snapshot_thumbnail(camera.exid, user, (if camera.status == "online", do: true, else: false)) do
           {200, img} -> send_image(img[:image], update)
           {404, img} -> send_image(img[:image], update)
           {403, img} -> send_message "#{img.message}"

@@ -14,6 +14,10 @@ defmodule Commons do
     File.read!("#{path}SESSION") |> String.split("\n", trim: true)
   end
 
+  def session_file_exists?(path) do
+    File.exists?("#{path}SESSION")
+  end
+
   def commit_if_1000(1000, client, path) do
     entries =
       path

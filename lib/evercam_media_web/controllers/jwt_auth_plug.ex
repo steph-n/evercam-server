@@ -7,12 +7,14 @@ defmodule EvercamMediaWeb.JwtAuthPlug do
 
   def call(conn, _opts) do
     jwt_string = jwt_from_cookie(conn)
-    AccessToken.by_request_token(jwt_string) |> handle_response(conn, jwt_string)
+    jwt_string
+    |> AccessToken.by_request_token
+    |> handle_response(conn, jwt_string)
   end
 
   defp handle_response(nil, conn, jwt_string), do: conn |> forbidden(%{message: "Token '#{jwt_string}' is revoked."})
-  defp handle_response({ :ok, claims }, conn, _jwt_string), do: conn |> assign(:current_user, User.by_username_or_email(claims["user_id"]))
-  defp handle_response({ :error, error }, conn, _jwt_string), do: conn |> forbidden(error)
+  defp handle_response({:ok, claims}, conn, _), do: conn |> assign(:current_user, User.by_username_or_email(claims["user_id"]))
+  defp handle_response({:error, error}, conn, _), do: conn |> forbidden(error)
   defp handle_response(_, conn, jwt_string), do: JwtAuthToken.verify_and_validate(jwt_string) |> handle_response(conn, jwt_string)
 
   defp jwt_from_cookie(conn) do

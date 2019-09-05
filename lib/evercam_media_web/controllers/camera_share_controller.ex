@@ -271,7 +271,7 @@ defmodule EvercamMediaWeb.CameraShareController do
       %{
         camera_id: camera.exid,
         name: camera.name,
-        status: camera.is_online,
+        status: camera.status,
         cr_status: CloudRecording.recording(camera.cloud_recordings),
         cr_storage_duration: CloudRecording.storage_duration(camera.cloud_recordings)
       }

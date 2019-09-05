@@ -22,18 +22,24 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 401, "Invalid API keys"
     response 403, "Forbidden camera access"
     response 504, "Camera does not respond with a jpeg"
+    response 410, "We are sorry to inform you that the project has been finished."
   end
 
   def live(conn, %{"id" => camera_exid}) do
-    case snapshot_with_user(camera_exid, conn.assigns[:current_user], false) do
-      {200, response} ->
-        conn
-        |> put_resp_header("content-type", "image/jpeg")
-        |> text(response[:image])
-      {code, response} ->
-        conn
-        |> put_status(code)
-        |> json(response)
+    camera = Camera.get_full(camera_exid)
+    with true <- "project_finished" != camera.status do
+      case snapshot_with_user(camera, conn.assigns[:current_user], false) do
+        {200, response} ->
+          conn
+          |> put_resp_header("content-type", "image/jpeg")
+          |> text(response[:image])
+        {code, response} ->
+          conn
+          |> put_status(code)
+          |> json(response)
+      end
+    else
+      _ -> render_error(conn, 410, "We are sorry to inform you that the project has been finished.")
     end
   end
 
@@ -51,6 +57,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 401, "Invalid API keys"
     response 403, "Forbidden camera access"
     response 504, "Camera does not respond with a jpeg"
+    response 410, "We are sorry to inform you that the project has been finished."
   end
 
   def create(conn, %{"id" => camera_exid}) do
@@ -59,20 +66,24 @@ defmodule EvercamMediaWeb.SnapshotController do
     camera = Camera.get_full(camera_exid)
     timezone = Camera.get_timezone(camera)
 
-    with true <- Permission.Camera.can_snapshot?(user, camera)
-    do
-      case fetch_latest_snapshot(camera) do
-        {200, response} ->
-          data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
-          conn
-          |> json(%{created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), notes: "", data: data})
-        {code, response} ->
-          conn
-          |> put_status(code)
-          |> json(response)
+    with true <- "project_finished" != camera.status do
+      with true <- Permission.Camera.can_snapshot?(user, camera)
+      do
+        case fetch_latest_snapshot(camera) do
+          {200, response} ->
+            data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
+            conn
+            |> json(%{created_at: get_snapshot_timestamp(version, response[:timestamp], timezone), notes: "", data: data})
+          {code, response} ->
+            conn
+            |> put_status(code)
+            |> json(response)
+        end
+      else
+        false -> render_error(conn, 403, "Forbidden.")
       end
     else
-      false -> render_error(conn, 403, "Forbidden.")
+      _ -> render_error(conn, 410, "We are sorry to inform you that the project has been finished.")
     end
   end
 
@@ -132,6 +143,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 200, "Success"
     response 401, "Invalid API keys"
     response 504, "Camera does not respond with a jpeg"
+    response 410, "We are sorry to inform you that the project has been finished."
   end
 
   def test(conn, params) do
@@ -163,6 +175,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     response 401, "Invalid API keys"
     response 403, "Forbidden camera access"
     response 404, "Camera didn't respond with a jpeg"
+    response 410, "We are sorry to inform you that the project has been finished."
   end
 
   def thumbnail(conn, %{"id" => camera_exid}) do
@@ -556,8 +569,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
 
-  def snapshot_with_user(camera_exid, user, store_snapshot, notes \\ "") do
-    camera = Camera.get_full(camera_exid)
+  def snapshot_with_user(camera, user, store_snapshot, notes \\ "") do
     case Permission.Camera.can_snapshot?(user, camera) do
       true ->
         construct_args(camera, store_snapshot, notes)
@@ -572,8 +584,8 @@ defmodule EvercamMediaWeb.SnapshotController do
     timestamp = Calendar.DateTime.Format.unix(Calendar.DateTime.now_utc)
     args = Map.put(args, :timestamp, timestamp)
 
-    case {response, args[:is_online], attempt} do
-      {{:error, _error}, true, attempt} when attempt <= 3 ->
+    case {response, args[:status], attempt} do
+      {{:error, _error}, "online", attempt} when attempt <= 3 ->
         fetch_snapshot(args, attempt + 1)
       _ ->
         handle_camera_response(args, response, args[:store_snapshot])
@@ -587,7 +599,7 @@ defmodule EvercamMediaWeb.SnapshotController do
   end
 
   def snapshot_thumbnail(camera, user, do_update_thumbnail) do
-    spawn(fn -> update_thumbnail(do_update_thumbnail, camera) end)
+    if camera.status != "project_finished", do: spawn(fn -> update_thumbnail(do_update_thumbnail, camera) end)
     with true <- Permission.Camera.can_snapshot?(user, camera),
          {:ok, timestamp, image} <- Storage.thumbnail_load(camera.exid)
     do
@@ -598,11 +610,11 @@ defmodule EvercamMediaWeb.SnapshotController do
     end
   end
 
-  defp update_thumbnail(_, nil), do: :noop
-  defp update_thumbnail(false, _), do: :noop
-  defp update_thumbnail(true, camera) do
-    case {camera.is_online, Util.camera_recording?(camera)} do
-      {true, false} ->
+  def update_thumbnail(_, nil), do: :noop
+  def update_thumbnail(false, _), do: :noop
+  def update_thumbnail(true, camera) do
+    case {camera.status, Util.camera_recording?(camera)} do
+      {"online", false} ->
         store_snapshot = save_thumbnail(camera.cloud_recordings)
         construct_args(camera, store_snapshot, "Evercam Thumbnail")
         |> Map.put(:description, "Thumbnail")
@@ -633,7 +645,7 @@ defmodule EvercamMediaWeb.SnapshotController do
   defp construct_args(camera, store_snapshot, notes) do
     %{
       camera_exid: camera.exid,
-      is_online: camera.is_online,
+      status: camera.status,
       url: Camera.snapshot_url(camera),
       username: Camera.username(camera),
       password: Camera.password(camera),
@@ -664,7 +676,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     spawn fn ->
       Util.broadcast_snapshot(args[:camera_exid], data, args[:timestamp])
       do_save_to_seaweed(args[:camera_exid], args[:timestamp], data, args[:notes])
-      DBHandler.update_camera_status(args[:camera_exid], args[:timestamp], true)
+      DBHandler.update_camera_status(args[:camera_exid], args[:timestamp], "online")
     end
     {200, %{image: data, timestamp: args[:timestamp], notes: args[:notes]}}
   end
@@ -673,7 +685,7 @@ defmodule EvercamMediaWeb.SnapshotController do
     spawn fn ->
       Storage.update_cache_thumbnail("#{args[:camera_exid]}", args[:timestamp], data)
       Util.broadcast_snapshot(args[:camera_exid], data, args[:timestamp])
-      DBHandler.update_camera_status(args[:camera_exid], args[:timestamp], true)
+      DBHandler.update_camera_status(args[:camera_exid], args[:timestamp], "online")
     end
     {200, %{image: data}}
   end
@@ -787,9 +799,9 @@ defmodule EvercamMediaWeb.SnapshotController do
   def update_camera_status_online(camera_exid) when camera_exid in [nil, ""], do: :noop
   def update_camera_status_online(camera_exid) do
     with camera <- Camera.get_full(camera_exid),
-         false <- camera.is_online do
+         "offline" <- camera.status do
       timestamp = Calendar.DateTime.Format.unix(Calendar.DateTime.now_utc)
-      DBHandler.update_camera_status(camera.exid, timestamp, true)
+      DBHandler.update_camera_status(camera.exid, timestamp, "online")
       Camera.invalidate_camera(camera)
       camera.exid
       |> String.to_atom
