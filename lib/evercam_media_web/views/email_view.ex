@@ -134,4 +134,29 @@ defmodule EvercamMediaWeb.EmailView do
     '<p style="line-height: 1.6; margin: 0 0 10px; padding: 0;">Extractor has been Completed with #{count} out of #{expected_count} images for #{camera}.</p>
               The whole process took #{execution_time} minutes!'
   end
+
+  def render_schedule(schedule) do
+    "<p style='line-height: 1.6; margin: 0 0 10px; padding: 0; clear'>
+      <table style='border-collapse: collapse;width: 100%;'>
+        <tr>
+          <th style='border: 1px solid #636466;text-align: left;padding: 8px;'>Monday</th>
+          <th style='border: 1px solid #636466;text-align: left;padding: 8px;'>Tuesday</th>
+          <th style='border: 1px solid #636466;text-align: left;padding: 8px;'>Wednesday</th>
+          <th style='border: 1px solid #636466;text-align: left;padding: 8px;'>Thursday</th>
+          <th style='border: 1px solid #636466;text-align: left;padding: 8px;'>Friday</th>
+          <th style='border: 1px solid #636466;text-align: left;padding: 8px;'>Saturday</th>
+          <th style='border: 1px solid #636466;text-align: left;padding: 8px;'>Sunday</th>
+        </tr>
+        <tr style='background-color: #f5f5f5;'>
+          <td style='border: 1px solid #636466;text-align: left;padding: 8px;'>#{Enum.map(schedule["Monday"], fn x -> x <> "<br>" end)}</td>
+          <td style='border: 1px solid #636466;text-align: left;padding: 8px;'>#{Enum.map(schedule["Tuesday"], fn x -> x <> "<br>" end)}</td>
+          <td style='border: 1px solid #636466;text-align: left;padding: 8px;'>#{Enum.map(schedule["Wednesday"], fn x -> x <> "<br>" end)}</td>
+          <td style='border: 1px solid #636466;text-align: left;padding: 8px;'>#{Enum.map(schedule["Thursday"], fn x -> x <> "<br>" end)}</td>
+          <td style='border: 1px solid #636466;text-align: left;padding: 8px;'>#{Enum.map(schedule["Friday"], fn x -> x <> "<br>" end)}</td>
+          <td style='border: 1px solid #636466;text-align: left;padding: 8px;'>#{Enum.map(schedule["Saturday"], fn x -> x <> "<br>" end)}</td>
+          <td style='border: 1px solid #636466;text-align: left;padding: 8px;'>#{Enum.map(schedule["Sunday"], fn x -> x <> "<br>" end)}</td>
+        </tr>
+      </table>
+    </p>"
+  end
 end

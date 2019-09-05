@@ -2,7 +2,8 @@ defmodule EvercamMediaWeb.JwtAuthPlug do
   import Plug.Conn
   alias EvercamMediaWeb.JwtAuthToken
 
-  def init(opts), do: opts
+  def init(_opts) do
+  end
 
   def call(conn, _opts) do
     jwt_string = jwt_from_cookie(conn)

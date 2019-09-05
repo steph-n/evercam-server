@@ -236,6 +236,26 @@ defmodule EvercamMedia.UserMailer do
     |> EvercamMedia.Mailer.deliver
   end
 
+  def timelapse_creator_started(e_start_date, e_to_date, e_schedule, e_interval, camera_name, requestor, duration) do
+    new()
+    |> from(@no_reply)
+    |> to("#{requestor}")
+    |> bcc(["marco@evercam.io","javier@evercam.io"])
+    |> subject("Time-lapse Creator Started")
+    |> render_body("timelapse_started.html", %{start_date: e_start_date, to_date: e_to_date, interval: e_interval, schedule: e_schedule, camera_name: camera_name, requestor: requestor, duration: duration, year: @year})
+    |> EvercamMedia.Mailer.deliver
+  end
+
+  def timelapse_creator_completed(count, camera_name, expected_count, extractor_id, camera_exid, requestor, execution_time, duration) do
+    new()
+    |> from(@no_reply)
+    |> to("#{requestor}")
+    |> bcc(["marco@evercam.io","javier@evercam.io"])
+    |> subject("Time-lapse Completed")
+    |> render_body("timelapse_completed.html", %{count: count, camera_name: camera_name, expected_count: expected_count, extractor_id: extractor_id, camera_exid: camera_exid, execution_time: execution_time, requestor: requestor, year: @year, duration: duration})
+    |> EvercamMedia.Mailer.deliver
+  end
+
   defp get_thumbnail(camera, status \\ "")
   defp get_thumbnail(camera, "online") do
     case camera |> construct_args |> fetch_snapshot do

@@ -117,9 +117,26 @@ defmodule EvercamMedia.S3 do
     end
   end
 
+  def do_load_timelapse(path) do
+    case ExAws.S3.get_object("evercam-timelapse", path) |> ExAws.request do
+      {:ok, response} -> {:ok, response.body}
+      {:error, {:http_error, code, response}} ->
+        message = EvercamMedia.XMLParser.parse_single(response.body, '/Error/Message')
+        {:error, code, message}
+    end
+  end
+
   def load_compare_thumbnail(camera_exid, compare_id) do
     get_url = "#{camera_exid}/compares/#{compare_id}/thumb-#{compare_id}.jpg"
     case ExAws.S3.get_object("evercam-camera-assets", get_url) |> ExAws.request do
+      {:ok, response} -> response.body
+      {:error, _} -> EvercamMedia.Util.default_thumbnail
+    end
+  end
+
+  def load_timelapse_thumbnail(camera_exid, timelapse_id) do
+    get_url = "#{camera_exid}/#{timelapse_id}/thumb-video.jpg"
+    case ExAws.S3.get_object("evercam-timelapse", get_url) |> ExAws.request do
       {:ok, response} -> response.body
       {:error, _} -> EvercamMedia.Util.default_thumbnail
     end

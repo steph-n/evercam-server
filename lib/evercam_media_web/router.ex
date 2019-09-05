@@ -21,6 +21,12 @@ defmodule EvercamMediaWeb.Router do
     plug APIVersion, version: :v2
   end
 
+  pipeline :api_v3 do
+    plug :accepts, ["json", "jpg"]
+    plug CORSPlug, origin: ["*"]
+    plug APIVersion, version: :v3
+  end
+
   def swagger_info do
     %{
       info: %{
@@ -77,8 +83,44 @@ end
       options "/auth/credentials", UserController, :nothing
       post "/auth/logout", UserController, :remote_logout
       options "/auth/logout", UserController, :nothing
+
       get "/cameras", CameraController, :index
       options "/cameras", CameraController, :nothing
+      get "/cameras/:id", CameraController, :show
+      options "/cameras/:id", CameraController, :show
+
+      get "/cameras/:id/recordings/snapshots/latest", SnapshotController, :latest
+      options "/cameras/:id/recordings/snapshots/latest", SnapshotController, :nothing
+      get "/cameras/:id/recordings/snapshots/oldest", SnapshotController, :oldest
+      options "/cameras/:id/recordings/snapshots/oldest", SnapshotController, :nothing
+      get "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :days
+      options "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :nothing
+      get "/cameras/:id/recordings/snapshots/:year/:month/:day/hours", SnapshotController, :hours
+      options "/cameras/:id/recordings/snapshots/:year/:month/:day/hours", SnapshotController, :nothing
+      get "/cameras/:id/recordings/snapshots/:timestamp/nearest", SnapshotController, :nearest
+      options "/cameras/:id/recordings/snapshots/:timestamp/nearest", SnapshotController, :nothing
+
+      post "/timelapse", TimelapseCreatorController, :create
+      options "/timelapse", TimelapseCreatorController, :nothing
+
+      post "/cameras/:id/archives", ArchiveController, :create
+      options "/cameras/:id/archives", ArchiveController, :nothing
+      get "/cameras/:id/archives", ArchiveController, :index
+      options "/cameras/:id/archives", ArchiveController, :nothing
+      get "/cameras/:id/archives/:archive_id", ArchiveController, :show
+      options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
+      get "/cameras/:id/archives/:archive_id/play", ArchiveController, :play
+      options "/cameras/:id/archives/:archive_id/play", ArchiveController, :nothing
+      patch "/cameras/:id/archives/:archive_id", ArchiveController, :update
+      delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete_archive
+      options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
+
+      get "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :play
+      options "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :nothing
+
+      patch "/cameras/:id/compares/:compare_id", CompareController, :update
+      delete "/cameras/:id/compares/:compare_id", CompareController, :delete_compare
+      options "/cameras/:id/compares/:compare_id", CompareController, :nothing
     end
   end
 
@@ -148,6 +190,8 @@ end
       put "/cameras/:id/archives/:archive_id", ArchiveController, :retry
       patch "/cameras/:id/archives/:archive_id", ArchiveController, :update
       options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
+      get "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :play
+      options "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :nothing
 
       # Logs route
       get "/cameras/:id/logs", LogController, :show

@@ -4,6 +4,7 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
   require Logger
   alias EvercamMedia.SnapshotExtractor.Extractor
   alias EvercamMedia.SnapshotExtractor.CloudExtractor
+  alias EvercamMedia.SnapshotExtractor.TimelapseCreator
   import Commons
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
@@ -18,6 +19,8 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
     supervise(extractor_children, strategy: :simple_one_for_one, max_restarts: 1_000_000)
     cloud_extractor_childern = [worker(CloudExtractor, [], restart: :permanent)]
     supervise(cloud_extractor_childern, strategy: :simple_one_for_one, max_restarts: 1_000_000)
+    timelapse_children = [worker(TimelaspeCreator, [], restart: :permanent)]
+    supervise(timelapse_children, strategy: :simple_one_for_one, max_restarts: 1_000_000)
   end
 
   def initiate_workers do
@@ -41,10 +44,21 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
       end)
       :ets.insert(:extractions, {extractor.camera.exid <> "-cloud-#{extractor.id}", extraction_pid})
     end)
+
+    #..Starting Timelapse extractions.
+    SnapshotExtractor.by_status(21)
+    |> Enum.each(fn(extractor) ->
+      extraction_pid = spawn(fn ->
+        extractor
+        |> start_extraction(:timelapse)
+      end)
+      :ets.insert(:extractions, {extractor.camera.exid <> "-timelapse-#{extractor.id}", extraction_pid})
+    end)
   end
 
   def start_extraction(nil, :local), do: :noop
   def start_extraction(nil, :cloud), do: :noop
+  def start_extraction(nil, :timelapse), do: :noop
   def start_extraction(extractor, :local) do
     Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
     Process.whereis(:"snapshot_extractor_#{extractor.id}")
@@ -56,6 +70,12 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
     Process.whereis(:"snapshot_extractor_#{extractor.id}")
     |> get_process_pid(EvercamMedia.SnapshotExtractor.CloudExtractor, extractor.id)
     |> GenStage.cast({:snapshot_extractor, get_config(extractor, :cloud)})
+  end
+  def start_extraction(extractor, :timelapse) do
+    Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
+    Process.whereis(:"snapshot_extractor_#{extractor.id}")
+    |> get_process_pid(EvercamMedia.SnapshotExtractor.TimelapseCreator, extractor.id)
+    |> GenStage.cast({:snapshot_extractor, get_config(extractor, :timelapse)})
   end
 
   defp get_process_pid(nil, module, id) do
@@ -108,6 +128,22 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
       jpegs_to_dropbox: serve_nil_value(extractor.jpegs_to_dropbox),
       inject_to_cr: serve_nil_value(extractor.inject_to_cr)
     }
+  end
+  def get_config(extractor, :timelapse) do
+  %{
+    id: extractor.id,
+    from_date: get_starting_date(extractor),
+    to_date: extractor.to_date,
+    interval: extractor.interval,
+    schedule: extractor.schedule,
+    camera_exid: extractor.camera.exid,
+    timezone: extractor.camera.timezone,
+    camera_name: extractor.camera.name,
+    requestor: extractor.requestor,
+    create_mp4: extractor.create_mp4,
+    jpegs_to_dropbox: extractor.jpegs_to_dropbox,
+    expected_count: get_count("#{@root_dir}/#{extractor.camera.exid}/extract/#{extractor.id}/") - 2
+  }
   end
 
   defp serve_nil_value(nil), do: false

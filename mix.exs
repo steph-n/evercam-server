@@ -71,7 +71,8 @@ defmodule EvercamMedia.Mixfile do
     :geoip,
     :poolboy,
     :evercam_models,
-    :joken
+    :joken,
+    :export
   ]
 
   # Specifies which paths to compile per environment
@@ -122,8 +123,9 @@ defmodule EvercamMedia.Mixfile do
       {:ex_json_schema, "~> 0.5"},
       {:geoip, "~> 0.2"},
       {:poolboy, "~> 1.5.1"},
-      {:evercam_models, github: "evercam/evercam_models"},
-      {:joken, "~> 2.0"}
+      {:evercam_models, path: "~/evercam/evercam_models"},
+      {:joken, "~> 2.0"},
+      {:export, "~> 0.1.0"},
     ]
   end
 end
