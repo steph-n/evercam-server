@@ -30,7 +30,11 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
         _ ->
           "Construction2"
       end
-    timezone = extractor.timezone
+    timezone =
+      case extractor.timezone do
+        nil -> "Etc/UTC"
+        _ -> extractor.timezone
+      end
     headers = extractor.headers
     format = extractor.format
     rm_date = extractor.rm_date

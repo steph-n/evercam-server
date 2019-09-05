@@ -1,9 +1,10 @@
 defmodule EvercamMediaWeb.TimelapseCreatorController do
   use EvercamMediaWeb, :controller
   alias EvercamMediaWeb.SnapshotExtractorView
+  alias EvercamMedia.Util
   import EvercamMedia.S3, only: [do_load_timelapse: 1]
 
-  def user_all(conn, _params) do
+  def timelapses_by_user(conn, _params) do
     caller = conn.assigns[:current_user]
 
     with :ok <- authorized(conn, caller)
@@ -13,13 +14,11 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
     end
   end
 
-  def all(conn, %{"id" => exid}) do
+  def timelapses_by_camera(conn, %{"id" => exid}) do
     caller = conn.assigns[:current_user]
     camera = Camera.get_full(exid)
 
-    with :ok <- authorized(conn, caller),
-         :ok <- user_can_list(conn, caller, camera)
-    do
+    with :ok <- user_can_list(conn, caller, camera) do
       timelapses = Timelapse.by_camera_id(camera.id)
       render(conn, "index.json", %{timelapses: timelapses})
     end
@@ -63,15 +62,7 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
   def create(conn, video_params) do
     current_user = conn.assigns[:current_user]
     camera = Camera.by_exid_with_associations(video_params["camera"])
-    camera_id =
-      video_params["title"]
-      |> String.normalize(:nfd)
-      |> String.replace(~r/[^A-z0-9-\s]/u, "")
-      |> String.replace(" ", "")
-      |> String.replace("-", "")
-      |> String.downcase
-      |> String.slice(0..4)
-    exid = "#{camera_id}-#{Enum.take_random(?a..?z, 5)}"
+    exid = Util.generate_unique_exid(video_params["title"])
     if upload = video_params["watermark_logo"] do
       File.cp!(upload.path, "media/#{upload.filename}")
     end
@@ -81,11 +72,9 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
         _ -> upload.filename
       end
     snapshot_count = String.to_integer(video_params["duration"]) * 24
-    new_from = get_date(video_params["from_datetime"], "UTC")
-    new_to = get_date(video_params["to_datetime"], "UTC")
     params = %{
-      from_datetime: new_from,
-      to_datetime: new_to,
+      from_datetime: video_params["from_datetime"] |> NaiveDateTime.from_iso8601! |> Calendar.DateTime.from_naive("Etc/UTC") |> elem(1),
+      to_datetime: video_params["to_datetime"] |> NaiveDateTime.from_iso8601! |> Calendar.DateTime.from_naive("Etc/UTC") |> elem(1),
       exid: exid,
       watermark_logo: logo,
       camera_id: camera.id,
@@ -95,7 +84,6 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
       time_always: true,
       title: video_params["title"],
       status: 6,
-      date_always: false,
       description: video_params["description"],
       camera: video_params["camera"],
       frequency: video_params["duration"],
@@ -109,8 +97,8 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
     do
       SnapshotExtractor.changeset(%SnapshotExtractor{}, %{
         camera_id: camera.id,
-        from_date: new_from,
-        to_date: new_to,
+        from_date: video_params["from_datetime"] |> NaiveDateTime.from_iso8601! |> Calendar.DateTime.from_naive("Etc/UTC") |> elem(1),
+        to_date: video_params["to_datetime"] |> NaiveDateTime.from_iso8601! |> Calendar.DateTime.from_naive("Etc/UTC") |> elem(1),
         interval: video_params["duration"],
         schedule: Jason.decode!(video_params["schedule"]),
         requestor: current_user.email,
@@ -188,12 +176,4 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
     render_error(conn, 404, "Camera '#{exid}' not found!")
   end
   defp ensure_camera_exists(_camera, _id, _conn), do: :ok
-
-  def get_date(datetime, timezone) do
-    [date, time] = String.split datetime, " "
-    [year, month, day] = String.split date, "-"
-    [hour, minute] = String.split time, ":"
-    {{Integer.parse(year) |> elem(0), Integer.parse(month) |> elem(0), Integer.parse(day) |> elem(0)}, {Integer.parse(hour) |> elem(0),Integer.parse(minute) |> elem(0),0}}
-    |> Calendar.DateTime.from_erl!(timezone)
-  end
 end
