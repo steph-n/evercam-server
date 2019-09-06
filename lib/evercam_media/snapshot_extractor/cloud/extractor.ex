@@ -109,23 +109,6 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     end
   end
 
-  defp humanize_time(seconds) do
-    Float.floor(seconds / 60)
-  end
-
-  defp ambiguous_handle(value) do
-    case value do
-      {:ok, datetime} -> datetime
-      {:ambiguous, datetime} -> datetime.possible_date_times |> hd
-    end
-  end
-
-  defp get_head_tail([]), do: []
-  defp get_head_tail(nil), do: []
-  defp get_head_tail([head|tail]) do
-    [[head]|get_head_tail(tail)]
-  end
-
   def count_download(start_end, interval, acc \\ 0)
   def count_download([], _interval, acc), do: acc
   def count_download([starting, ending], interval, acc) do
@@ -241,13 +224,6 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
   end
   def upload(_, _response, _starting, _camera_exid, _id, _requestor), do: :noop
 
-  defp find_difference(end_date, start_date) do
-    case Calendar.DateTime.diff(end_date, start_date) do
-      {:ok, seconds, _, :after} -> seconds
-      _ -> 1
-    end
-  end
-
   def iterate([], _check_time, _timezone), do: []
   def iterate([head], check_time, timezone) do
     [from, to] = String.split head, "-"
@@ -258,27 +234,6 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     to_unix_timestamp = unix_timestamp(to_hour, to_minute, check_time, timezone)
     [from_unix_timestamp, to_unix_timestamp]
   end
-
-  defp unix_timestamp(hours, minutes, date, nil) do
-    unix_timestamp(hours, minutes, date, "UTC")
-  end
-  defp unix_timestamp(hours, minutes, date, timezone) do
-    %{year: year, month: month, day: day} = date
-    {h, _} = Integer.parse(hours)
-    {m, _} = Integer.parse(minutes)
-    erl_date_time = {{year, month, day}, {h, m, 0}}
-    case Calendar.DateTime.from_erl(erl_date_time, timezone) do
-      {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
-      {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
-      _ -> raise "Timezone conversion error"
-    end
-  end
-
-  defp round_2(0), do: 2
-  defp round_2(n), do: n + 1
-
-  defp intervaling(0), do: 1
-  defp intervaling(n), do: n
 
   defp send_mail_end(false, _full_extractor, _count, _expected_count, _execution_time), do: :noop
   defp send_mail_end(true, full_extractor, count, expected_count, execution_time), do: EvercamMedia.UserMailer.snapshot_extraction_completed(full_extractor, count, expected_count, execution_time)
