@@ -81,7 +81,7 @@ defmodule EvercamMedia.Mixfile do
 
   defp deps do
     [
-      {:calendar, "~> 0.17.6"},
+      {:calendar, "~> 0.18.0", override: true},
       {:bcrypt_elixir, "~> 2.0"},
       {:con_cache, "~> 0.13.1"},
       {:cors_plug, "~> 2.0"},
