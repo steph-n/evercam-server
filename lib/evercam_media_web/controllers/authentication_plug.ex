@@ -11,6 +11,7 @@ defmodule EvercamMediaWeb.AuthenticationPlug do
       conn
       |> extract_credential(%{header: "authorization", query: "authorization"})
       |> String.replace_leading("bearer ", "")
+      |> String.replace_leading("Bearer ", "")
 
     case EvercamMediaWeb.Auth.validate(api_id, api_key, token) do
       :valid ->
