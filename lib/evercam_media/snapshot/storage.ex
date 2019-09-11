@@ -164,6 +164,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     to_days =
       seaweedfs.app_list
       |> Enum.flat_map(fn(app) -> request_from_seaweedfs("#{url_base}/#{app}/#{to_date}/", seaweedfs.type, seaweedfs.attribute) end)
+      |> irish_life(to_date, camera_exid)
       |> Enum.uniq
       |> Enum.map(fn(day) -> parse_day(to.year, to.month, day, timezone) end)
       |> Enum.reject(fn(datetime) -> Calendar.DateTime.after?(datetime, to) end)
@@ -174,6 +175,24 @@ defmodule EvercamMedia.Snapshot.Storage do
     |> Enum.uniq
   end
 
+  defp irish_life(data, date, camera_exid) do
+    with true <- irish_life_cameras?(camera_exid),
+         true <- october_seventeenth?(date) do
+      []
+    else
+      _ -> data
+    end
+  end
+
+  defp october_seventeenth?("2017/10"), do: true
+  defp october_seventeenth?("2017/10/13"), do: true
+  defp october_seventeenth?("2017/10/14"), do: true
+  defp october_seventeenth?(_date), do: false
+
+  defp irish_life_cameras?("irish-life-plaza"), do: true
+  defp irish_life_cameras?("irish-life-mall"), do: true
+  defp irish_life_cameras?(_camera_exid), do: false
+
   def hours(camera_exid, from, to, timezone) do
     seaweedfs = from |> Calendar.DateTime.Format.unix |> point_to_seaweed
     url_base = "#{seaweedfs.url}/#{camera_exid}/snapshots"
@@ -183,6 +202,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     from_hours =
       seaweedfs.app_list
       |> Enum.flat_map(fn(app) -> request_from_seaweedfs("#{url_base}/#{app}/#{from_date}/", seaweedfs.type, seaweedfs.attribute) end)
+      |> irish_life(from_date, camera_exid)
       |> Enum.uniq
       |> Enum.map(fn(hour) -> parse_hour(from.year, from.month, from.day, "#{hour}:00:00", timezone) end)
       |> Enum.reject(fn(datetime) -> Calendar.DateTime.before?(datetime, from) end)
@@ -192,6 +212,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     to_hours =
       seaweedfs.app_list
       |> Enum.flat_map(fn(app) -> request_from_seaweedfs("#{url_base}/#{app}/#{to_date}/", seaweedfs.type, seaweedfs.attribute) end)
+      |> irish_life(to_date, camera_exid)
       |> Enum.uniq
       |> Enum.map(fn(hour) -> parse_hour(to.year, to.month, to.day, "#{hour}:00:00", timezone) end)
       |> Enum.reject(fn(datetime) -> Calendar.DateTime.after?(datetime, to) end)
