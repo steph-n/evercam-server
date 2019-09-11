@@ -4,7 +4,7 @@ defmodule EvercamMediaWeb.ArchiveController do
   alias EvercamMedia.Util
   alias EvercamMedia.Snapshot.Storage
   import Ecto.Changeset
-  import EvercamMedia.S3, only: [load_compare_thumbnail: 2, do_load: 1, get_presigned_url_to_object: 1]
+  import EvercamMedia.S3, only: [load_compare_thumbnail: 2, load_timelapse_thumbnail: 2, do_load: 1, get_presigned_url_to_object: 1]
   require Logger
 
   @status %{pending: 0, processing: 1, completed: 2, failed: 3}
@@ -69,7 +69,9 @@ defmodule EvercamMediaWeb.ArchiveController do
 
       compare_archives = Compare.get_by_camera(camera.id)
 
-      render(conn, "index.#{version}.json", %{archives: archives, compares: compare_archives})
+      timelapse_archives = Timelapse.by_camera_id(camera.id)
+
+      render(conn, "index.#{version}.json", %{archives: archives, compares: compare_archives, timelapses: timelapse_archives})
     end
   end
 
@@ -113,6 +115,7 @@ defmodule EvercamMediaWeb.ArchiveController do
       case media do
         %Compare{} = compare -> render(conn, "compare.#{version}.json", %{compare: compare})
         %Archive{} = archive -> render(conn, "show.#{version}.json", %{archive: archive})
+        %Timelapse{} = timelapse -> render(conn, "timelapse.#{version}.json", %{timelapse: timelapse})
       end
     end
   end
@@ -163,6 +166,7 @@ defmodule EvercamMediaWeb.ArchiveController do
       case media_type do
         "clip" -> Storage.load_archive_thumbnail(exid, archive_id)
         "compare" -> load_compare_thumbnail(exid, archive_id)
+        "timelapse" -> load_timelapse_thumbnail(exid, archive_id)
         _ -> Util.default_thumbnail
       end
     conn
@@ -585,7 +589,11 @@ defmodule EvercamMediaWeb.ArchiveController do
   defp archive_can_list(current_user, camera, archive_exid, conn) do
     media =
       case Archive.by_exid(archive_exid) do
-        nil -> Compare.by_exid(archive_exid)
+        nil ->
+          case Compare.by_exid(archive_exid) do
+            nil -> Timelapse.by_exid(archive_exid)
+            archive -> archive
+          end
         archive -> archive
       end
 
@@ -593,6 +601,7 @@ defmodule EvercamMediaWeb.ArchiveController do
       nil -> render_error(conn, 404, "Archive '#{archive_exid}' not found!")
       %Archive{} = archive -> can_list(archive.public, archive, current_user, camera, conn)
       %Compare{} = compare -> can_list(compare.public, compare, current_user, camera, conn)
+      %Timelapse{} = timelapse -> can_list(true, timelapse, current_user, camera, conn)
     end
   end
 

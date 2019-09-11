@@ -21,3 +21,6 @@ erl_crash.dump
 .env
 tmp
 storage
+
+# Python Cache
+/lib/python/__pycache__

@@ -8,10 +8,11 @@ defmodule EvercamMediaWeb.ArchiveView do
     %{archives: archives_list ++ compares_list}
   end
 
-  def render("index.v2.json", %{archives: archives, compares: compares}) do
+  def render("index.v2.json", %{archives: archives, compares: compares, timelapses: timelapses}) do
     archives_list = render_many(archives, __MODULE__, "archive.v2.json")
     compares_list = Enum.map(compares, fn(compare) -> render_compare_archive(:v2, compare) end)
-    %{archives: archives_list ++ compares_list}
+    timelapse_list = Enum.map(timelapses, fn(timelapses) -> render_timelapse_archive(:v2, timelapses) end)
+    %{archives: archives_list ++ compares_list ++ timelapse_list}
   end
 
   def render("compare.v1.json", %{compare: compare}) do
@@ -30,6 +31,14 @@ defmodule EvercamMediaWeb.ArchiveView do
   def render("show.v2.json", %{archive: nil}), do: %{archives: []}
   def render("show.v2.json", %{archive: archive}) do
     %{archives: render_many([archive], __MODULE__, "archive.v2.json")}
+  end
+
+  def render("timelapse.v1.json", %{timelapse: timelapse}) do
+    %{archives: [render_timelapse_archive(:v1, timelapse)]}
+  end
+
+  def render("timelapse.v2.json", %{timelapse: timelapse}) do
+    %{archives: [render_timelapse_archive(:v2, timelapse)]}
   end
 
   def render("archive.v1.json", %{archive: archive}) do
@@ -120,6 +129,28 @@ defmodule EvercamMediaWeb.ArchiveView do
       embed_code: compare.embed_code,
       type: "compare",
       thumbnail_url: "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{compare.camera.exid}/archives/#{compare.exid}/thumbnail?type=compare"
+    }
+  end
+  def render_timelapse_archive(:v2, timelapse) do
+    %{
+      id: timelapse.exid,
+      camera_id: timelapse.camera.exid,
+      title: timelapse.title,
+      from_date: Util.datetime_to_iso8601(timelapse.from_datetime, Camera.get_timezone(timelapse.camera)),
+      to_date: Util.datetime_to_iso8601(timelapse.to_datetime, Camera.get_timezone(timelapse.camera)),
+      created_at: Util.datetime_to_iso8601(timelapse.inserted_at, Camera.get_timezone(timelapse.camera)),
+      status: timelapse.status,
+      requested_by: timelapse.user_id,
+      requester_name: timelapse.user_id,
+      requester_email: timelapse.user_id,
+      embed_time: false,
+      frames: 2,
+      public: true,
+      file_name: "",
+      media_url: "",
+      embed_code: timelapse.exid,
+      type: "timelapse",
+      thumbnail_url: "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{timelapse.camera.exid}/archives/#{timelapse.exid}/thumbnail?type=timelapse"
     }
   end
 
