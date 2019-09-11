@@ -83,7 +83,7 @@ defmodule EvercamMedia.Mixfile do
     [
       {:calendar, "~> 0.18.0", override: true},
       {:bcrypt_elixir, "~> 2.0"},
-      {:con_cache, "~> 0.13.1"},
+      {:con_cache, "~> 0.14.0", override: true},
       {:cors_plug, "~> 2.0"},
       {:plug_cowboy, "~> 2.0"},
       {:credo, "~> 0.8.8", only: :dev},
