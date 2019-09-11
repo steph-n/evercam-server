@@ -73,7 +73,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
       end)
 
     1..total_days |> Enum.reduce(start_date, fn _i, acc ->
-      filer = point_to_seaweed(acc)
+      filer = point_to_seaweed(Calendar.DateTime.Format.unix(acc))
       url_day = "#{filer.url}/#{camera_exid}/snapshots/recordings/"
       with :ok <- ensure_a_day(acc, url_day)
       do
@@ -128,7 +128,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
   defp do_loop(starting, ending, _interval, _camera_exid, _id, _requestor) when starting >= ending, do: :noop
   defp do_loop(starting, ending, interval, camera_exid, id, requestor) do
     %{year: year, month: month, day: day, hour: hour, min: min, sec: sec} = make_me_complete(starting)
-    filer = point_to_seaweed(Calendar.DateTime.Parse.unix!(starting))
+    filer = point_to_seaweed(starting)
     url = "#{filer.url}/#{camera_exid}/snapshots/recordings/#{year}/#{month}/#{day}/#{hour}/#{min}_#{sec}_000.jpg"
     case HTTPoison.get(url, [], []) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
@@ -149,7 +149,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     date_on = Calendar.DateTime.Parse.unix!(starting)
     %{year: _year, month: _month, day: _day, hour: _hour, min: min, sec: sec} = make_me_complete(starting)
     on_miss = "#{min}_#{sec}_000.jpg"
-    filer = point_to_seaweed(date_on)
+    filer = point_to_seaweed(starting)
 
     request_from_seaweedfs(url, filer.files, filer.name)
     |> case do
@@ -249,7 +249,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
   end
 
   defp ensure_a_day(date, url) do
-    filer = point_to_seaweed(date)
+    filer = point_to_seaweed(Calendar.DateTime.Format.unix(date))
     day = Calendar.Strftime.strftime!(date, "%Y/%m/%d/")
     url_day = url <> "#{day}"
     case request_from_seaweedfs(url_day, filer.type, filer.attribute) |> Enum.empty? do
