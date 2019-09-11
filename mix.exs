@@ -94,7 +94,7 @@ defmodule EvercamMedia.Mixfile do
       {:geo, "~> 3.0"},
       {:geo_postgis, "~> 3.0"},
       {:httpoison, "~> 1.5"},
-      {:jsx, "~> 2.8.2", override: true},
+      {:jsx, "~> 2.10.0", override: true},
       {:swoosh, "~> 0.23.4", override: true},
       {:phoenix_swoosh, "~> 0.2"},
       {:nadia, "~> 0.4.4"},

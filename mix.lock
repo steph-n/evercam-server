@@ -53,7 +53,7 @@
   "joken": {:hex, :joken, "2.1.0", "bf21a73105d82649f617c5e59a7f8919aa47013d2519ebcc39d998d8d12adda9", [:mix], [{:jose, "~> 1.9", [hex: :jose, repo: "hexpm", optional: false]}], "hexpm"},
   "jose": {:hex, :jose, "1.9.0", "4167c5f6d06ffaebffd15cdb8da61a108445ef5e85ab8f5a7ad926fdf3ada154", [:mix, :rebar3], [{:base64url, "~> 0.0.1", [hex: :base64url, repo: "hexpm", optional: false]}], "hexpm"},
   "json": {:hex, :json, "0.3.3", "373eb4f7321f898ad6772999f30daf65f9f38e1d3dd4d798d7a82d3b123fe1d3", [:mix], [], "hexpm"},
-  "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], [], "hexpm"},
+  "jsx": {:hex, :jsx, "2.10.0", "77760560d6ac2b8c51fd4c980e9e19b784016aa70be354ce746472c33beb0b1c", [:rebar3], [], "hexpm"},
   "jumper": {:hex, :jumper, "1.0.1", "3c00542ef1a83532b72269fab9f0f0c82bf23a35e27d278bfd9ed0865cecabff", [:mix], [], "hexpm"},
   "libring": {:hex, :libring, "1.4.0", "41246ba2f3fbc76b3971f6bce83119dfec1eee17e977a48d8a9cfaaf58c2a8d6", [:mix], [], "hexpm"},
   "meck": {:hex, :meck, "0.8.13", "ffedb39f99b0b99703b8601c6f17c7f76313ee12de6b646e671e3188401f7866", [:rebar3], [], "hexpm"},
