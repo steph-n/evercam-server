@@ -84,7 +84,8 @@ defmodule EvercamMediaWeb.ArchiveController do
       _ ->
         archives = Archive.requested_by(current_user.id)
         compares = Compare.requested_by(current_user.id)
-        render(conn, "index.#{version}.json", %{archives: archives, compares: compares})
+        timelapses = Timelapse.by_user_id(current_user.id)
+        render(conn, "index.#{version}.json", %{archives: archives, compares: compares, timelapses: timelapses})
     end
   end
 
