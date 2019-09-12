@@ -70,62 +70,11 @@ end
     options "/live/:token", StreamController, :nothing
   end
 
-  scope "/v3", EvercamMediaWeb do
+  scope "/v2", EvercamMediaWeb do
     pipe_through :api_v2
 
     post "/auth/login", UserController, :remote_login
     options "/auth/login", UserController, :nothing
-
-    scope "/" do
-      pipe_through :jwt_auth
-
-      get "/auth/credentials", UserController, :remote_credentials
-      options "/auth/credentials", UserController, :nothing
-      post "/auth/logout", UserController, :remote_logout
-      options "/auth/logout", UserController, :nothing
-
-      get "/cameras", CameraController, :index
-      options "/cameras", CameraController, :nothing
-      get "/cameras/:id", CameraController, :show
-      options "/cameras/:id", CameraController, :show
-
-      get "/cameras/:id/recordings/snapshots/latest", SnapshotController, :latest
-      options "/cameras/:id/recordings/snapshots/latest", SnapshotController, :nothing
-      get "/cameras/:id/recordings/snapshots/oldest", SnapshotController, :oldest
-      options "/cameras/:id/recordings/snapshots/oldest", SnapshotController, :nothing
-      get "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :days
-      options "/cameras/:id/recordings/snapshots/:year/:month/days", SnapshotController, :nothing
-      get "/cameras/:id/recordings/snapshots/:year/:month/:day/hours", SnapshotController, :hours
-      options "/cameras/:id/recordings/snapshots/:year/:month/:day/hours", SnapshotController, :nothing
-      get "/cameras/:id/recordings/snapshots/:timestamp/nearest", SnapshotController, :nearest
-      options "/cameras/:id/recordings/snapshots/:timestamp/nearest", SnapshotController, :nothing
-
-      post "/timelapse", TimelapseCreatorController, :create
-      options "/timelapse", TimelapseCreatorController, :nothing
-
-      post "/cameras/:id/archives", ArchiveController, :create
-      options "/cameras/:id/archives", ArchiveController, :nothing
-      get "/cameras/:id/archives", ArchiveController, :index
-      options "/cameras/:id/archives", ArchiveController, :nothing
-      get "/cameras/:id/archives/:archive_id", ArchiveController, :show
-      options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
-      get "/cameras/:id/archives/:archive_id/play", ArchiveController, :play
-      options "/cameras/:id/archives/:archive_id/play", ArchiveController, :nothing
-      patch "/cameras/:id/archives/:archive_id", ArchiveController, :update
-      delete "/cameras/:id/archives/:archive_id", ArchiveController, :delete_archive
-      options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
-
-      get "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :play
-      options "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :nothing
-
-      patch "/cameras/:id/compares/:compare_id", CompareController, :update
-      delete "/cameras/:id/compares/:compare_id", CompareController, :delete_compare
-      options "/cameras/:id/compares/:compare_id", CompareController, :nothing
-    end
-  end
-
-  scope "/v2", EvercamMediaWeb do
-    pipe_through :api_v2
 
     get "/cameras/port-check", CameraController, :port_check
     post "/cameras/test", SnapshotController, :test
@@ -148,6 +97,11 @@ end
 
     scope "/" do
       pipe_through :auth
+
+      get "/auth/credentials", UserController, :remote_credentials
+      options "/auth/credentials", UserController, :nothing
+      post "/auth/logout", UserController, :remote_logout
+      options "/auth/logout", UserController, :nothing
 
       # User Route
       get "/users/:id", UserController, :get_user
@@ -192,6 +146,8 @@ end
       options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
       get "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :play
       options "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :nothing
+      post "/timelapse", TimelapseCreatorController, :create
+      options "/timelapse", TimelapseCreatorController, :nothing
 
       # Logs route
       get "/cameras/:id/logs", LogController, :show
