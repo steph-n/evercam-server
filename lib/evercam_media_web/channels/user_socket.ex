@@ -7,6 +7,7 @@ defmodule EvercamMediaWeb.UserSocket do
   channel "cameras:*", EvercamMediaWeb.CameraChannel
   channel "livetail:*", EvercamMediaWeb.LivetailChannel
   channel "thumbnail:render", EvercamMediaWeb.ThumbnailChannel
+  channel "timelapse:*", EvercamMediaWeb.TimelapseChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
