@@ -34,17 +34,16 @@ defmodule EvercamMediaWeb.TimelapseChannel do
         |> Calendar.DateTime.from_erl!(timezone)
       interval =
         case Calendar.DateTime.diff(end_date, start_date) do
-          {:ok, seconds, _, :after} -> seconds / 20 |> round
+          {:ok, seconds, _, :after} -> seconds / 10 |> round
           _ -> 1
         end
-      1..20 |> Enum.reduce(start_date, fn _i, acc ->
+      1..11 |> Enum.reduce(start_date, fn _i, acc ->
         case Storage.hour(camera_exid, acc, :v2, timezone) do
           [] ->
             IO.inspect "Snapshot not found"
           _ ->
             image = Storage.nearest(camera_exid, acc |> Calendar.DateTime.Format.unix, :v2, timezone) |> List.first
             EvercamMediaWeb.Endpoint.broadcast("timelapse:" <> session_id, "preview-thumbnail", %{image: image.data})
-          
         end
         acc |> Calendar.DateTime.to_erl |> Calendar.DateTime.from_erl(timezone, {123456, 6}) |> ambiguous_handle |> Calendar.DateTime.add!(interval)
       end)
