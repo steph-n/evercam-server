@@ -290,7 +290,9 @@ defmodule EvercamMedia.UserMailer do
   defp add_multi_attachment(email, []), do: email
   defp add_multi_attachment(email, content_filename) do
     Enum.reduce(content_filename, email, fn c_f, email_with_attachment = _acc ->
-      email_with_attachment |> attachment(Swoosh.Attachment.new({:data, c_f.content}, filename: "#{c_f.filename}", content_type: "image/jpeg", type: :inline))
+      email_with_attachment
+      |> attachment(Swoosh.Attachment.new({:data, c_f.content}, filename: "#{c_f.filename}", content_type: "image/jpeg", type: :inline))
+      |> attachment(Swoosh.Attachment.new({:data, c_f.content}, filename: "#{c_f.filename}", content_type: "image/jpeg"))
     end)
   end
 
