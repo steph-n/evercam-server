@@ -59,7 +59,7 @@ defmodule EvercamMediaWeb.UserController do
         |> add_parameter("request", token)
       changeset = AccessToken.changeset(%AccessToken{}, params)
       case Repo.insert(changeset) do
-        {:ok, token} -> render(conn, "remote_login.json", %{token: token.request})
+        {:ok, token} -> render(conn, "remote_login.json", %{token: token.request, user: user})
         {:error, changeset} -> {:invalid_token, changeset}
       end
     end
