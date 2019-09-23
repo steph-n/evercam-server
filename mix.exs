@@ -102,7 +102,7 @@ defmodule EvercamMedia.Mixfile do
       {:phoenix_ecto, "~> 4.0.0"},
       {:phoenix_html, "~> 2.9.3"},
       {:porcelain, "~> 2.0.3"},
-      {:postgrex, "~> 0.14.1"},
+      {:postgrex, "~> 0.15.1"},
       {:quantum, "~> 2.3"},
       {:timex, "~> 3.6.1"},
       {:tzdata, "1.0.1", override: true},
