@@ -81,12 +81,12 @@ defmodule EvercamMedia.Mixfile do
 
   defp deps do
     [
-      {:calendar, "~> 0.18.0", override: true},
+      {:calendar, "~> 1.0.0", override: true},
       {:bcrypt_elixir, "~> 2.0"},
       {:con_cache, "~> 0.14.0", override: true},
       {:cors_plug, "~> 2.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:credo, "~> 0.8.8", only: :dev},
+      {:credo, "~> 1.1.4", only: :dev},
       {:dotenv, "~> 3.0.0", only: [:dev, :test]},
       {:ecto, "~> 3.1.7"},
       {:ecto_sql, "~> 3.1.6"},
@@ -100,9 +100,9 @@ defmodule EvercamMedia.Mixfile do
       {:nadia, "~> 0.5.0"},
       {:phoenix, "~> 1.4", override: true},
       {:phoenix_ecto, "~> 4.0.0"},
-      {:phoenix_html, "~> 2.9.3"},
+      {:phoenix_html, "~> 2.13.3"},
       {:porcelain, "~> 2.0.3"},
-      {:postgrex, "~> 0.14.1"},
+      {:postgrex, "~> 0.15.1"},
       {:quantum, "~> 2.3"},
       {:timex, "~> 3.6.1"},
       {:tzdata, "1.0.1", override: true},
