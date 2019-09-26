@@ -146,7 +146,7 @@ defmodule EvercamMedia.Snapshot.DBHandler do
   end
 
   defp construct_camera(datetime, error_reason, online_status, online_status_unchanged)
-  defp construct_camera(datetime, error_reason, "offline", "offline") do
+  defp construct_camera(datetime, error_reason, "offline", false) do
     %{last_polled_at: datetime, offline_reason: error_reason, status: "offline", last_online_at: datetime}
   end
   defp construct_camera(datetime, _, status, _) do
