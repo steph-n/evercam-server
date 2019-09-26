@@ -206,6 +206,7 @@ defmodule EvercamMedia.Snapshot.Worker do
           {:error, _error} -> old_timestamp
           _ -> new_timestamp
         end
+      ConCache.put(:do_camera_request, camera_exid, true)
       send worker, {:camera_reply, result, timestamp, reply_to}
     end
   end
@@ -235,6 +236,7 @@ defmodule EvercamMedia.Snapshot.Worker do
           try_snapshot(state, config, camera_exid, timestamp, reply_to, worker, attempt + 1)
         _ ->
           ConCache.delete(:camera_lock, camera_exid)
+          ConCache.put(:do_camera_request, camera_exid, true)
           send worker, {:camera_reply, result, timestamp, reply_to}
       end
     end

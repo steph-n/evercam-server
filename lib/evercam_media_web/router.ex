@@ -151,6 +151,7 @@ end
 
       # Logs route
       get "/cameras/:id/logs", LogController, :show
+      options "/cameras/:id/logs", LogController, :nothing
       post "/logs", LogController, :create
       options "/logs", LogController, :nothing
       get "/cameras/:id/response-time", LogController, :response_time
