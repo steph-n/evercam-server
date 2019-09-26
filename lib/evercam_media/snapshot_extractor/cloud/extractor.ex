@@ -146,7 +146,7 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
   end
 
   defp the_most_nearest(url, starting) do
-    date_on = Calendar.DateTime.Parse.unix!(starting)
+    # date_on = Calendar.DateTime.Parse.unix!(starting)
     %{year: _year, month: _month, day: _day, hour: _hour, min: min, sec: sec} = make_me_complete(starting)
     on_miss = "#{min}_#{sec}_000.jpg"
     filer = point_to_seaweed(starting)

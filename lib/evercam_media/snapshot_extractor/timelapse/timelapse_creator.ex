@@ -121,7 +121,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
               :ets.delete(:extractions, camera_exid <> "-timelapse-#{video.id}")
               case Timelapse.update_timelapse(video, %{status: 5}) do
                 {:ok, _} ->
-                  with {:ok, full_extractor} <- SnapshotExtractor.by_id(extractor.id) |> SnapshotExtractor.update_snapshot_extactor(%{status: 22, notes: "Extracted Images = #{count} -- Expected Count = #{c_count}"})
+                  with {:ok, _full_extractor} <- SnapshotExtractor.by_id(extractor.id) |> SnapshotExtractor.update_snapshot_extactor(%{status: 22, notes: "Extracted Images = #{count} -- Expected Count = #{c_count}"})
                   do
                     send_mail_end(true, count, camera_exid, c_count, title, exid, requestor, execution_time, duration)
                   end
@@ -233,7 +233,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     case HTTPoison.get(full_url, [], []) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
         upload(200, body, starting, camera_exid, id, construction)
-      {:ok, %HTTPoison.Response{body: body, status_code: 404}} ->
+      {:ok, %HTTPoison.Response{body: _body, status_code: 404}} ->
         Logger.info "Not found"
       {:error, _} ->
         :timer.sleep(:timer.seconds(3))

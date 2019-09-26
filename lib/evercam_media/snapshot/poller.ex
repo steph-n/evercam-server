@@ -125,7 +125,7 @@ defmodule EvercamMedia.Snapshot.Poller do
   Take care of unknown messages which otherwise would trigger function clause mismatch error.
   """
   def handle_info(msg, state) do
-    Logger.info "[handle_info] [#{msg}] [#{state.name}] [unknown messages]"
+    Logger.info "[handle_info] [#{inspect msg}] [#{state.name}] [unknown messages]"
     {:noreply, [], state}
   end
 
