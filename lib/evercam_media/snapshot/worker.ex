@@ -223,6 +223,7 @@ defmodule EvercamMedia.Snapshot.Worker do
       case {result, camera.status} do
         {{:error, _error}, "online"} ->
           if ConCache.get(:camera_lock, state.config.camera_exid) && attempt == 1 do
+            ConCache.put(:do_camera_request, camera_exid, true)
             Process.exit self(), :shutdown
           end
           ConCache.put(:camera_lock, camera_exid, camera_exid)
