@@ -115,6 +115,7 @@ end
       options "/users/:id", UserController, :nothing
       delete "/users/:id", UserController, :delete_user
       get "/users/session/activities", UserController, :user_activities
+      options "/users/session/activities", UserController, :nothing
       delete "/users/invalidate/cache", UserController, :invalidate_cache
 
       # Cameras route
