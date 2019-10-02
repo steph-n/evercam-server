@@ -162,6 +162,7 @@ end
       get "/snapmails", SnapmailController, :all
       get "/snapmails/:id", SnapmailController, :show
       get "/cameras/:id/snapmails", SnapmailController, :index
+      options "/snapmails", SnapmailController, :nothing
       post "/snapmails", SnapmailController, :create
       patch "/snapmails/:id", SnapmailController, :update
       options "/snapmails/:id", SnapmailController, :nothing
