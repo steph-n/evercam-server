@@ -567,7 +567,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   defp ensure_params({:invalid, message}, conn), do: json(conn, %{error: message})
 
   defp get_json(schedule) do
-    case Poison.decode(schedule) do
+    case Jason.decode(schedule) do
       {:ok, json} -> json
     end
   end

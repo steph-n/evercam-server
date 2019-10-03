@@ -26,7 +26,7 @@ defmodule EvercamMedia.ArchiveControllerTest do
     response = build_conn() |> get("/v2/cameras/#{camera_exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
+    assert Jason.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
   end
 
   test "GET /v2/cameras/:id/archives/:archive_id archive not found", context do
@@ -34,7 +34,7 @@ defmodule EvercamMedia.ArchiveControllerTest do
     response = build_conn() |> get("/v2/cameras/#{context[:camera].exid}/archives/#{archive_id}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Archive 'text-dexter' not found!"}}
+    assert Jason.decode(response.resp_body) == {:ok, %{"message" => "Archive 'text-dexter' not found!"}}
   end
 
   test "POST /v2/cameras/:id/archives when params aren't valid!", context do
@@ -43,7 +43,7 @@ defmodule EvercamMedia.ArchiveControllerTest do
       |> post("/v2/cameras/#{context[:camera].exid}/archives?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", context[:params])
 
     assert response.status == 400
-    assert Poison.decode(response.resp_body) == {:ok, %{"message" => %{"public" => ["is invalid"]}}}
+    assert Jason.decode(response.resp_body) == {:ok, %{"message" => %{"public" => ["is invalid"]}}}
   end
 
   test "POST /v2/cameras/:id/archives when params are valid!", context do
@@ -63,7 +63,7 @@ defmodule EvercamMedia.ArchiveControllerTest do
 
     error_message =
       response.resp_body
-      |> Poison.decode
+      |> Jason.decode
       |> elem(1)
       |> Map.get("message")
 

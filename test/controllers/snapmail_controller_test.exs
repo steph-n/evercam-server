@@ -28,8 +28,8 @@ defmodule EvercamMedia.SnapmailControllerTest do
       build_conn()
       |> patch("/v2/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
 
-    assert Poison.decode!(response.resp_body)["snapmails"] |> List.first |> Map.get("timezone") == "Etc/UTC"
-    assert Poison.decode!(response.resp_body)["snapmails"] |> List.first |> Map.get("notify_days") == "Monday,Friday"
+    assert Jason.decode!(response.resp_body)["snapmails"] |> List.first |> Map.get("timezone") == "Etc/UTC"
+    assert Jason.decode!(response.resp_body)["snapmails"] |> List.first |> Map.get("notify_days") == "Monday,Friday"
     assert response.status == 200
   end
 
@@ -39,7 +39,7 @@ defmodule EvercamMedia.SnapmailControllerTest do
       |> get("/v2/snapmails/test_snapmail?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Snapmail not found."
+    assert Jason.decode!(response.resp_body)["message"] == "Snapmail not found."
   end
 
   test "DELETE /v2/snapmails, delete a snapmail", context do
@@ -48,7 +48,7 @@ defmodule EvercamMedia.SnapmailControllerTest do
       |> delete("/v2/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 200
-    assert Poison.decode!(response.resp_body) == %{}
+    assert Jason.decode!(response.resp_body) == %{}
   end
 
   test "UPDATE /v2/snapmails, when notify_time is invalid", context do
@@ -59,7 +59,7 @@ defmodule EvercamMedia.SnapmailControllerTest do
       build_conn()
       |> patch("/v2/snapmails/#{context[:snapmail].exid}?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", updated_params)
 
-    assert Poison.decode!(response.resp_body)["message"] |> Map.get("notify_time") == ["Notify time is invalid"]
+    assert Jason.decode!(response.resp_body)["message"] |> Map.get("notify_time") == ["Notify time is invalid"]
     assert response.status == 400
   end
 
@@ -69,7 +69,7 @@ defmodule EvercamMedia.SnapmailControllerTest do
       |> get("/v2/snapmails")
 
     assert response.status == 401
-    assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
+    assert Jason.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
   test "POST /v2/snapmails, valid params", context do
@@ -87,7 +87,7 @@ defmodule EvercamMedia.SnapmailControllerTest do
 
     timelapse =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("snapmails")
       |> List.first
 

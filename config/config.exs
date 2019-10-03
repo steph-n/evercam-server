@@ -62,7 +62,8 @@ config :evercam_media, EvercamMedia.Mailer,
 config :ex_aws,
   access_key_id: System.get_env["AWS_ACCESS_KEY_ID"],
   secret_access_key: System.get_env["SECRET_ACCESS_KEY"],
-  region: "eu-west-1"
+  region: "eu-west-1",
+  json_codec: Jason
 
 config :evercam_media,
   dunkettle_cameras: System.get_env["DUNKETTLE_CAMERAS"] || ""
@@ -83,6 +84,8 @@ config :porcelain,
 
 config :joken,
   default_signer: System.get_env["WEB_APP_TOKEN"] || "secret"
+
+config :phoenix, :json_library, Jason
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

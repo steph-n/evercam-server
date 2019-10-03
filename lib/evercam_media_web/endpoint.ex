@@ -25,7 +25,7 @@ defmodule EvercamMediaWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Poison,
+    json_decoder: Jason,
     length: 100_000_000
 
   plug Plug.MethodOverride

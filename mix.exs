@@ -72,7 +72,9 @@ defmodule EvercamMedia.Mixfile do
     :poolboy,
     :evercam_models,
     :joken,
-    :export
+    :export,
+    :poison,
+    :jason
   ]
 
   # Specifies which paths to compile per environment
@@ -114,7 +116,8 @@ defmodule EvercamMedia.Mixfile do
       {:meck,  "~> 0.8.4", override: :true},
       {:html_sanitize_ex, "~> 1.3.0"},
       {:gen_stage, "~> 0.14"},
-      {:poison, "~> 3.1.0", override: true},
+      {:poison, "~> 3.1.0", override: true}, #its here because of geo_postgis,ex_aws,elixir_dropbox
+      {:jason, "~> 1.1"},
       {:elixir_dropbox, github: "sger/elixir_dropbox"},
       {:ex_aws, "~> 1.1.5"},
       {:configparser_ex, "~> 0.2.1"},
@@ -123,7 +126,7 @@ defmodule EvercamMedia.Mixfile do
       {:ex_json_schema, "~> 0.6.1"},
       {:geoip, "~> 0.2"},
       {:poolboy, "~> 1.5.1"},
-      {:evercam_models, github: "evercam/evercam_models"},
+      {:evercam_models, github: "evercam/evercam_models", branch: "switch_to_Jason"},
       {:joken, "~> 2.0"},
       {:export, "~> 0.1.0"},
     ]

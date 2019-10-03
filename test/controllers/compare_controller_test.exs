@@ -22,7 +22,7 @@ defmodule EvercamMedia.CompareControllerTest do
       |> get("/v2/cameras/austin1/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
+    assert Jason.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
   end
 
   test "GET /v2/cameras/:id/compares, when passed invalid keys", _context do
@@ -31,7 +31,7 @@ defmodule EvercamMedia.CompareControllerTest do
       |> get("/v2/cameras/austin/compares")
 
     assert response.status == 401
-    assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
+    assert Jason.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
   test "GET /v2/cameras/:id/compares, with valid params", context do
@@ -41,7 +41,7 @@ defmodule EvercamMedia.CompareControllerTest do
 
     _compares =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("compares")
       |> List.first
 
@@ -54,7 +54,7 @@ defmodule EvercamMedia.CompareControllerTest do
       |> get("/v2/cameras/austin1/compares/compar-gstd?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
+    assert Jason.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
   end
 
   test "GET /v2/cameras/:id/compares/:compare_id, when passed compare_id not exist", context do
@@ -63,7 +63,7 @@ defmodule EvercamMedia.CompareControllerTest do
       |> get("/v2/cameras/austin/compares/compar-gstd1?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Compare archive 'compar-gstd1' not found!"
+    assert Jason.decode!(response.resp_body)["message"] == "Compare archive 'compar-gstd1' not found!"
   end
 
   test "GET /v2/cameras/:id/compares/:compare_id, when passed invalid keys", _context do
@@ -72,7 +72,7 @@ defmodule EvercamMedia.CompareControllerTest do
       |> get("/v2/cameras/austin/compares/compar-gstd")
 
     assert response.status == 403
-    assert Poison.decode!(response.resp_body)["message"] == "Forbidden."
+    assert Jason.decode!(response.resp_body)["message"] == "Forbidden."
   end
 
   test "GET /v2/cameras/:id/compares/:compare_id, with valid params", context do
@@ -82,7 +82,7 @@ defmodule EvercamMedia.CompareControllerTest do
 
     compares =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("compares")
       |> List.first
 
@@ -103,7 +103,7 @@ defmodule EvercamMedia.CompareControllerTest do
       |> post("/v2/cameras/austin/compares", params)
 
     assert response.status == 401
-    assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
+    assert Jason.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
   test "POST /v2/cameras/:id/compares, when passed camera_id not exist", context do
@@ -119,7 +119,7 @@ defmodule EvercamMedia.CompareControllerTest do
       |> post("/v2/cameras/austin1/compares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
+    assert Jason.decode!(response.resp_body)["message"] == "Camera 'austin1' not found!"
   end
 
   test "POST /v2/cameras/:id/compares, invalid params", context do
@@ -153,7 +153,7 @@ defmodule EvercamMedia.CompareControllerTest do
 
     compare =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("compares")
       |> List.first
 

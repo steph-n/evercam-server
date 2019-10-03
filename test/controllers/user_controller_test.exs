@@ -28,7 +28,7 @@ defmodule EvercamMedia.UserControllerTest do
     response_body = %{"message" => "User does not exist."}
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body) == response_body
+    assert Jason.decode!(response.resp_body) == response_body
   end
 
   test "GET /v2/users/:id/credentials Get users credentials", context do
@@ -50,7 +50,7 @@ defmodule EvercamMedia.UserControllerTest do
     response_body = %{"message" => "Country isn't valid!"}
 
     assert response.status == 400
-    assert Poison.decode!(response.resp_body) == response_body
+    assert Jason.decode!(response.resp_body) == response_body
   end
 
   test "PATCH /v2/users/ when email is not valid while update!", context do
@@ -80,7 +80,7 @@ defmodule EvercamMedia.UserControllerTest do
 
     signed_up_user =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("users")
       |> List.first
 
@@ -105,7 +105,7 @@ defmodule EvercamMedia.UserControllerTest do
 
     error =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert error["password"] == ["Password should be at least 6 character(s)."]
@@ -120,7 +120,7 @@ defmodule EvercamMedia.UserControllerTest do
 
     updated_user =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("users")
       |> List.first
 
@@ -137,7 +137,7 @@ defmodule EvercamMedia.UserControllerTest do
 
     user =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("user")
 
     assert response.status == 201
@@ -151,7 +151,7 @@ defmodule EvercamMedia.UserControllerTest do
 
     user =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("user")
 
     assert response.status == 404

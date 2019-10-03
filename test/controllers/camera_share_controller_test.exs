@@ -22,7 +22,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     shares =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("shares")
       |> List.first
 
@@ -36,7 +36,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
       |> get("/v2/cameras/austin/shares?user_id=johndoexyz&api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "User 'johndoexyz' does not exist."
+    assert Jason.decode!(response.resp_body)["message"] == "User 'johndoexyz' does not exist."
   end
 
   test "GET /v2/cameras/:id/shares, when camera does not exist", context do
@@ -45,7 +45,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
       |> get("/v2/cameras/austinxyz/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "The austinxyz camera does not exist."
+    assert Jason.decode!(response.resp_body)["message"] == "The austinxyz camera does not exist."
   end
 
   test "GET /v2/cameras/:id/shares, when required keys are missing" do
@@ -54,7 +54,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
       |> get("/v2/cameras/austin/shares")
 
     assert response.status == 200
-    assert Poison.decode!(response.resp_body)["shares"] == []
+    assert Jason.decode!(response.resp_body)["shares"] == []
   end
 
   test "POST /v2/cameras/:id/shares, return share when sharee exists", context do
@@ -68,7 +68,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     share =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("shares")
       |> List.first
 
@@ -88,7 +88,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     share =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("share_requests")
       |> List.first
 
@@ -109,7 +109,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("errors")
       |> List.first
       |> Map.get("text")
@@ -128,7 +128,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("errors")
       |> List.first
       |> Map.get("text")
@@ -147,7 +147,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("errors")
       |> List.first
       |> Map.get("text")
@@ -166,7 +166,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     share =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("shares")
       |> List.first
 
@@ -186,7 +186,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 404
@@ -204,7 +204,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
       |> Map.get("rights")
 
@@ -227,7 +227,7 @@ defmodule EvercamMedia.CameraShareControllerTest do
       |> delete("/v2/cameras/austin/shares?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", %{email: "smithmarc1"})
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Sharee 'smithmarc1' not found."
+    assert Jason.decode!(response.resp_body)["message"] == "Sharee 'smithmarc1' not found."
   end
 
   test "DELETE /v2/cameras/:id/shares, when required permission", _context do
@@ -236,6 +236,6 @@ defmodule EvercamMedia.CameraShareControllerTest do
       |> delete("/v2/cameras/austin/shares", %{email: "smithmarc"})
 
     assert response.status == 401
-    assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
+    assert Jason.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 end

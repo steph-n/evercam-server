@@ -22,7 +22,7 @@ defmodule EvercamMediaWeb.AuthenticationPlug do
       :invalid ->
         conn
         |> put_resp_content_type("application/json")
-        |> resp(401, Poison.encode!(%{message: "Invalid API keys"}))
+        |> resp(401, Jason.encode!(%{message: "Invalid API keys"}))
         |> send_resp
         |> halt
     end

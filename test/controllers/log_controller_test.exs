@@ -22,7 +22,7 @@ defmodule EvercamMedia.LogControllerTest do
     response = build_conn() |> get("/v2/cameras/#{camera_exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
+    assert Jason.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
   end
 
   test "GET /v2/cameras/:id/logs Unauthorized" do
@@ -30,7 +30,7 @@ defmodule EvercamMedia.LogControllerTest do
     response = build_conn() |> get("/v2/cameras/#{camera_exid}/logs?")
 
     assert response.status == 401
-    assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Unauthorized."}}
+    assert Jason.decode(response.resp_body) == {:ok, %{"message" => "Unauthorized."}}
   end
 
   test "GET /v2/cameras/:id/logs when params are valid!", context do
@@ -40,7 +40,7 @@ defmodule EvercamMedia.LogControllerTest do
 
     response_body = %{"camera_exid" => "austin", "camera_name" => "Austin", "logs" => [], "pages" => 0.0}
     assert response.status == 200
-    assert Poison.decode(response.resp_body) == {:ok, response_body}
+    assert Jason.decode(response.resp_body) == {:ok, response_body}
   end
 
   test "GET /v2/cameras/:id/logs when from is greater than to!", context do
@@ -49,6 +49,6 @@ defmodule EvercamMedia.LogControllerTest do
       build_conn()
       |> get("/v2/cameras/#{context[:camera].exid}/logs?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
     assert response.status == 400
-    assert Poison.decode(response.resp_body) == {:ok, %{"message" => "From can't be higher than to."}}
+    assert Jason.decode(response.resp_body) == {:ok, %{"message" => "From can't be higher than to."}}
   end
 end

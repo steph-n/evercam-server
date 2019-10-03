@@ -110,7 +110,7 @@ defmodule EvercamMediaWeb.PublicController do
     |> HTTPoison.get
     |> elem(1)
     |> Map.get(:body)
-    |> Poison.decode!
+    |> Jason.decode!
     |> get_in(["results", Access.at(0), "geometry", "location"])
     |> Enum.map(fn({_coordinate, value}) -> value end)
     |> List.to_tuple

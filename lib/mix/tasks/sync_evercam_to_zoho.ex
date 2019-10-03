@@ -66,7 +66,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        zoho_response = Poison.decode!(body)
+        zoho_response = Jason.decode!(body)
         info = zoho_response |> Map.get("info")
 
         zoho_response
@@ -93,7 +93,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
             "Account" => %{"id" => account["id"], "name" => account["Account_Name"]}
           }]
         }
-        HTTPoison.put("#{@zoho_url}Share_Requests", Poison.encode!(raw_xml), headers)
+        HTTPoison.put("#{@zoho_url}Share_Requests", Jason.encode!(raw_xml), headers)
       _ -> "Account not found. Site domain => #{domain}"
     end
     :timer.sleep(5000)
@@ -115,7 +115,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
         }
       end)
     raw_xml = %{ "data" => xml_data }
-    case HTTPoison.put(url, Poison.encode!(raw_xml), headers) do
+    case HTTPoison.put(url, Jason.encode!(raw_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
       error -> {:error, error}
     end
@@ -145,7 +145,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        zoho_response = Poison.decode!(body)
+        zoho_response = Jason.decode!(body)
         info = zoho_response |> Map.get("info")
         contact_lists = Map.get(zoho_response, "data")
         sync_accounts_with_contacts(info["more_records"], info["page"] + 1, contacts ++ contact_lists, account_name)
@@ -176,7 +176,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        zoho_response = Poison.decode!(body)
+        zoho_response = Jason.decode!(body)
         contacts = Map.get(zoho_response, "data")
         link_empty_account(contacts)
         {:ok}

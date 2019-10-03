@@ -17,7 +17,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
 
     share_requests =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("share_requests")
       |> List.first
 
@@ -31,7 +31,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
       |> get("/v2/cameras/austinxyz/shares/requests?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode!(response.resp_body)["message"] == "The austinxyz camera does not exist."
+    assert Jason.decode!(response.resp_body)["message"] == "The austinxyz camera does not exist."
   end
 
   test "GET /v2/cameras/:id/shares/requests, when required keys are missing" do
@@ -40,7 +40,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
       |> get("/v2/cameras/austin/shares/requests")
 
     assert response.status == 401
-    assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
+    assert Jason.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
   test "DELETE /v2/cameras/:id/shares/requests, with valid params", context do
@@ -49,7 +49,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
       |> delete("/v2/cameras/austin/shares/requests?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", %{email: "abc@email.com"})
 
     assert response.status() == 200
-    assert Poison.decode!(response.resp_body) == %{}
+    assert Jason.decode!(response.resp_body) == %{}
   end
 
   test "DELETE /v2/cameras/:id/shares/requests, when required keys are missing" do
@@ -58,7 +58,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
       |> delete("/v2/cameras/austin/shares/requests", %{email: "abc@email.com"})
 
     assert response.status == 401
-    assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
+    assert Jason.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
   test "DELETE /v2/cameras/:id/shares/requests, when share request not found", context do
@@ -67,7 +67,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
       |> delete("/v2/cameras/austin/shares/requests?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", %{email: "xyz@email.com"})
 
     assert response.status() == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Share request not found."
+    assert Jason.decode!(response.resp_body)["message"] == "Share request not found."
   end
 
   test "PATCH /v2/cameras/:id/shares/requests, with valid params", context do
@@ -81,7 +81,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
 
     share_requests =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("share_requests")
       |> List.first
 
@@ -96,7 +96,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
       |> patch("/v2/cameras/austin/shares/requests", %{email: "abc@email.com", rights: "snapshot,list"})
 
     assert response.status == 401
-    assert Poison.decode!(response.resp_body)["message"] == "Unauthorized."
+    assert Jason.decode!(response.resp_body)["message"] == "Unauthorized."
   end
 
   test "PATCH /v2/cameras/:id/shares/requests, when invalid rights", context do
@@ -111,7 +111,7 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
       |> Map.get("rights")
 
@@ -130,6 +130,6 @@ defmodule EvercamMedia.CameraShareRequestControllerTest do
       |> patch("/v2/cameras/austin/shares/requests?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", params)
 
     assert response.status() == 404
-    assert Poison.decode!(response.resp_body)["message"] == "Share request not found."
+    assert Jason.decode!(response.resp_body)["message"] == "Share request not found."
   end
 end

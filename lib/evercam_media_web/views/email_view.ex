@@ -72,7 +72,7 @@ defmodule EvercamMediaWeb.EmailView do
           </tr>
           <tr>
             <th>Schedule</th>
-            <td>#{Poison.encode!(cloud_recordings.schedule)}</td>
+            <td>#{Jason.encode!(cloud_recordings.schedule)}</td>
           </tr>
         </tbody>
       </table>

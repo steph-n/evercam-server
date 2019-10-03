@@ -271,7 +271,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     hackney = [pool: :seaweedfs_download_pool, recv_timeout: 15000]
     with {:ok, response} <- HTTPoison.get(url, ["Accept": "application/json"], hackney: hackney),
          %HTTPoison.Response{status_code: 200, body: body} <- response,
-         {:ok, data} <- Poison.decode(body),
+         {:ok, data} <- Jason.decode(body),
          true <- is_list(data[type]) do
       Enum.map(data[type], fn(item) -> item[attribute] |> get_base_name(type, attribute) end)
     else

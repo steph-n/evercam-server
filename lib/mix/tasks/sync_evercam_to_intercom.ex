@@ -18,8 +18,8 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
-    users = Poison.decode!(body) |> Map.get("users")
-    pages = Poison.decode!(body) |> Map.get("pages")
+    users = Jason.decode!(body) |> Map.get("users")
+    pages = Jason.decode!(body) |> Map.get("pages")
     verify_user(users, Map.get(pages, "next"))
   end
 
@@ -29,7 +29,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
       Logger.debug u.email
       case Intercom.get_user(u.email) do
         {:ok, response} ->
-          ic_user = response.body |> Poison.decode!
+          ic_user = response.body |> Jason.decode!
           urls =
             ic_user["social_profiles"]["social_profiles"]
             |> Enum.reduce(%{}, fn(item, social_links) ->
@@ -55,8 +55,8 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
-    companies = Poison.decode!(body) |> Map.get("companies")
-    pages = Poison.decode!(body) |> Map.get("pages")
+    companies = Jason.decode!(body) |> Map.get("companies")
+    pages = Jason.decode!(body) |> Map.get("pages")
     sync_companies(companies, Map.get(pages, "next"))
   end
 
@@ -145,13 +145,13 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
       case Intercom.get_user(email) do
         {:ok, response} ->
-          intercom_user = response.body |> Poison.decode!
+          intercom_user = response.body |> Jason.decode!
           Logger.info "Adding company for email: #{email}, intercom_id: #{intercom_user["id"]}, company_id: #{company_id}"
           intercom_new_user = %{
             id: intercom_user["id"],
             companies: [%{company_id: company_id}]
           }
-          |> Poison.encode!
+          |> Jason.encode!
           HTTPoison.post(@intercom_url, intercom_new_user, headers)
         _ -> ""
       end
@@ -172,7 +172,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
             company_id: company_id,
             name: company_name
           }
-          |> Poison.encode!
+          |> Jason.encode!
           HTTPoison.post(intercom_url, intercom_new_company, headers)
           Logger.info "Updated company #{company_id} with name #{company_name}"
         _ ->
@@ -190,8 +190,8 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
-    users = Poison.decode!(body) |> Map.get("users")
-    pages = Poison.decode!(body) |> Map.get("pages")
+    users = Jason.decode!(body) |> Map.get("users")
+    pages = Jason.decode!(body) |> Map.get("pages")
     update_intercom_user_attr(users, Map.get(pages, "next"))
   end
 
@@ -210,7 +210,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
       user_id: intercom_user_id,
       signed_up_at: first_seen
     }
-    |> Poison.encode!
+    |> Jason.encode!
     HTTPoison.post(@intercom_url, intercom_new_user, headers)
     update_intercom_user_attr(rest, next_url)
   end
@@ -252,7 +252,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
         status: "Share-Accepted"
       }
     }
-    |> Poison.encode!
+    |> Jason.encode!
 
     HTTPoison.post(@intercom_url, intercom_new_user, headers)
   end
@@ -263,10 +263,10 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
       url = "https://api.fullcontact.com/v3/company.enrich"
       case HTTPoison.post(url, '{"domain":"#{company.exid}"}', ["Content-Type": "application/x-www-form-urlencoded", "Authorization": "Bearer #{@fullcontact_key}"]) do
         {:ok,  %HTTPoison.Response{status_code: 200, body: body}} ->
-          company = body |> Poison.decode!
+          company = body |> Jason.decode!
           Company.update_company(company, %{linkedin_url: company["linkedin"]})
         {:ok,  %HTTPoison.Response{body: body}} ->
-          res = body |> Poison.decode!
+          res = body |> Jason.decode!
           Logger.info res["message"]
         {:error, error} -> Logger.info "#{inspect error}"
       end

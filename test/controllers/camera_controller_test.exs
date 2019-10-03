@@ -35,7 +35,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     camera =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("cameras")
       |> List.first
 
@@ -52,7 +52,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 403
@@ -66,7 +66,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 404
@@ -80,7 +80,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 404
@@ -94,7 +94,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 401
@@ -112,7 +112,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     camera =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("cameras")
       |> List.first
 
@@ -130,7 +130,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 404
@@ -147,7 +147,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 403
@@ -164,7 +164,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
       |> Map.get("external_host")
 
@@ -193,7 +193,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 403
@@ -207,7 +207,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 403
@@ -226,7 +226,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     camera =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("cameras")
       |> List.first
 
@@ -247,7 +247,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
       |> Map.get("external_host")
 
@@ -267,7 +267,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
 
     assert response.status == 401
@@ -285,7 +285,7 @@ defmodule EvercamMedia.CameraControllerTest do
 
     message =
       response.resp_body
-      |> Poison.decode!
+      |> Jason.decode!
       |> Map.get("message")
       |> Map.get("external_host")
 

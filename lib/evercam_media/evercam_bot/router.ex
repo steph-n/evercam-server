@@ -16,8 +16,8 @@ defmodule EvercamMedia.EvercamBot.Router do
         rescue
           err in FunctionClauseError ->
             Logger.log :warn, """
-              Errored when matching command. #{Poison.encode! err}
-              Message was: #{Poison.encode! message}
+              Errored when matching command. #{Jason.encode! err}
+              Message was: #{Jason.encode! message}
               """
         end
       end

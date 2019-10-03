@@ -224,7 +224,7 @@ defmodule EvercamMediaWeb.NVRController do
   end
 
   defp get_schedule(schedule) when schedule in [nil, ""] do
-    Poison.decode!("{\"Wednesday\":[\"08:00-18:00\"],\"Tuesday\":[\"00:00-18:00\"],\"Thursday\":[\"00:00-18:00\"],\"Sunday\":[\"00:00-18:00\"],\"Saturday\":[\"00:00-18:00\"],\"Monday\":[\"00:00-18:00\"],\"Friday\":[\"00:00-08:00\"]}")
+    Jason.decode!("{\"Wednesday\":[\"08:00-18:00\"],\"Tuesday\":[\"00:00-18:00\"],\"Thursday\":[\"00:00-18:00\"],\"Sunday\":[\"00:00-18:00\"],\"Saturday\":[\"00:00-18:00\"],\"Monday\":[\"00:00-18:00\"],\"Friday\":[\"00:00-08:00\"]}")
   end
-  defp get_schedule(schedule), do: Poison.decode!(schedule)
+  defp get_schedule(schedule), do: Jason.decode!(schedule)
 end

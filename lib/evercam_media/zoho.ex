@@ -10,7 +10,7 @@ defmodule EvercamMedia.Zoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         camera = Map.get(json_response, "data") |> List.first
         {:ok, camera}
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Camera does't exits."}
@@ -26,7 +26,7 @@ defmodule EvercamMedia.Zoho do
     camera_object = create_camera_request(cameras, [])
     request = %{"data" => camera_object}
 
-    case HTTPoison.post(url, Poison.encode!(request), headers) do
+    case HTTPoison.post(url, Jason.encode!(request), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 201}} -> {:ok, body}
       response -> {:error, response}
     end
@@ -39,9 +39,9 @@ defmodule EvercamMedia.Zoho do
     camera_object = create_camera_request(cameras, [])
     request = %{"data" => camera_object}
 
-    case HTTPoison.put(url, Poison.encode!(request), headers) do
+    case HTTPoison.put(url, Jason.encode!(request), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         response = Map.get(json_response, "data") |> List.first
         {:ok, response}
       _ -> {:error}
@@ -55,7 +55,7 @@ defmodule EvercamMedia.Zoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         account = Map.get(json_response, "data") |> List.first
         {:ok, account}
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Account does't exits."}
@@ -68,9 +68,9 @@ defmodule EvercamMedia.Zoho do
     headers = ["Authorization": "#{@zoho_auth_token}"]
     query = "select Account_Name from Accounts where Email_Domain like '%#{domain}%'"
 
-    case HTTPoison.post(url, Poison.encode!(%{select_query: query}), headers) do
+    case HTTPoison.post(url, Jason.encode!(%{select_query: query}), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         account = Map.get(json_response, "data") |> List.first
         {:ok, account}
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Account does't exits."}
@@ -84,7 +84,7 @@ defmodule EvercamMedia.Zoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         contact = Map.get(json_response, "data") |> List.first
         {:ok, contact}
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Contact does't exits."}
@@ -114,9 +114,9 @@ defmodule EvercamMedia.Zoho do
         }]
       }
 
-    case HTTPoison.post(url, Poison.encode!(contact_xml), headers) do
+    case HTTPoison.post(url, Jason.encode!(contact_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 201}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         contact = Map.get(json_response, "data") |> List.first
         {:ok, contact["details"]}
       error -> {:error, error}
@@ -128,7 +128,7 @@ defmodule EvercamMedia.Zoho do
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
 
     contact_xml = %{ "data" => request_params }
-    case HTTPoison.put(url, Poison.encode!(contact_xml), headers) do
+    case HTTPoison.put(url, Jason.encode!(contact_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
       error -> {:error, error}
     end
@@ -159,7 +159,7 @@ defmodule EvercamMedia.Zoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         share = Map.get(json_response, "data") |> List.first
         {:ok, share}
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Share does't exits."}
@@ -197,7 +197,7 @@ defmodule EvercamMedia.Zoho do
         }]
       }
 
-    case HTTPoison.post(url, Poison.encode!(contact_xml), headers) do
+    case HTTPoison.post(url, Jason.encode!(contact_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 201}} -> {:ok, body}
       error -> {:error, error}
     end
@@ -208,7 +208,7 @@ defmodule EvercamMedia.Zoho do
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
 
     contact_xml = %{ "data" => request_params }
-    case HTTPoison.post(url, Poison.encode!(contact_xml), headers) do
+    case HTTPoison.post(url, Jason.encode!(contact_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 201}} -> {:ok, body}
       error -> {:error, error}
     end
@@ -245,7 +245,7 @@ defmodule EvercamMedia.Zoho do
 
     case HTTPoison.get(url, headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         share_requests = Map.get(json_response, "data")
         {:ok, share_requests}
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Share request does't exits."}
@@ -288,9 +288,9 @@ defmodule EvercamMedia.Zoho do
         }]
       }
 
-    case HTTPoison.post(url, Poison.encode!(contact_xml), headers) do
+    case HTTPoison.post(url, Jason.encode!(contact_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 201}} ->
-        json_response = Poison.decode!(body)
+        json_response = Jason.decode!(body)
         contact = Map.get(json_response, "data") |> List.first
         {:ok, contact["details"]}
       error -> {:error, error}
@@ -309,7 +309,7 @@ defmodule EvercamMedia.Zoho do
         }
       end)
     contact_xml = %{ "data" => xml_data }
-    case HTTPoison.put(url, Poison.encode!(contact_xml), headers) do
+    case HTTPoison.put(url, Jason.encode!(contact_xml), headers) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
       error -> {:error, error}
     end

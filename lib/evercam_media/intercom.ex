@@ -26,7 +26,7 @@ defmodule EvercamMedia.Intercom do
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
     response = HTTPoison.get(url, headers) |> elem(1)
     case response.status_code do
-      200 -> {:ok, response.body |> Poison.decode!}
+      200 -> {:ok, response.body |> Jason.decode!}
       _ -> {:error, response}
     end
   end
@@ -42,7 +42,7 @@ defmodule EvercamMedia.Intercom do
     }
 
     json =
-      case Poison.encode(company_changeset) do
+      case Jason.encode(company_changeset) do
         {:ok, json} -> json
         _ -> nil
       end
@@ -80,7 +80,7 @@ defmodule EvercamMedia.Intercom do
     |> add_subscribe(status)
 
     json =
-      case Poison.encode(intercom_new_user) do
+      case Jason.encode(intercom_new_user) do
         {:ok, json} -> json
         _ -> nil
       end
@@ -146,7 +146,7 @@ defmodule EvercamMedia.Intercom do
 
     case get_user(old_username) do
       {:ok, response} ->
-        intercom_user = response.body |> Poison.decode!
+        intercom_user = response.body |> Jason.decode!
         intercom_new_user = %{
           id: intercom_user["id"],
           email: user.email,
@@ -155,7 +155,7 @@ defmodule EvercamMedia.Intercom do
           last_seen_user_agent: user_agent,
           last_seen_ip: requester_ip,
         }
-        |> Poison.encode!
+        |> Jason.encode!
         HTTPoison.post(@intercom_url, intercom_new_user, headers)
       _ -> ""
     end
@@ -171,7 +171,7 @@ defmodule EvercamMedia.Intercom do
     }
 
     json =
-      case Poison.encode(tag_params) do
+      case Jason.encode(tag_params) do
         {:ok, json} -> json
         _ -> nil
       end

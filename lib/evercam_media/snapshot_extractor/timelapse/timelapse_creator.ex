@@ -271,7 +271,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
       |> Calendar.DateTime.from_erl!("UTC")
     case HTTPoison.get(url, ["Accept": "application/json"], []) do
       {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        my_json = Poison.Parser.parse!(body)
+        my_json = Jason.decode!(body)
         sum = count_filer(starting, oct_date, my_json)
         Agent.get_and_update(c_agent, fn state -> {state, state + sum} end)
         Enum.map(my_json[filer.files], fn x ->

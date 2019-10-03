@@ -28,7 +28,7 @@ defmodule EvercamMediaWeb.JwtAuthPlug do
   defp forbidden(conn, error) do
     conn
     |> put_resp_content_type("application/json")
-    |> resp(401, Poison.encode!(%{message: error[:message]}))
+    |> resp(401, Jason.encode!(%{message: error[:message]}))
     |> send_resp
     |> halt
   end

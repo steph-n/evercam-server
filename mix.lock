@@ -31,7 +31,7 @@
   "erlport": {:hex, :erlport, "0.10.1", "c96ffa51bbcab0298232fcdfe8c3e110f1598011de71ae6b9082b80c9e2e476a", [:rebar3], [], "hexpm"},
   "erlware_commons": {:hex, :erlware_commons, "1.3.1", "0ce192ad69bc6fd0880246d852d0ece17631e234878011d1586e053641ed4c04", [:rebar3], [{:cf, "~>0.3", [hex: :cf, repo: "hexpm", optional: false]}], "hexpm"},
   "eternal": {:hex, :eternal, "1.2.1", "d5b6b2499ba876c57be2581b5b999ee9bdf861c647401066d3eeed111d096bc4", [:mix], [], "hexpm"},
-  "evercam_models": {:git, "https://github.com/evercam/evercam_models.git", "bf49c6766e15206a76c9c23537c78d52d15673a8", []},
+  "evercam_models": {:git, "https://github.com/evercam/evercam_models.git", "a7be290e917edff286e7df2904b3e89f585d1664", [branch: "switch_to_Jason"]},
   "ex_aws": {:hex, :ex_aws, "1.1.5", "789173f385934f7e27f9ef36692a6c5f7dde06fd6e6f64d4cd92cda613d34bf9", [:mix], [{:configparser_ex, "~> 0.2.1", [hex: :configparser_ex, repo: "hexpm", optional: true]}, {:hackney, "1.6.3 or 1.6.5 or 1.7.1 or 1.8.6 or ~> 1.9", [hex: :hackney, repo: "hexpm", optional: true]}, {:jsx, "~> 2.8", [hex: :jsx, repo: "hexpm", optional: true]}, {:poison, ">= 1.2.0", [hex: :poison, repo: "hexpm", optional: true]}, {:sweet_xml, "~> 0.6", [hex: :sweet_xml, repo: "hexpm", optional: true]}, {:xml_builder, "~> 0.1.0", [hex: :xml_builder, repo: "hexpm", optional: true]}], "hexpm"},
   "ex_json_schema": {:hex, :ex_json_schema, "0.6.2", "de23d80478215987469c81688208fe0ff440ee0e0e6ae2268fcadbb2ff35df9d", [:mix], [], "hexpm"},
   "exactor": {:hex, :exactor, "2.2.4", "5efb4ddeb2c48d9a1d7c9b465a6fffdd82300eb9618ece5d34c3334d5d7245b1", [:mix], [], "hexpm"},

@@ -24,7 +24,7 @@ defmodule EvercamMedia.CloudRecordingControllerTest do
 
     response_body = %{"cloud_recordings" => [%{"frequency" => 2, "schedule" => [], "status" => "on", "storage_duration" => 1}]}
     assert response.status == 200
-    assert Poison.decode!(response.resp_body) == response_body
+    assert Jason.decode!(response.resp_body) == response_body
   end
 
   test "GET /v2/cameras/:id/apps/cloud-recording Camera not found", context do
@@ -32,7 +32,7 @@ defmodule EvercamMedia.CloudRecordingControllerTest do
     response = build_conn() |> get("/v2/cameras/#{camera_exid}/apps/cloud-recording?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}")
 
     assert response.status == 404
-    assert Poison.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
+    assert Jason.decode(response.resp_body) == {:ok, %{"message" => "Camera '#{camera_exid}' not found!"}}
   end
 
   test "POST /v2/cameras/:id/apps/cloud-recording when params valid.", context do
@@ -41,7 +41,7 @@ defmodule EvercamMedia.CloudRecordingControllerTest do
       |> post("/v2/cameras/#{context[:camera].exid}/apps/cloud-recording?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", context[:params])
 
     response_body = %{"cloud_recordings" => [%{"frequency" => 2, "schedule" => %{"Monday" => ["00:00-23:59"], "Tuesday" => ["00:00-23:59"]}, "status" => "off", "storage_duration" => 1}]}
-    assert Poison.decode!(response.resp_body) == response_body
+    assert Jason.decode!(response.resp_body) == response_body
   end
 
   test "POST /v2/cameras/:id/apps/cloud-recording when schedule isn't valid!", context do
@@ -50,6 +50,6 @@ defmodule EvercamMedia.CloudRecordingControllerTest do
       build_conn()
       |> post("/v2/cameras/#{context[:camera].exid}/apps/cloud-recording?api_id=#{context[:user].api_id}&api_key=#{context[:user].api_key}", cr_params)
 
-    assert Poison.decode!(response.resp_body) == %{"error" => "The parameter 'schedule' isn't valid."}
+    assert Jason.decode!(response.resp_body) == %{"error" => "The parameter 'schedule' isn't valid."}
   end
 end

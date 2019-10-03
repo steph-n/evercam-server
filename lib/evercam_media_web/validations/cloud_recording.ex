@@ -16,7 +16,7 @@ defmodule EvercamMedia.Validation.CloudRecording do
   defp validate(:status = key, _value), do: invalid(key)
 
   defp validate(:schedule = key, value) do
-    case Poison.decode(value) do
+    case Jason.decode(value) do
       {:ok, json} -> valid_schedule(key, json)
       {:error, _error} -> invalid(key)
     end
