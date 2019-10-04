@@ -19,6 +19,10 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     {:noreply, [], state}
   end
 
+  def handle_info({:ssl_closed, _}, state) do
+    {:noreply, state}
+  end
+
   #####################
   # Private functions #
   #####################
