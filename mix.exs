@@ -126,7 +126,7 @@ defmodule EvercamMedia.Mixfile do
       {:ex_json_schema, "~> 0.6.1"},
       {:geoip, "~> 0.2"},
       {:poolboy, "~> 1.5.1"},
-      {:evercam_models, github: "evercam/evercam_models", branch: "switch_to_Jason"},
+      {:evercam_models, github: "evercam/evercam_models"},
       {:joken, "~> 2.0"},
       {:export, "~> 0.1.0"},
     ]
