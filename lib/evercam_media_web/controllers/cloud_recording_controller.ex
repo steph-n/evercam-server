@@ -64,11 +64,10 @@ defmodule EvercamMediaWeb.CloudRecordingController do
             jpegs_to_dropbox: full_snapshot_extractor.jpegs_to_dropbox,
             expected_count: 0
           }
-          extraction_pid = spawn(fn ->
+          spawn(fn ->
             EvercamMedia.UserMailer.snapshot_extraction_started(full_snapshot_extractor, "Cloud")
             start_snapshot_extractor(config)
           end)
-          :ets.insert(:extractions, {exid <> "-cloud-#{full_snapshot_extractor.id}", extraction_pid})
           conn
           |> put_status(:created)
           |> put_view(SnapshotExtractorView)
@@ -76,6 +75,17 @@ defmodule EvercamMediaWeb.CloudRecordingController do
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end
+    end
+  end
+
+
+  def extraction_status(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
+    with  _pid <- Process.whereis(:"snapshot_extractor_#{extraction_id}"),
+          {:ok, files} <- File.ls("#{@root_dir}/#{exid}/extract/#{extraction_id}/") do
+      json(conn, %{status: :up, jpegs: count_jpegs(files)})
+    else
+      {:ok, ["CURRENT"]} -> json(conn, %{status: :down, jpegs: 0})
+      _ -> json(conn, %{status: :down, jpegs: 0})
     end
   end
 
@@ -95,11 +105,10 @@ defmodule EvercamMediaWeb.CloudRecordingController do
   end
 
   def delete_cloud_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
-    with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid <> "-cloud-#{extraction_id}"),
-         true                     <- Process.exit(extraction_pid, :kill),
+    with gen_server_pid           <- Process.whereis(:"snapshot_extractor_#{extraction_id}"),
+         true                     <- Process.exit(gen_server_pid, :kill),
          {:ok, _}                 <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
-         {1, nil}                 <- SnapshotExtractor.delete_by_id(extraction_id),
-         true                     <- :ets.delete(:extractions, exid <> "-cloud-#{extraction_id}")
+         {1, nil}                 <- SnapshotExtractor.delete_by_id(extraction_id)
    do
      json(conn, %{message: "Cloud Extraction has been deleted for camera: #{exid}"})
    else
@@ -577,4 +586,6 @@ defmodule EvercamMediaWeb.CloudRecordingController do
 
   defp get_action_log(nil), do: "created"
   defp get_action_log(_cloud_recording), do: "updated"
+
+  defp count_jpegs(files), do: files |> Enum.filter(&String.ends_with?(&1, ".jpg")) |> Enum.count()
 end

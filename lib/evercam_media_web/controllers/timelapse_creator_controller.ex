@@ -132,10 +132,9 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
             headers: video_params["headers"],
             exid: exid,
           }
-          extraction_pid = spawn(fn ->
+          spawn(fn ->
             start_snapshot_extractor(config)
           end)
-          :ets.insert(:extractions, {exid <> "-timelapse-#{full_snapshot_extractor.id}", extraction_pid})
           conn
           |> put_status(:created)
           |> put_view(SnapshotExtractorView)
