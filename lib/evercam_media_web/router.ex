@@ -175,10 +175,10 @@ end
       options "/cameras/:id/apps/cloud-recording", CloudRecordingController, :nothing
       post "/cameras/:id/apps/cloud-recording", CloudRecordingController, :create
 
-      get "/cameras/:id/apps/cloud-recording/extract", CloudRecordingController, :extraction_status
-      post "/cameras/:id/apps/cloud-recording/extract", CloudRecordingController, :cloud_extraction
-      options "/cameras/:id/apps/cloud-recording/extract", CloudRecordingController, :nothing
-      delete "/cameras/:id/apps/cloud-recording/extract", CloudRecordingController, :delete_cloud_extraction
+      get "/cameras/:id/apps/cloud-extractions", CloudExtractionsController, :show
+      post "/cameras/:id/apps/cloud-extractions", CloudExtractionsController, :create
+      options "/cameras/:id/apps/cloud-extractions", CloudExtractionsController, :nothing
+      delete "/cameras/:id/apps/cloud-extractions", CloudExtractionsController, :delete_extraction
 
       # Share and share-request route
       get "/cameras/:id/shares", CameraShareController, :show

@@ -87,6 +87,7 @@ defmodule EvercamMediaWeb.NVRController do
 
   def delete_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
     with pid       <- Process.whereis(:"snapshot_extractor_#{extraction_id}"),
+         true      <- pid != nil,
          true      <- Process.exit(pid, :kill),
          {:ok, _}  <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
          {1, nil}  <- SnapshotExtractor.delete_by_id(extraction_id)
