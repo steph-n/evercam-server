@@ -92,7 +92,10 @@ defmodule EvercamMediaWeb.NVRController do
          {:ok, _}  <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
          {1, nil}  <- SnapshotExtractor.delete_by_id(extraction_id)
    do
-     json(conn, %{message: "Extraction has been deleted"})
+      spawn(fn ->
+        Porcelain.shell("for pid in $(ps -ef | grep ffmpeg | grep '#{exid}' | grep -v grep |  awk '{print $2}'); do kill -9 $pid; done")
+      end)
+      json(conn, %{message: "Extraction has been deleted"})
    else
     _ ->
       json(conn, %{message: "Extraction is not running for this camera."})
