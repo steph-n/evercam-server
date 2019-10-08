@@ -86,13 +86,16 @@ defmodule EvercamMediaWeb.NVRController do
   end
 
   def delete_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
-    with [{exid, extraction_pid}] <- :ets.lookup(:extractions, exid),
-         true                     <- Process.exit(extraction_pid, :kill),
-         {:ok, _}                 <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
-         {1, nil}                 <- SnapshotExtractor.delete_by_id(extraction_id),
-         true                     <- :ets.delete(:extractions, exid)
+    with pid       <- Process.whereis(:"snapshot_extractor_#{extraction_id}"),
+         true      <- pid != nil,
+         true      <- Process.exit(pid, :kill),
+         {:ok, _}  <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
+         {1, nil}  <- SnapshotExtractor.delete_by_id(extraction_id)
    do
-     json(conn, %{message: "Extraction has been deleted"})
+      spawn(fn ->
+        Porcelain.shell("for pid in $(ps -ef | grep ffmpeg | grep '#{exid}' | grep -v grep |  awk '{print $2}'); do kill -9 $pid; done")
+      end)
+      json(conn, %{message: "Extraction has been deleted"})
    else
     _ ->
       json(conn, %{message: "Extraction is not running for this camera."})
@@ -139,11 +142,10 @@ defmodule EvercamMediaWeb.NVRController do
       |> case do
         {:ok, snapshot_extractor} ->
           full_snapshot_extractor = Repo.preload(snapshot_extractor, :camera, force: true)
-          extraction_pid = spawn(fn ->
+          spawn(fn ->
             EvercamMedia.UserMailer.snapshot_extraction_started(full_snapshot_extractor, "Local")
             start_snapshot_extractor(config, full_snapshot_extractor.id)
           end)
-          :ets.insert(:extractions, {exid, extraction_pid})
           conn
           |> put_status(:created)
           |> put_view(SnapshotExtractorView)

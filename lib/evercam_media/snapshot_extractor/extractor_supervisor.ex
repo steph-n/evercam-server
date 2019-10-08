@@ -28,31 +28,28 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
     #..Starting Local extractions.
     SnapshotExtractor.by_status(11)
     |> Enum.each(fn(extractor) ->
-      extraction_pid = spawn(fn ->
+      spawn(fn ->
         extractor
         |> start_extraction(:local)
       end)
-      :ets.insert(:extractions, {extractor.camera.exid, extraction_pid})
     end)
 
     #..Starting Cloud extractions.
     SnapshotExtractor.by_status(1)
     |> Enum.each(fn(extractor) ->
-      extraction_pid = spawn(fn ->
+      spawn(fn ->
         extractor
         |> start_extraction(:cloud)
       end)
-      :ets.insert(:extractions, {extractor.camera.exid <> "-cloud-#{extractor.id}", extraction_pid})
     end)
 
     #..Starting Timelapse extractions.
     SnapshotExtractor.by_status(21)
     |> Enum.each(fn(extractor) ->
-      extraction_pid = spawn(fn ->
+      spawn(fn ->
         extractor
         |> start_extraction(:timelapse)
       end)
-      :ets.insert(:extractions, {extractor.camera.exid <> "-timelapse-#{extractor.id}", extraction_pid})
     end)
   end
 

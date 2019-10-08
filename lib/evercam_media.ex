@@ -36,7 +36,6 @@ defmodule EvercamMedia do
       :hackney_pool.child_spec(:seaweedfs_download_pool, [timeout: 5000, max_connections: 1000]),
     ]
 
-    :ets.new(:extractions, [:public, :named_table])
     :ets.new(:storage_servers, [:set, :public, :named_table])
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
