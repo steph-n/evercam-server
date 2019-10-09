@@ -90,7 +90,7 @@ defmodule EvercamMedia.SnapshotExtractor.Extractor do
       :ets.delete(:extractions, config.exid)
     end)
   end
-  def create_video_mp4(_, config, path, _upload_path) do
+  def create_video_mp4(_, _config, path, _upload_path) do
     clean_images(path)
   end
 
