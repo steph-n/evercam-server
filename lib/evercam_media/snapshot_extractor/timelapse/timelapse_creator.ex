@@ -118,7 +118,6 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
               {:ok, secs, _msecs, :after} = Calendar.DateTime.diff(time_end, time_start)
               execution_time = humanize_time(secs)
               clean_images(images_directory)
-              :ets.delete(:extractions, camera_exid <> "-timelapse-#{video.id}")
               case Timelapse.update_timelapse(video, %{status: 5}) do
                 {:ok, _} ->
                   with {:ok, _full_extractor} <- SnapshotExtractor.by_id(extractor.id) |> SnapshotExtractor.update_snapshot_extactor(%{status: 22, notes: "Extracted Images = #{count} -- Expected Count = #{c_count}"})

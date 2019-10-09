@@ -105,7 +105,6 @@ defmodule EvercamMedia.SnapshotExtractor.CloudExtractor do
     {:ok, secs, _msecs, :after} = Calendar.DateTime.diff(time_end, time_start)
     execution_time = humanize_time(secs)
     clean_images(images_directory)
-    :ets.delete(:extractions, camera_exid <> "-cloud-#{extractor.id}")
     case SnapshotExtractor.by_id(extractor.id) |> SnapshotExtractor.update_snapshot_extactor(%{status: 2, notes: "Extracted Images = #{count} -- Expected Count = #{expected_count}"}) do
       {:ok, full_extractor} ->
         send_mail_end(Application.get_env(:evercam_media, :run_spawn), full_extractor, count, expected_count + extractor.expected_count, execution_time)
