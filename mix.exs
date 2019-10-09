@@ -123,7 +123,7 @@ defmodule EvercamMedia.Mixfile do
       {:configparser_ex, "~> 0.2.1"},
       {:sweet_xml, "~> 0.6", optional: true},
       {:phoenix_swagger, github: "xerions/phoenix_swagger"},
-      {:ex_json_schema, "~> 0.6.1"},
+      {:ex_json_schema, "~> 0.7.1"},
       {:geoip, "~> 0.2"},
       {:poolboy, "~> 1.5.1"},
       {:evercam_models, github: "evercam/evercam_models"},
