@@ -6,7 +6,6 @@ defmodule EvercamMedia.Snapmail.SnapmailerSupervisor do
   use Supervisor
   require Logger
   alias EvercamMedia.Snapmail.Snapmailer
-  alias EvercamMedia.Util
 
   def start_link() do
     Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -59,7 +58,7 @@ defmodule EvercamMedia.Snapmail.SnapmailerSupervisor do
   """
   def initiate_workers do
     Logger.info "Initiate workers for snapmail."
-    Snapmail.all |> Util.get_unfinished_only |> Enum.map(&(start_snapmailer &1))
+    Snapmail.all |> Enum.map(&(start_snapmailer &1))
   end
 
   @doc """
