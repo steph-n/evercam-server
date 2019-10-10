@@ -549,7 +549,7 @@ defmodule EvercamMediaWeb.CameraController do
       exid
       |> String.to_atom
       |> Process.whereis
-      |> update_or_start_worker(camera, old_camera.status, old_camera.cloud_recordings.status)
+      |> update_or_start_worker(camera, old_camera.status, camera.cloud_recordings.status)
     end
   end
   defp update_camera_worker(_mode, _exid, _status, _old_camera), do: :noop
