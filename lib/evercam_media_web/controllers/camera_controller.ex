@@ -250,7 +250,7 @@ defmodule EvercamMediaWeb.CameraController do
       camera = change_camera_owner(user, camera)
       rights = CameraShare.rights_list("full") |> Enum.join(",")
       CameraShare.create_share(camera, old_owner, user, rights, "")
-      update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, "")
+      update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, "", "")
       render(conn, "show.#{version}.json", %{camera: camera, user: current_user})
     end
   end
@@ -315,7 +315,7 @@ defmodule EvercamMediaWeb.CameraController do
                   Util.log_activity(caller, camera, "camera edited", extra)
                 _ -> :noop
               end
-              update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, camera.status)
+              update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, camera.status, old_camera)
               update_camera_to_zoho(Application.get_env(:evercam_media, :run_spawn), camera, caller.email)
               render(conn, "show.#{version}.json", %{camera: camera, user: caller})
             {:error, changeset} ->
@@ -533,7 +533,7 @@ defmodule EvercamMediaWeb.CameraController do
     end
   end
 
-  defp update_camera_worker(true, exid, "project_finished") do
+  defp update_camera_worker(true, exid, "project_finished", _old_camera) do
     spawn fn  ->
       exid
       |> String.to_atom
@@ -541,7 +541,7 @@ defmodule EvercamMediaWeb.CameraController do
       |> WorkerSupervisor.delete_worker()
     end
   end
-  defp update_camera_worker(true, exid, _status) do
+  defp update_camera_worker(true, exid, _status, old_camera) do
     spawn fn ->
       exid |> Camera.get_full |> Camera.invalidate_camera
       camera = exid |> Camera.get_full
@@ -549,10 +549,14 @@ defmodule EvercamMediaWeb.CameraController do
       exid
       |> String.to_atom
       |> Process.whereis
-      |> WorkerSupervisor.update_worker(camera)
+      |> update_or_start_worker(camera, old_camera.status, old_camera.cloud_recordings.status)
     end
   end
-  defp update_camera_worker(_mode, _exid, _status), do: :noop
+  defp update_camera_worker(_mode, _exid, _status, _old_camera), do: :noop
+
+  defp update_or_start_worker(nil, _camera, "project_finished", "off"), do: :noop
+  defp update_or_start_worker(nil, camera, "project_finished", _cr_status), do: WorkerSupervisor.start_worker(camera)
+  defp update_or_start_worker(pid, camera, _status, _cr_status), do: WorkerSupervisor.update_worker(pid, camera)
 
   defp change_camera_owner(user, camera) do
     camera
