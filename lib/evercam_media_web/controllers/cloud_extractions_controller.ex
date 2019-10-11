@@ -114,7 +114,8 @@ defmodule EvercamMediaWeb.CloudExtractionsController do
       end)
       json(conn, %{message: "Cloud Extraction has been deleted for camera: #{exid}"})
    else
-    _ ->
+    test ->
+      IO.inspect test
       json(conn, %{message: "Cloud Extraction is not running for this camera."})
    end
   end
