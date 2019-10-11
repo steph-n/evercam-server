@@ -103,13 +103,16 @@ defmodule EvercamMediaWeb.CloudExtractionsController do
   end
 
   def delete_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
-    with gen_server_pid <- Process.whereis(:"snapshot_extractor_#{extraction_id}"),
-         true           <- gen_server_pid != nil,
-         true           <- Process.exit(gen_server_pid, :kill),
-         {:ok, _}       <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
-         {1, nil}       <- SnapshotExtractor.delete_by_id(extraction_id)
-   do
-     json(conn, %{message: "Cloud Extraction has been deleted for camera: #{exid}"})
+    with {1, nil}       <- SnapshotExtractor.delete_by_id(extraction_id) do
+      spawn(fn ->
+        Process.whereis(:"snapshot_extractor_#{extraction_id}")
+        |> case do
+          nil -> :noop
+          pid -> Process.exit(pid, :kill)
+        end
+        File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/")
+      end)
+      json(conn, %{message: "Cloud Extraction has been deleted for camera: #{exid}"})
    else
     _ ->
       json(conn, %{message: "Cloud Extraction is not running for this camera."})
