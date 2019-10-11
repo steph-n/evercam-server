@@ -85,23 +85,6 @@ defmodule EvercamMediaWeb.NVRController do
     end
   end
 
-  def delete_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
-    with pid       <- Process.whereis(:"snapshot_extractor_#{extraction_id}"),
-         true      <- pid != nil,
-         true      <- Process.exit(pid, :kill),
-         {:ok, _}  <- File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/"),
-         {1, nil}  <- SnapshotExtractor.delete_by_id(extraction_id)
-   do
-      spawn(fn ->
-        Porcelain.shell("for pid in $(ps -ef | grep ffmpeg | grep '#{exid}' | grep -v grep |  awk '{print $2}'); do kill -9 $pid; done")
-      end)
-      json(conn, %{message: "Extraction has been deleted"})
-   else
-    _ ->
-      json(conn, %{message: "Extraction is not running for this camera."})
-   end
-  end
-
   def extract_snapshots(conn, %{"id" => exid, "start_date" => start_date, "end_date" => end_date, "interval" => interval} = params) do
     %{assigns: %{version: version}} = conn
     current_user = conn.assigns[:current_user]

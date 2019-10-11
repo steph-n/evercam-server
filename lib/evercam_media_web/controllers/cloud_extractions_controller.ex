@@ -103,7 +103,7 @@ defmodule EvercamMediaWeb.CloudExtractionsController do
   end
 
   def delete_extraction(conn, %{"id" => exid, "extraction_id" => extraction_id}) do
-    with {1, nil}       <- SnapshotExtractor.delete_by_id(extraction_id) do
+    with {1, nil} <- SnapshotExtractor.delete_by_id(extraction_id) do
       spawn(fn ->
         Process.whereis(:"snapshot_extractor_#{extraction_id}")
         |> case do
@@ -111,11 +111,11 @@ defmodule EvercamMediaWeb.CloudExtractionsController do
           pid -> Process.exit(pid, :kill)
         end
         File.rm_rf("#{@root_dir}/#{exid}/extract/#{extraction_id}/")
+        Porcelain.shell("for pid in $(ps -ef | grep ffmpeg | grep '#{exid}' | grep -v grep |  awk '{print $2}'); do kill -9 $pid; done")
       end)
       json(conn, %{message: "Cloud Extraction has been deleted for camera: #{exid}"})
    else
-    test ->
-      IO.inspect test
+    _ ->
       json(conn, %{message: "Cloud Extraction is not running for this camera."})
    end
   end
