@@ -250,7 +250,7 @@ defmodule EvercamMediaWeb.CameraController do
       camera = change_camera_owner(user, camera)
       rights = CameraShare.rights_list("full") |> Enum.join(",")
       CameraShare.create_share(camera, old_owner, user, rights, "")
-      update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, "", "")
+      update_camera_worker(Application.get_env(:evercam_media, :run_spawn), camera.exid, "", camera)
       render(conn, "show.#{version}.json", %{camera: camera, user: current_user})
     end
   end
@@ -549,14 +549,13 @@ defmodule EvercamMediaWeb.CameraController do
       exid
       |> String.to_atom
       |> Process.whereis
-      |> update_or_start_worker(camera, old_camera.status, camera.cloud_recordings.status)
+      |> update_or_start_worker(camera, old_camera.status)
     end
   end
   defp update_camera_worker(_mode, _exid, _status, _old_camera), do: :noop
 
-  defp update_or_start_worker(nil, _camera, "project_finished", "off"), do: :noop
-  defp update_or_start_worker(nil, camera, "project_finished", _cr_status), do: WorkerSupervisor.start_worker(camera)
-  defp update_or_start_worker(pid, camera, _status, _cr_status), do: WorkerSupervisor.update_worker(pid, camera)
+  defp update_or_start_worker(nil, camera, "project_finished"), do: WorkerSupervisor.start_worker(camera)
+  defp update_or_start_worker(pid, camera, _status), do: WorkerSupervisor.update_worker(pid, camera)
 
   defp change_camera_owner(user, camera) do
     camera

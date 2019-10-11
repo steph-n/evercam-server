@@ -72,7 +72,7 @@ defmodule EvercamMediaWeb.CloudRecordingController do
           exid
           |> String.to_atom
           |> Process.whereis
-          |> update_or_start_worker(camera)
+          |> WorkerSupervisor.update_worker(camera)
 
           extra = %{
             agent: get_user_agent(conn, params["agent"]),
@@ -463,7 +463,4 @@ defmodule EvercamMediaWeb.CloudRecordingController do
 
   defp get_action_log(nil), do: "created"
   defp get_action_log(_cloud_recording), do: "updated"
-
-  defp update_or_start_worker(nil, camera), do: WorkerSupervisor.start_worker(camera)
-  defp update_or_start_worker(pid, camera), do: WorkerSupervisor.update_worker(pid, camera)
 end
