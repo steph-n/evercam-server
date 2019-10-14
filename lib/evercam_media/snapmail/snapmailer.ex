@@ -142,18 +142,14 @@ defmodule EvercamMedia.Snapmail.Snapmailer do
   defp get_snapshots_send_snapmail(state, config, timestamp, worker) do
     spawn fn ->
       config.cameras
+      |> Enum.reject(fn(cam) -> Camera.by_exid(cam.camera_exid).status == "project_finished" end)
       |> Enum.map(fn(camera) ->
-        cache_camera = Camera.get(camera.camera_exid)
-        with true <- cache_camera.status != "project_finished" do
-          case try_snapshot(camera, 1) do
-            {:ok, image, true} ->
-              send worker, {:camera_reply, camera.camera_exid, image, timestamp}
-              %{exid: camera.camera_exid, name: camera.name, data: image}
-            {:ok, image, false} -> %{exid: camera.camera_exid, name: camera.name, data: image}
-            {:error, _error} -> %{exid: camera.camera_exid, name: camera.name, data: nil}
-          end
-        else
-          _ -> %{exid: camera.camera_exid, name: camera.name, data: nil}
+        case try_snapshot(camera, 1) do
+          {:ok, image, true} ->
+            send worker, {:camera_reply, camera.camera_exid, image, timestamp}
+            %{exid: camera.camera_exid, name: camera.name, data: image}
+          {:ok, image, false} -> %{exid: camera.camera_exid, name: camera.name, data: image}
+          {:error, _error} -> %{exid: camera.camera_exid, name: camera.name, data: nil}
         end
       end)
       |> send_snapmail(state, timestamp)
