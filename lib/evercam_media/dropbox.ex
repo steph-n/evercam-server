@@ -35,7 +35,7 @@ defmodule ElixirDropbox.Files.UploadSession do
 
   def finish_batch(client, entries) do
     body = %{"entries" => entries}
-    result = to_string(Jason.Encoder.encode(body, []))
+    result = to_string(Jason.encode_to_iodata!(body))
     ElixirDropbox.post(client, "/files/upload_session/finish_batch", result)
   end
 end
