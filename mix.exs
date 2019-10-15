@@ -70,7 +70,6 @@ defmodule EvercamMedia.Mixfile do
     :evercam_models,
     :joken,
     :export,
-    :poison,
     :jason
   ]
 
@@ -111,7 +110,6 @@ defmodule EvercamMedia.Mixfile do
       {:meck,  "~> 0.8.4", override: :true},
       {:html_sanitize_ex, "~> 1.3.0"},
       {:gen_stage, "~> 0.14"},
-      {:poison, "~> 3.1.0", override: true}, #its here because of geo_postgis,ex_aws,elixir_dropbox
       {:jason, "~> 1.1"},
       {:ex_aws, "~> 1.1.5"},
       {:configparser_ex, "~> 0.2.1"},
