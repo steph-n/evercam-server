@@ -59,7 +59,6 @@ defmodule EvercamMedia.Mixfile do
     :xmerl,
     :html_sanitize_ex,
     :gen_stage,
-    :elixir_dropbox,
     :ex_aws,
     :configparser_ex,
     :sweet_xml,
@@ -114,7 +113,6 @@ defmodule EvercamMedia.Mixfile do
       {:gen_stage, "~> 0.14"},
       {:poison, "~> 3.1.0", override: true}, #its here because of geo_postgis,ex_aws,elixir_dropbox
       {:jason, "~> 1.1"},
-      {:elixir_dropbox, github: "sger/elixir_dropbox"},
       {:ex_aws, "~> 1.1.5"},
       {:configparser_ex, "~> 0.2.1"},
       {:sweet_xml, "~> 0.6", optional: true},
