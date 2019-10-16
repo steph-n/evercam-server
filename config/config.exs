@@ -42,7 +42,7 @@ config :logger, :console,
 config :evercam_media,
   hls_url: "http://localhost:8080/hls"
 
-config :elixir_dropbox,
+config :evercam_media,
   upload_url: "https://content.dropboxapi.com/2/",
   base_url: "https://api.dropboxapi.com/2"
 
