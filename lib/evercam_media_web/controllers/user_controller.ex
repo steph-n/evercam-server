@@ -35,67 +35,41 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def remote_login(conn, params) do
-    user =
-      params["username"]
-      |> String.replace_trailing(".json", "")
-      |> User.by_username_or_email
-      |> Repo.preload(:access_tokens, force: true)
     exp =
       Calendar.DateTime.now_utc
       |> Calendar.DateTime.advance!(60 * 60 * 24 * 7)
-    extra_claims = %{
-      "user_id" => params["username"],
-      "exp" => exp |> DateTime.to_unix
-    }
-
-    with :ok <- ensure_user_exists(user, params["username"], conn),
-         :ok <- password(params["password"], user, conn),
-         {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims)
-    do
-      update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
-      params =
-        %{}
-        |> add_parameter("is_revoked", false)
-        |> add_parameter("request", token)
-      changeset = AccessToken.changeset(%AccessToken{}, params)
-      case Repo.insert(changeset) do
-        {:ok, token} -> render(conn, "remote_login.json", %{token: token.request, user: user})
-        {:error, changeset} -> {:invalid_token, changeset}
-      end
-    end
-  end
-
-  def remote_login_api(conn, params) do
-    case EvercamMediaWeb.Auth.validate(params["api_id"], params["api_key"], "") do
-      :valid ->
-        conn
-      {:valid, user} ->
+    case conn.assigns[:current_user] do
+      nil ->
+        user =
+          params["username"]
+          |> String.replace_trailing(".json", "")
+          |> User.by_username_or_email
+          |> Repo.preload(:access_tokens, force: true)
+        extra_claims = %{
+          "user_id" => params["username"],
+          "exp" => exp |> DateTime.to_unix
+        }
+        with :ok <- ensure_user_exists(user, params["username"], conn),
+            :ok <- password(params["password"], user, conn),
+            {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims)
+        do
+          save_session(conn, token, user, params)
+        end
+      user -> 
         user =
           user
           |> Repo.preload(:access_tokens, force: true)
-        exp =
-          Calendar.DateTime.now_utc
-          |> Calendar.DateTime.advance!(60 * 60 * 24 * 7)
         extra_claims = %{
           "user_id" => user.username,
           "exp" => exp |> DateTime.to_unix
         }
         with {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims) do
-          update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
-          params =
-            %{}
-            |> add_parameter("is_revoked", false)
-            |> add_parameter("request", token)
-          changeset = AccessToken.changeset(%AccessToken{}, params)
-          case Repo.insert(changeset) do
-            {:ok, token} -> render(conn, "remote_login.json", %{token: token.request, user: user})
-            {:error, changeset} -> {:invalid_token, changeset}
-          end
+          save_session(conn, token, user, params)
         end
-      :invalid ->
+      _ ->
         conn
         |> put_resp_content_type("application/json")
-        |> resp(401, Jason.encode!(%{message: "Invalid API keys"}))
+        |> resp(401, Jason.encode!(%{message: "Invalid Credentials"}))
         |> send_resp
         |> halt
     end
@@ -490,6 +464,19 @@ defmodule EvercamMediaWeb.UserController do
       conn
       |> put_view(LogView)
       |> render("user_logs.#{version}.json", %{user_logs: user_logs})
+    end
+  end
+
+  defp save_session(conn, token, user, params) do
+    update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
+    params =
+      %{}
+      |> add_parameter("is_revoked", false)
+      |> add_parameter("request", token)
+    changeset = AccessToken.changeset(%AccessToken{}, params)
+    case Repo.insert(changeset) do
+      {:ok, token} -> render(conn, "remote_login.json", %{token: token.request, user: user})
+      {:error, changeset} -> {:invalid_token, changeset}
     end
   end
 
