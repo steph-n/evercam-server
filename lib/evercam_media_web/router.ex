@@ -74,6 +74,8 @@ end
     pipe_through :api_v2
 
     post "/auth/login", UserController, :remote_login
+    post "/auth/login/api", UserController, :remote_login_api
+    options "/auth/login/api", UserController, :nothing
     options "/auth/login", UserController, :nothing
 
     get "/cameras/port-check", CameraController, :port_check
