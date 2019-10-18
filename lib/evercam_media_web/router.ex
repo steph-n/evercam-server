@@ -73,9 +73,6 @@ end
   scope "/v2", EvercamMediaWeb do
     pipe_through :api_v2
 
-    post "/auth/login", UserController, :remote_login
-    options "/auth/login", UserController, :nothing
-
     get "/cameras/port-check", CameraController, :port_check
     post "/cameras/test", SnapshotController, :test
 
@@ -97,6 +94,9 @@ end
 
     scope "/" do
       pipe_through :auth
+
+      post "/auth/login", UserController, :remote_login
+      options "/auth/login", UserController, :nothing
 
       get "/auth/credentials", UserController, :remote_credentials
       options "/auth/credentials", UserController, :nothing
