@@ -87,6 +87,7 @@ end
     options "/vendors/:id", VendorController, :show
 
     post "/users", UserController, :create
+    options "/users", UserController, :nothing
     post "/users/exist/:input", UserController, :user_exist
 
     get "/public/cameras", PublicController, :index
