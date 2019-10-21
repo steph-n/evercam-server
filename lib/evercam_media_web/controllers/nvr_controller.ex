@@ -38,7 +38,9 @@ defmodule EvercamMediaWeb.NVRController do
       stream_info = HikvisionNVR.get_stream_info(ip, port, cam_username, cam_password, channel)
       device_info = HikvisionNVR.get_device_info(ip, port, cam_username, cam_password)
       hdd_info = HikvisionNVR.get_hdd_info(ip, port, cam_username, cam_password)
-      json(conn, %{stream_info: stream_info, device_info: device_info, hdd_info: hdd_info})
+      time_info = HikvisionNVR.get_time_info(ip, port, cam_username, cam_password)
+      ntp_server_info = HikvisionNVR.get_ntp_server_info(ip, port, cam_username, cam_password)
+      json(conn, %{stream_info: stream_info, device_info: device_info, hdd_info: hdd_info, time_info: time_info, ntp_server_info: ntp_server_info})
     end
   end
 
@@ -78,7 +80,9 @@ defmodule EvercamMediaWeb.NVRController do
           vh_port ->
             vh_stream_info = HikvisionNVR.get_stream_info(ip, vh_port, cam_username, cam_password, channel)
             vh_device_info = HikvisionNVR.get_device_info(ip, vh_port, cam_username, cam_password)
-            %{vh_info: vh_info, vh_stream_info: vh_stream_info, vh_device_info: vh_device_info}
+            vh_time_info = HikvisionNVR.get_time_info(ip, vh_port, cam_username, cam_password)
+            vh_ntp_server_info = HikvisionNVR.get_ntp_server_info(ip, vh_port, cam_username, cam_password)
+            %{vh_info: vh_info, vh_stream_info: vh_stream_info, vh_device_info: vh_device_info, vh_time_info: vh_time_info, vh_ntp_server_info: vh_ntp_server_info}
         end
 
       json(conn, response)
