@@ -152,6 +152,35 @@ defmodule EvercamMedia.HikvisionNVR do
     end
   end
 
+  def get_time_info(host, port, username, password) do
+    url = "http://#{host}:#{port}/ISAPI/System/time"
+    case HTTPClient.get(:digest_auth, url, username, password) do
+      {:ok, %HTTPoison.Response{body: body}} ->
+        xml = XMLParser.parse_inner_array(body)
+        %{
+          time_mode: XMLParser.parse_single_element(xml, '/Time/timeMode'),
+          local_time: XMLParser.parse_single_element(xml, '/Time/localTime'),
+          timezone: XMLParser.parse_single_element(xml, '/Time/timeZone')
+        }
+      _ -> %{}
+    end
+  end
+
+  def get_ntp_server_info(host, port, username, password) do
+    url = "http://#{host}:#{port}/ISAPI/System/time/NtpServers"
+    case HTTPClient.get(:digest_auth, url, username, password) do
+      {:ok, %HTTPoison.Response{body: body}} ->
+        xml = XMLParser.parse_inner_array(body)
+        %{
+          addressing_format_type: XMLParser.parse_single_element(xml, '/NTPServerList/NTPServer/addressingFormatType'),
+          host_name: XMLParser.parse_single_element(xml, '/NTPServerList/NTPServer/hostName'),
+          port_no: XMLParser.parse_single_element(xml, '/NTPServerList/NTPServer/portNo'),
+          synchronize_interval: XMLParser.parse_single_element(xml, '/NTPServerList/NTPServer/synchronizeInterval')
+        }
+      _ -> %{}
+    end
+  end
+
   @doc """
   Give HDD info attached with NVR
   """
