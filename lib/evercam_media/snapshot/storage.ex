@@ -262,6 +262,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     directory_path = construct_directory_path(camera_exid, from, app_name, "")
     request_from_seaweedfs("#{seaweedfs.url}#{directory_path}?limit=3600", seaweedfs.files, seaweedfs.name)
     |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
+    |> Enum.reject(fn(file_name) -> String.ends_with?(file_name, ".json") end)
     |> Enum.map(fn(file_name) ->
       construct_snapshot_record(directory_path, file_name, app_name, 0, version, timezone)
     end)
@@ -379,6 +380,7 @@ defmodule EvercamMedia.Snapshot.Storage do
   defp get_latest_directory_name(directory, url, type, attribute) do
     request_from_seaweedfs(url, type, attribute)
     |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
+    |> Enum.reject(fn(file_name) -> String.ends_with?(file_name, ".json") end)
     |> Enum.sort
     |> case do
       [] -> {:error}
