@@ -55,7 +55,7 @@ defmodule EvercamMediaWeb.UserController do
         do
           save_session(conn, token, user, params)
         end
-      user -> 
+      %User{} = user ->
         user =
           user
           |> Repo.preload(:access_tokens, force: true)
@@ -66,12 +66,6 @@ defmodule EvercamMediaWeb.UserController do
         with {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims) do
           save_session(conn, token, user, params)
         end
-      _ ->
-        conn
-        |> put_resp_content_type("application/json")
-        |> resp(401, Jason.encode!(%{message: "Invalid Credentials"}))
-        |> send_resp
-        |> halt
     end
   end
 
@@ -307,6 +301,27 @@ defmodule EvercamMediaWeb.UserController do
          :ok <- is_expired_token(conn, user.token_expires_at)
     do
       user_params = %{reset_token: "", token_expires_at: Calendar.DateTime.now_utc, password: params["password"]}
+      changeset = User.changeset(user, user_params)
+      case Repo.update(changeset) do
+        {:ok, updated_user} ->
+          extra =
+            %{agent: get_user_agent(conn, params["agent"])}
+            |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+          Util.log_activity(updated_user, %{id: 0, exid: ""}, "password changed", extra)
+          conn |> put_status(200) |> json(%{message: "Password changed successfully."})
+        {:error, changeset} ->
+          render_error(conn, 400, Util.parse_changeset(changeset))
+      end
+    end
+  end
+
+  def remote_password_update(conn, %{"id" => email} = params) do
+    user = conn.assigns[:current_user]
+    email = String.downcase(email)
+    with {:ok, user} <- user_exists(conn, email),
+         :ok <- password(params["currentPassword"], user, conn)
+    do
+      user_params = %{password: params["newPassword"]}
       changeset = User.changeset(user, user_params)
       case Repo.update(changeset) do
         {:ok, updated_user} ->
