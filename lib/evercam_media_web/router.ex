@@ -112,6 +112,8 @@ end
       options "/users/:id/password/reset", UserController, :nothing
       patch "/users/:id/password", UserController, :password_update
       options "/users/:id/password", UserController, :nothing
+      patch "/users/:id/password/update", UserController, :remote_password_update
+      options "/users/:id/password/update", UserController, :remote_password_update
       patch "/users/:id", UserController, :update
       options "/users/:id", UserController, :nothing
       delete "/users/:id", UserController, :delete_user
