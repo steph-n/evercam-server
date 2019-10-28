@@ -91,7 +91,7 @@ defmodule EvercamMedia.Mixfile do
       {:distillery, github: "ijunaid8989/distillery"},
       {:httpoison, "~> 1.5"},
       {:jsx, "~> 2.10.0", override: true},
-      {:swoosh, "~> 0.23.4", override: true},
+      {:swoosh, "~> 0.24.1", override: true},
       {:phoenix_swoosh, "~> 0.2"},
       {:nadia, "~> 0.5.0"},
       {:phoenix, "~> 1.4", override: true},
