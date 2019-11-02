@@ -415,7 +415,7 @@ defmodule EvercamMedia.Snapshot.Storage do
     url = "#{server.url}/#{camera_exid}/snapshots/"
     case HTTPoison.get("#{url}#{file_name}", [], hackney: [pool: :seaweedfs_download_pool]) do
       {:ok, %HTTPoison.Response{status_code: 200, body: snapshot}} ->
-        save_oldest_snapshot(camera_exid, snapshot, take_prefix(file_name, "oldest-"), current_server)
+        save_oldest_snapshot(camera_exid, snapshot, take_prefix(file_name, "oldest-"), current_server.url)
         # {:ok, snapshot, take_prefix(file_name, "oldest-")}
       _error -> :noop
         # import_oldest_image(camera_exid, server, current_server)
