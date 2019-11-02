@@ -84,8 +84,8 @@ defmodule EvercamMedia.Snapshot.Storage do
     file_name = construct_file_name(timestamp)
     file_path = directory_path <> file_name
     case HTTPoison.post("#{seaweed_server.url}#{file_path}", {:multipart, [{file_path, image, []}]}, [], hackney: hackney) do
-      {:ok, response} -> response
-      {:error, error} -> Logger.info "[seaweedfs_save_sync] [#{camera_exid}] [#{inspect error}]"
+      {:ok, response} -> {:ok, response}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -262,7 +262,6 @@ defmodule EvercamMedia.Snapshot.Storage do
     directory_path = construct_directory_path(camera_exid, from, app_name, "")
     request_from_seaweedfs("#{seaweedfs.url}#{directory_path}?limit=3600", seaweedfs.files, seaweedfs.name)
     |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
-    |> Enum.reject(fn(file_name) -> String.ends_with?(file_name, ".json") end)
     |> Enum.map(fn(file_name) ->
       construct_snapshot_record(directory_path, file_name, app_name, 0, version, timezone)
     end)
@@ -380,7 +379,6 @@ defmodule EvercamMedia.Snapshot.Storage do
   defp get_latest_directory_name(directory, url, type, attribute) do
     request_from_seaweedfs(url, type, attribute)
     |> Enum.reject(fn(file_name) -> file_name == "metadata.json" end)
-    |> Enum.reject(fn(file_name) -> String.ends_with?(file_name, ".json") end)
     |> Enum.sort
     |> case do
       [] -> {:error}
@@ -438,6 +436,30 @@ defmodule EvercamMedia.Snapshot.Storage do
       |> Enum.reduce({{}, {}, {year, month, day, h}}, fn(note, {snapshot, error, datetime}) ->
         {yr, mh, dy, hr} = datetime
         case get_oldest_snapshot(url, note, yr, mh, dy, hr, server) do
+          {:ok, image, datetime, y, m, d, h} ->
+            {{:ok, image, datetime}, error, {y, m, d, h}}
+          {:error, message, y, m, d, h} ->
+            {snapshot, {:error, message}, {y, m, d, h}}
+        end
+      end)
+    case snapshot do
+      {} -> {:error, "Oldest image does not exist."}
+      {:ok, image, datetime} ->
+        spawn fn -> save_oldest_snapshot(camera_exid, image, datetime, server.url) end
+        {:ok, image, datetime}
+    end
+  end
+
+  def quick_import_oldest_image(camera_exid, server, old_server) do
+    url = "#{old_server.url}/#{camera_exid}/snapshots/"
+    {{year, month, day}, {h, _m, _s}} = Calendar.DateTime.now_utc |> Calendar.DateTime.to_erl
+
+    {snapshot, _error, _datetime} =
+      url
+      |> request_from_seaweedfs(old_server.type, old_server.attribute)
+      |> Enum.reduce({{}, {}, {year, month, day, h}}, fn(note, {snapshot, error, datetime}) ->
+        {yr, mh, dy, hr} = datetime
+        case get_oldest_snapshot(url, note, yr, mh, dy, hr, old_server) do
           {:ok, image, datetime, y, m, d, h} ->
             {{:ok, image, datetime}, error, {y, m, d, h}}
           {:error, message, y, m, d, h} ->
