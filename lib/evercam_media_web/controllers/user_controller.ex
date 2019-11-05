@@ -59,6 +59,7 @@ defmodule EvercamMediaWeb.UserController do
         user =
           user
           |> Repo.preload(:access_tokens, force: true)
+          |> Repo.preload(:country, force: true)
         extra_claims = %{
           "user_id" => user.username,
           "exp" => exp |> DateTime.to_unix
@@ -484,12 +485,8 @@ defmodule EvercamMediaWeb.UserController do
 
   defp save_session(conn, token, user, params) do
     update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
-    params =
-      %{}
-      |> add_parameter("is_revoked", false)
-      |> add_parameter("request", token)
-    changeset = AccessToken.changeset(%AccessToken{}, params)
-    case Repo.insert(changeset) do
+    token = Ecto.build_assoc(user, :access_tokens, is_revoked: false, request: token)
+    case Repo.insert(token) do
       {:ok, token} -> render(conn, "remote_login.json", %{token: token.request, user: user})
       {:error, changeset} -> {:invalid_token, changeset}
     end
