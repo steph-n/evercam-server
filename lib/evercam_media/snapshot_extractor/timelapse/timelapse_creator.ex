@@ -54,7 +54,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
 
     total_days = find_difference(end_date, start_date) / 86400 |> round |> round_2
 
-    File.mkdir_p(images_directory = "#{@root_dir}/#{camera_exid}/#{exid}/")
+    File.mkdir_p(images_directory = "#{@root_dir}/#{camera_exid}/#{exid}")
 
     {:ok, c_agent} = Agent.start_link(fn -> 0 end)
     {:ok, i_agent} = Agent.start_link fn -> [] end
