@@ -4,6 +4,8 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   import EvercamMedia.Snapshot.Storage
   import Commons
 
+  @root_dir Application.get_env(:evercam_media, :storage_dir)
+
   def init(args) do
     {:producer, args}
   end
@@ -52,8 +54,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
 
     total_days = find_difference(end_date, start_date) / 86400 |> round |> round_2
 
-    images_directory = "#{construction}/#{camera_exid}/#{exid}"
-    File.mkdir_p(images_directory)
+    File.mkdir_p(images_directory = "#{@root_dir}/#{camera_exid}/#{exid}/")
 
     {:ok, c_agent} = Agent.start_link(fn -> 0 end)
     {:ok, i_agent} = Agent.start_link fn -> [] end
@@ -67,7 +68,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
       acc |> Calendar.DateTime.to_erl |> Calendar.DateTime.from_erl(timezone, {123456, 6}) |> ambiguous_handle |> Calendar.DateTime.add!(86400)
     end)
 
-    c_count = Agent.get(c_agent, fn state -> state end)
+    c_count = Agent.get(c_agent, fn state -> state end) - available_count(images_directory)
     interval = get_interval(duration, c_count) |> intervaling
 
     e_start_date = start_date |> Calendar.Strftime.strftime!("%A, %b %d %Y, %H:%M")
@@ -81,6 +82,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
             send_mail_start(true, e_start_date, e_to_date, schedule, e_interval, camera_exid, requestor, duration)
             Agent.get(i_agent, fn list -> list end)
             |> Enum.filter(fn(item) -> item end)
+            |> Enum.sort
             |> Enum.with_index(1)
             |> Enum.map(fn {url, acc} ->
               cad = String.split(url, "/")
@@ -95,6 +97,8 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
             end)
             |> Enum.reject(&is_nil/1)
             |> Enum.map_every(interval, fn { url , _ } ->
+              unix_date = String.split(url, "/") |> get_timestamp()
+              File.write("#{@root_dir}/#{camera_exid}/#{exid}/CURRENT", "#{unix_date}")
               do_loop_duration(url, camera_exid, exid, construction)
             end)
 
@@ -196,7 +200,6 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
       false -> Logger.info "No headers"
       _ ->
         h_unique_filename = "#{images_directory}/#{h_headers}"
-        IO.inspect files
         Map.put(files, "#{h_unique_filename}", "#{camera_exid}/#{exid}/h-#{exid}.mp4")
     end
     #z_unique_filename = "#{images_directory}/#{exid}.zip"
@@ -313,8 +316,8 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     end
   end
 
-  defp upload(200, response, starting, camera_exid, id, construction) do
-    image_save_path = "#{construction}/#{camera_exid}/#{id}/#{starting}.jpg"
+  defp upload(200, response, starting, camera_exid, id, _construction) do
+    image_save_path = "#{@root_dir}/#{camera_exid}/#{id}/#{starting}.jpg"
     imagef = File.write(image_save_path, response, [:binary])
     File.close imagef
   end
@@ -393,5 +396,18 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
       |> Enum.map(&String.to_charlist/1)
     to_path = "#{path}/#{exid}.zip"
     :zip.create(to_path, files)
+  end
+
+  defp available_count(dir) do
+    File.ls(dir)
+    |> case do
+      {:error, :enoent} -> 0
+      {:ok, files} ->
+        Enum.count(files, fn file -> Path.extname(file) == ".jpg" end)
+        |> case do
+          [] -> 0
+          count -> count
+        end
+    end 
   end
 end

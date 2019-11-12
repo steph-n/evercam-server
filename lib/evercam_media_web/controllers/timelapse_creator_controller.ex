@@ -4,6 +4,8 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
   alias EvercamMedia.Util
   import EvercamMedia.S3, only: [do_load_timelapse: 1]
 
+  @root_dir Application.get_env(:evercam_media, :storage_dir)
+
   def timelapses_by_user(conn, _params) do
     caller = conn.assigns[:current_user]
 
@@ -132,6 +134,8 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
             headers: video_params["headers"],
             exid: exid,
           }
+          File.mkdir_p(processing_directory = "#{@root_dir}/#{full_snapshot_extractor.camera.exid}/")
+          File.write!("#{processing_directory}/#{full_snapshot_extractor.id}.json", Jason.encode!(config), [:binary])
           spawn(fn ->
             start_snapshot_extractor(config)
           end)
