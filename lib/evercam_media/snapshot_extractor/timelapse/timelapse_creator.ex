@@ -142,7 +142,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   end
 
   defp remove_date(images_directory, _exid, "false") do
-    Porcelain.shell("cat #{images_directory}/*.jpg | ffmpeg -f image2pipe -framerate 24 -i - -c:v libx264 -r 24 -preset veryfast -tune stillimage -bufsize 1000k -pix_fmt yuv420p -y #{images_directory}/output.mp4", [err: :out]).out
+    Porcelain.shell("cat #{images_directory}/*.jpg | ffmpeg -f image2pipe -framerate 24 -i -c:v h264_nvenc -r 24 -preset veryfast -tune stillimage -bufsize 1000k -pix_fmt yuv420p -y #{images_directory}/output.mp4", [err: :out]).out
   end
   defp remove_date(images_directory, exid, "true") do
     {:ok, py} = Python.start(python: "python3", python_path: Path.expand("lib/python"))
