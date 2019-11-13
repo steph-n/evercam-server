@@ -69,10 +69,44 @@ defmodule EvercamMedia.SnapshotExtractor.ExtractorSupervisor do
     |> GenStage.cast({:snapshot_extractor, get_config(extractor, :cloud)})
   end
   def start_extraction(extractor, :timelapse) do
-    Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
-    Process.whereis(:"snapshot_extractor_#{extractor.id}")
-    |> get_process_pid(EvercamMedia.SnapshotExtractor.TimelapseCreator, extractor.id)
-    |> GenStage.cast({:snapshot_extractor, get_config(extractor, :timelapse)})
+    # checkjson file
+    File.exists?("#{@root_dir}/#{extractor.camera.exid}/#{extractor.id}.json")
+    |> case do
+      true ->
+        details = File.read!("#{@root_dir}/#{extractor.camera.exid}/#{extractor.id}.json") |> Jason.decode! |> Map.new(fn {key, value} -> {String.to_atom(key), value} end)
+        File.exists?("#{@root_dir}/#{details.camera_exid}/#{details.exid}/CURRENT")
+        |> case do
+          true ->
+            unix_datetime = File.read!("#{@root_dir}/#{details.camera_exid}/#{details.exid}/CURRENT")
+            config = %{
+              id: details.id,
+              from_datetime: Calendar.DateTime.Parse.unix!(unix_datetime),
+              to_datetime: details.to_datetime |> Calendar.DateTime.Parse.rfc3339_utc() |> elem(1),
+              duration: details.duration,
+              schedule: details.schedule,
+              camera_exid: details.camera_exid,
+              timezone: details.timezone,
+              camera_name: details.camera_name,
+              requestor: details.requestor,
+              create_mp4: details.create_mp4,
+              jpegs_to_dropbox: details.jpegs_to_dropbox,
+              expected_count: 0,
+              watermark: details.watermark,
+              watermark_logo: details.watermark_logo,
+              title: details.title,
+              rm_date: details.rm_date,
+              format: details.format,
+              headers: details.headers,
+              exid: details.exid,
+            }
+            Logger.debug "Ressuming extraction for #{extractor.camera.exid}"
+            Process.whereis(:"snapshot_extractor_#{extractor.id}")
+            |> get_process_pid(EvercamMedia.SnapshotExtractor.TimelapseCreator, extractor.id)
+            |> GenStage.cast({:snapshot_extractor, config})
+          false -> :noop
+        end
+      false -> :noop
+    end
   end
 
   defp get_process_pid(nil, module, id) do
