@@ -73,7 +73,11 @@ defmodule EvercamMedia.Zoho do
         json_response = Jason.decode!(body)
         account = Map.get(json_response, "data") |> List.first
         {:ok, account}
-      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Account does't exits."}
+      {:ok, %HTTPoison.Response{status_code: 204}} ->
+        domain
+        |> String.split(".")
+        |> List.first
+        |> get_account
       error -> {:error, error}
     end
   end
@@ -95,9 +99,9 @@ defmodule EvercamMedia.Zoho do
   def insert_contact(user, owner_email \\ nil) do
     url = "#{@zoho_url}Contacts"
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
-    domain = user.email |> String.split("@") |> List.last |> String.split(".") |> List.first
+    domain = user.email |> String.split("@") |> List.last
     account_name =
-      case get_account(domain) do
+      case search_account(domain) do
         {:ok, account} -> account["Account_Name"]
         _ -> get_account_by_owner_email(owner_email)
       end
