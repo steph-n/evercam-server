@@ -676,18 +676,13 @@ defmodule EvercamMediaWeb.UserController do
   defp add_contact_to_zoho(true, share_request, user) do
     spawn fn ->
       update_share_requests(user.email)
-      contact =
-        case Zoho.get_contact(user.email) do
-          {:ok, contact} -> contact
-          {:nodata, _message} ->
-            {:ok, contact} = Zoho.insert_contact(user)
-            contact
-          {:error} -> nil
-        end
+      :timer.sleep(10_000)
+      contact = get_or_insert_contact(user)
       case {contact, share_request} do
         {nil, _} -> :noop
         {_, nil} -> :noop
         {zoho_contact, request} ->
+          :timer.sleep(10_000)
           case Zoho.get_camera(request.camera.exid) do
             {:ok, zoho_camera} ->
               zoho_contact
@@ -699,6 +694,19 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
   defp add_contact_to_zoho(_, _, _), do: :noop
+
+  defp get_or_insert_contact(user) do
+    case Zoho.get_contact(user.email) do
+      {:ok, contact} -> contact
+      {:nodata, _message} ->
+        :timer.sleep(10_000)
+        {:ok, contact} = Zoho.insert_contact(user)
+        contact
+      {:error, error} ->
+        Logger.info "[get_or_insert_contact] [#{user.email}] [#{User.get_fullname(user)}] [#{inspect error}]"
+        nil
+    end
+  end
 
   defp update_share_requests(email) do
     case Zoho.get_share_request(email) do

@@ -39,7 +39,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
           Logger.info "Start insert contact '#{user.email}' to zoho."
           {:ok, _contact} = Zoho.insert_contact(user)
           :timer.sleep(10000)
-        {:error} -> Logger.error "Error to insert"
+        {:error, _} -> Logger.error "Error to insert"
       end
     end)
   end
@@ -172,7 +172,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
           Zoho.update_contact(contact["id"], [%{"Evercam_Signup_Date" => evercam_user_signup_date}])
           :timer.sleep(1000)
         {:nodata, _message} -> Logger.info "Contact '#{user.email}' does not exists."
-        {:error} -> Logger.error "Error to get contact"
+        {:error, _} -> Logger.error "Error to get contact"
       end
     end)
   end
@@ -316,7 +316,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
             {:ok, contact} -> Map.put(contact, "Full_Name", User.get_fullname(camera_share.user))
             _ -> nil
           end
-        {:error} -> nil
+        {:error, _} -> nil
       end
     Logger.info "Associate camera (#{zoho_camera["Evercam_ID"]}) with contact (#{zoho_contact["Full_Name"]})."
 

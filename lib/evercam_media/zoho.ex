@@ -92,12 +92,14 @@ defmodule EvercamMedia.Zoho do
         contact = Map.get(json_response, "data") |> List.first
         {:ok, contact}
       {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "Contact does't exits."}
-      _ -> {:error}
+      error -> {:error, error}
     end
   end
 
-  def insert_contact(user, owner_email \\ nil) do
+  def insert_contact(user, owner_email \\ nil, retry \\ 1) do
+    Logger.debug("Try #{retry} to insert zoho contact")
     url = "#{@zoho_url}Contacts"
+
     headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
     domain = user.email |> String.split("@") |> List.last
     account_name =
@@ -123,7 +125,12 @@ defmodule EvercamMedia.Zoho do
         json_response = Jason.decode!(body)
         contact = Map.get(json_response, "data") |> List.first
         {:ok, contact["details"]}
-      error -> {:error, error}
+      error ->
+        if retry < 2 do
+          insert_contact(user, owner_email, retry + 1)
+        else
+          {:error, error}
+        end
     end
   end
 
