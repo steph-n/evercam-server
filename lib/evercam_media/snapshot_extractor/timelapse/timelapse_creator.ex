@@ -142,7 +142,9 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   end
 
   defp remove_date(images_directory, _exid, "false") do
-    Porcelain.shell("cat #{images_directory}/*.jpg | ffmpeg -f image2pipe -framerate 24 -i - -c:v libx264 -r 24 -preset veryfast -tune stillimage -bufsize 1000k -pix_fmt yuv420p -y #{images_directory}/output.mp4", [err: :out]).out
+    # ffmpeg -f image2pipe -framerate 24 -i - -c:v h264_nvenc -r 24 -preset fast -rc 1 -cbr true -pix_fmt yuv420p  -b:v 20000k -minrate 20000k -maxrate 20000k -bufsize 1835k -y output.mp4
+    # Porcelain.shell("cat #{images_directory}/*.jpg | ffmpeg -f image2pipe -framerate 24 -i - -c:v h264_nvenc -r 24 -bufsize 1000k -pix_fmt yuv420p -y #{images_directory}/output.mp4", [err: :out]).out
+    Porcelain.shell("cat #{images_directory}/*.jpg | ffmpeg -f image2pipe -framerate 24 -i - -c:v h264_nvenc -r 24 -preset fast -rc 1 -cbr true -pix_fmt yuv420p  -b:v 20000k -minrate 20000k -maxrate 20000k -bufsize 1835k -y #{images_directory}/output.mp4", [err: :out]).out
   end
   defp remove_date(images_directory, exid, "true") do
     {:ok, py} = Python.start(python: "python3", python_path: Path.expand("lib/python"))
@@ -174,18 +176,18 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     false
   end
   defp get_headers(images_directory, exid, duration, "true") do
-    Porcelain.shell("ffmpeg -i #{images_directory}/#{exid}.mp4 -acodec libvo_aacenc -vcodec libx264 -s 1920x1080 -r 60 -strict experimental #{images_directory}/h-#{exid}.mp4", [err: :out]).out
+    Porcelain.shell("ffmpeg -i #{images_directory}/#{exid}.mp4 -acodec libvo_aacenc -vcodec h264_nvenc -s 1920x1080 -r 60 -strict experimental #{images_directory}/h-#{exid}.mp4", [err: :out]).out
     File.rm!("#{images_directory}/#{exid}.mp4")
     Porcelain.shell("ffmpeg -i priv/static/video/intro.mp4 -i #{images_directory}/h-#{exid}.mp4 -f lavfi -i color=c=black:s=1920x1080 -filter_complex '[0:v]format=pix_fmts=yuva420p,fade=t=out:st=3:d=1:alpha=1,setpts=PTS-STARTPTS[va0];\
     [1:v]format=pix_fmts=yuv420p,fade=t=in:st=0:d=1:alpha=1,setpts=PTS-STARTPTS+3/TB[va1];\
     [2:v]scale=1920x1080,trim=duration=#{duration+2}[over];\
     [over][va0]overlay[over1];\
-    [over1][va1]overlay=format=yuv420[outv]' -vcodec libx264 -map [outv] #{images_directory}/out.mp4", [err: :out]).out
+    [over1][va1]overlay=format=yuv420[outv]' -vcodec h264_nvenc -map [outv] #{images_directory}/out.mp4", [err: :out]).out
     Porcelain.shell("ffmpeg -i #{images_directory}/out.mp4 -i priv/static/video/contact.mp4 -f lavfi -i color=c=black:s=1920x1080 -filter_complex '[0:v]format=pix_fmts=yuva420p,fade=t=out:st=#{duration+2}:d=1:alpha=1,setpts=PTS-STARTPTS[va0];\
     [1:v]format=pix_fmts=yuv420p,fade=t=in:st=0:d=1:alpha=1,setpts=PTS-STARTPTS+#{duration}/TB[va1];\
     [2:v]scale=1920x1080,trim=duration=#{duration}[over];\
     [over][va0]overlay[over1];\
-    [over1][va1]overlay=format=yuv420[outv]' -vcodec libx264 -map [outv] #{images_directory}/#{exid}.mp4", [err: :out]).out
+    [over1][va1]overlay=format=yuv420[outv]' -vcodec h264_nvenc -map [outv] #{images_directory}/#{exid}.mp4", [err: :out]).out
     "h-" <> exid <> ".mp4"
   end
 
@@ -408,6 +410,6 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
           [] -> 0
           count -> count
         end
-    end 
+    end
   end
 end
