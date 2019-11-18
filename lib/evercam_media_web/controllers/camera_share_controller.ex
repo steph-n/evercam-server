@@ -297,7 +297,7 @@ defmodule EvercamMediaWeb.CameraShareController do
             {:ok, contact} = Zoho.insert_contact(user, evercam_camera.owner.email)
             Map.put(contact, "Full_Name", User.get_fullname(user))
           {:error, error} ->
-            Logger.info "[get_or_insert_contact] [#{user.email}] [#{User.get_fullname(user)}] [#{inspect error}]"
+            Logger.info "[Share => add_contact_to_zoho] [#{user.email}] [#{User.get_fullname(user)}] [#{inspect error}]"
             nil
         end
       case contact do
