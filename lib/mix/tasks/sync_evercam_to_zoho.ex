@@ -39,7 +39,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
           Logger.info "Start insert contact '#{user.email}' to zoho."
           {:ok, _contact} = Zoho.insert_contact(user)
           :timer.sleep(10000)
-        {:error} -> Logger.error "Error to insert"
+        {:error, _} -> Logger.error "Error to insert"
       end
     end)
   end
@@ -58,6 +58,46 @@ defmodule EvercamMedia.SyncEvercamToZoho do
         _ -> nil
       end
     end)
+  end
+
+  def update_account_info(true, page) do
+    url = "#{@zoho_url}Accounts?per_page=99&page=#{page}"
+    headers = ["Authorization": "#{@zoho_auth_token}"]
+
+    case HTTPoison.get(url, headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        zoho_response = Jason.decode!(body)
+        info = zoho_response |> Map.get("info")
+
+        zoho_response
+        |> Map.get("data")
+        |> Enum.filter(fn(account) -> account["Email_Domain"] == nil end)
+        |> Enum.map(fn(rec) ->
+          %{
+            "id" => rec["id"],
+            "Email_Domain" => parse_domain_from_url(rec["Website"])
+          }
+        end)
+        |> Enum.filter(fn(account) -> account["Email_Domain"] != nil end)
+        |> do_update_account_info
+
+        :timer.sleep(30000)
+        update_account_info(info["more_records"], info["page"] + 1)
+      {:ok, %HTTPoison.Response{status_code: 204}} -> {:nodata, "No record found."}
+      error -> IO.inspect error
+    end
+  end
+  def update_account_info(false, _), do: :noop
+
+  def do_update_account_info(xml_data) do
+    url = "#{@zoho_url}Accounts"
+    headers = ["Authorization": "#{@zoho_auth_token}", "Content-Type": "application/x-www-form-urlencoded"]
+
+    raw_xml = %{ "data" => xml_data }
+    case HTTPoison.put(url, Jason.encode!(raw_xml), headers) do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} -> {:ok, body}
+      error -> {:error, error}
+    end
   end
 
   def update_records(true, page) do
@@ -132,7 +172,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
           Zoho.update_contact(contact["id"], [%{"Evercam_Signup_Date" => evercam_user_signup_date}])
           :timer.sleep(1000)
         {:nodata, _message} -> Logger.info "Contact '#{user.email}' does not exists."
-        {:error} -> Logger.error "Error to get contact"
+        {:error, _} -> Logger.error "Error to get contact"
       end
     end)
   end
@@ -276,7 +316,7 @@ defmodule EvercamMedia.SyncEvercamToZoho do
             {:ok, contact} -> Map.put(contact, "Full_Name", User.get_fullname(camera_share.user))
             _ -> nil
           end
-        {:error} -> nil
+        {:error, _} -> nil
       end
     Logger.info "Associate camera (#{zoho_camera["Evercam_ID"]}) with contact (#{zoho_contact["Full_Name"]})."
 
@@ -307,5 +347,17 @@ defmodule EvercamMedia.SyncEvercamToZoho do
           }
         }
     end
+  end
+
+  defp parse_domain_from_url(url) when url in [nil, ""], do: nil
+  defp parse_domain_from_url(url) do
+    url
+    |> String.replace_leading("https://", "")
+    |> String.replace_leading("https://www.", "")
+    |> String.replace_leading("http://", "")
+    |> String.replace_leading("http://www.", "")
+    |> String.replace_leading("www.", "")
+    |> String.split("/")
+    |> List.first
   end
 end
