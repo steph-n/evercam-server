@@ -229,11 +229,8 @@ defmodule EvercamMediaWeb.UserController do
           request_hex_code = UUID.uuid4(:hex)
           token = Ecto.build_assoc(user, :access_tokens, is_revoked: false,
             request: request_hex_code |> String.slice(0..31))
+          Repo.insert(token)
 
-          case Repo.insert(token) do
-            {:ok, token} -> {:success, user, token}
-            {:error, changeset} -> {:invalid_token, changeset}
-          end
           case has_share_request_key?(share_request_key) do
             false ->
               created_at =
@@ -255,10 +252,21 @@ defmodule EvercamMediaWeb.UserController do
           end
           share_requests = CameraShareRequest.by_email(user.email)
           multiple_share_create(share_requests, user, conn)
-          Logger.info "[POST v1/users] [#{user_agent}] [#{requester_ip}] [#{user.username}] [#{user.email}] [#{params["token"]}]"
-          conn
-          |> put_status(:created)
-          |> render("show.#{version}.json", %{user: user |> Repo.preload(:country, force: true)})
+          exp =
+            Calendar.DateTime.now_utc
+            |> Calendar.DateTime.advance!(60 * 60 * 24 * 7)
+            |> DateTime.to_unix
+          extra_claims = %{
+            "user_id" => user.username,
+            "exp" => exp
+          }
+          with {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims) do
+            update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
+            Logger.info "[POST v1/users] [#{user_agent}] [#{requester_ip}] [#{user.username}] [#{user.email}] [#{params["token"]}]"
+            conn
+            |> put_status(:created)
+            |> render("show.#{version}.json", %{user: user |> Repo.preload(:country, force: true), token: token})
+          end
         {:error, changeset} ->
           render_error(conn, 400, Util.parse_changeset(changeset))
       end

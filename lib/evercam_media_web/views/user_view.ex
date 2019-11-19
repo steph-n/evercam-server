@@ -25,6 +25,9 @@ defmodule EvercamMediaWeb.UserView do
     }
   end
 
+  def render("show.v2.json", %{token: token, user: user}) do
+    %{token: token} |> Map.merge(get_user(user))
+  end
   def render("show.v2.json", %{user: user}) do
     %{users: [get_user(user)]}
   end

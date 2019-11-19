@@ -81,8 +81,6 @@ defmodule EvercamMedia.UserControllerTest do
     signed_up_user =
       response.resp_body
       |> Jason.decode!
-      |> Map.get("users")
-      |> List.first
 
     assert response.status == 201
     assert signed_up_user["confirmed_at"] != nil
