@@ -25,7 +25,7 @@ defmodule EvercamMedia.Intercom do
     url = "#{intercom_url}?company_id=#{company_id}"
     headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json"]
     response = HTTPoison.get(url, headers) |> elem(1)
-    IO.inspect response
+
     case response.status_code do
       200 -> {:ok, response.body |> Jason.decode!}
       _ -> {:error, response}
@@ -86,7 +86,7 @@ defmodule EvercamMedia.Intercom do
         _ -> nil
       end
 
-    IO.inspect HTTPoison.post(@intercom_url, json, headers)
+    HTTPoison.post(@intercom_url, json, headers)
     sync_company_with_evercam(user, company_id)
     tag_user(user.email, get_tag_name(company_id))
   end
