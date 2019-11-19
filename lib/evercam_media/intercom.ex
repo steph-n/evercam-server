@@ -59,7 +59,7 @@ defmodule EvercamMedia.Intercom do
           name = company_domain |> String.split(".") |> List.first |> String.capitalize
           is_valid_company(company_domain, name)
       end
-    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"]
+    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "application/json", "Content-Type": "application/json"]
     intercom_new_user = %{
       email: user.email,
       name: user.firstname <> " " <> user.lastname,
@@ -143,7 +143,7 @@ defmodule EvercamMedia.Intercom do
 
   def update_intercom_user(false, _user, _old_username, _user_agent, _requester_ip), do: :noop
   def update_intercom_user(true, user, old_username, user_agent, requester_ip) do
-    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"]
+    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "application/json", "Content-Type": "application/json"]
 
     case get_user(old_username) do
       {:ok, response} ->
@@ -165,7 +165,7 @@ defmodule EvercamMedia.Intercom do
   def tag_user(_email, ""), do: :noop
   def tag_user(email, tag) do
     intercom_url = @intercom_url |> String.replace("users", "tags")
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/json"]
     tag_params = %{
       name: tag,
       users: [%{email: email}]
