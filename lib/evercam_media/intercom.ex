@@ -12,7 +12,7 @@ defmodule EvercamMedia.Intercom do
         _ -> "user_id=#{user_id}"
       end
     url = "#{@intercom_url}?#{search_string}"
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json"]
     response = HTTPoison.get(url, headers) |> elem(1)
     case response.status_code do
       200 -> {:ok, response}
@@ -23,8 +23,9 @@ defmodule EvercamMedia.Intercom do
   def get_company(company_id) do
     intercom_url = @intercom_url |> String.replace("users", "companies")
     url = "#{intercom_url}?company_id=#{company_id}"
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json"]
     response = HTTPoison.get(url, headers) |> elem(1)
+    IO.inspect response
     case response.status_code do
       200 -> {:ok, response.body |> Jason.decode!}
       _ -> {:error, response}
@@ -34,7 +35,7 @@ defmodule EvercamMedia.Intercom do
   def create_company(company_id, company_name) do
     intercom_url = @intercom_url |> String.replace("users", "companies")
     url = "#{intercom_url}"
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/json"]
     company_changeset = %{
       company_id: company_id,
       name: company_name,
@@ -58,7 +59,7 @@ defmodule EvercamMedia.Intercom do
           name = company_domain |> String.split(".") |> List.first |> String.capitalize
           is_valid_company(company_domain, name)
       end
-    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"]
     intercom_new_user = %{
       email: user.email,
       name: user.firstname <> " " <> user.lastname,
@@ -85,7 +86,7 @@ defmodule EvercamMedia.Intercom do
         _ -> nil
       end
 
-    HTTPoison.post(@intercom_url, json, headers)
+    IO.inspect HTTPoison.post(@intercom_url, json, headers)
     sync_company_with_evercam(user, company_id)
     tag_user(user.email, get_tag_name(company_id))
   end
@@ -142,7 +143,7 @@ defmodule EvercamMedia.Intercom do
 
   def update_intercom_user(false, _user, _old_username, _user_agent, _requester_ip), do: :noop
   def update_intercom_user(true, user, old_username, user_agent, requester_ip) do
-    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"]
 
     case get_user(old_username) do
       {:ok, response} ->
@@ -164,7 +165,7 @@ defmodule EvercamMedia.Intercom do
   def tag_user(_email, ""), do: :noop
   def tag_user(email, tag) do
     intercom_url = @intercom_url |> String.replace("users", "tags")
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"]
     tag_params = %{
       name: tag,
       users: [%{email: email}]
@@ -212,7 +213,7 @@ defmodule EvercamMedia.Intercom do
   def delete_user(user, tries) do
     company_domain = String.split(user, "@") |> List.last
     url = "#{@intercom_url}?email=#{user}"
-    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}",  "Accept": "application/json", "Content-Type": "application/json"]
 
     case HTTPoison.delete(url, headers) do
       {:ok, _} -> :noop
