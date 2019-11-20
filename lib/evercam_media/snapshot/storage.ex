@@ -643,7 +643,7 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
 
   defp delete_directory(camera_exid, url) do
-    Enum.each(1..24, fn(hour) ->
+    Enum.each(0..23, fn(hour) ->
       hour_url = url <> String.pad_leading("#{hour}", 2, "0")
       spawn(fn ->
         hackney = [pool: :seaweedfs_download_pool, recv_timeout: 30_000_000]
