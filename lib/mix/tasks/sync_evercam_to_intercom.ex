@@ -16,7 +16,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
         next_url -> next_url
       end
 
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json"]
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
     users = Jason.decode!(body) |> Map.get("users")
     pages = Jason.decode!(body) |> Map.get("pages")
@@ -53,7 +53,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
         next_url -> next_url
       end
 
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json"]
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
     companies = Jason.decode!(body) |> Map.get("companies")
     pages = Jason.decode!(body) |> Map.get("pages")
@@ -129,7 +129,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
   end
 
   def add_company_to_user(emails) do
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/json"]
     emails_list = String.split(emails, ",")
 
     Enum.each(emails_list, fn(email) ->
@@ -160,7 +160,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
   def update_company(ids_names) do
     intercom_url = @intercom_url |> String.replace("users", "companies")
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/json"]
     company_list = String.split(ids_names, ",")
 
     Enum.each(company_list, fn(company) ->
@@ -188,7 +188,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
         next_url -> next_url
       end
 
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json"]
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(api_url, headers)
     users = Jason.decode!(body) |> Map.get("users")
     pages = Jason.decode!(body) |> Map.get("pages")
@@ -202,7 +202,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
     first_seen = Map.get(intercom_user, "created_at")
 
     Logger.info "Update attributes of intercom user email: #{intercom_email}"
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/json"]
 
     intercom_new_user = %{
       id: intercom_id,
@@ -242,7 +242,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
   defp update_intercom_user_status(intercom_id, intercom_email) do
     Logger.info "Update statue of intercom user email: #{intercom_email}"
-    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "Accept:application/json", "Content-Type": "application/json"]
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/json"]
 
     intercom_new_user = %{
       id: intercom_id,
