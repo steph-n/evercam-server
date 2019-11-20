@@ -30,12 +30,13 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
       case Intercom.get_user(u.email) do
         {:ok, response} ->
           ic_user = response.body |> Jason.decode!
-          urls =
-            ic_user["social_profiles"]["social_profiles"]
-            |> Enum.reduce(%{}, fn(item, social_links) ->
-              add_url_to_params(social_links, item["url"], String.downcase(item["name"]))
-            end)
-          User.update_user(u, urls)
+          case Map.get(ic_user["companies"], "companies") do
+            [] ->
+              Logger.info "Company not exists."
+              associate_company(ic_user)
+            [companies] ->
+              Logger.info "Company id: #{companies["company_id"]} and id is: #{companies["id"]}"
+          end
         _ -> ""
       end
     end)
@@ -157,6 +158,28 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
         _ -> ""
       end
     end)
+  end
+
+  def associate_company(ic_user) do
+    headers = ["Authorization": "Bearer #{@intercom_token}", "Accept": "application/json", "Content-Type": "application/json"]
+    email = ic_user["email"]
+    company_domain = String.split(email, "@") |> List.last
+    company_id =
+        case Intercom.get_company(company_domain) do
+          {:ok, company} -> company["company_id"]
+          _ ->
+            Logger.info "Company does not found for #{email}."
+            Intercom.create_company(company_domain, String.split(company_domain, ".") |> List.first)
+            company_domain
+        end
+
+    Logger.info "Adding company for email: #{email}, intercom_id: #{ic_user["id"]}, company_id: #{company_id}"
+    intercom_new_user = %{
+      id: ic_user["id"],
+      companies: [%{company_id: company_id}]
+    }
+    |> Jason.encode!
+    HTTPoison.post(@intercom_url, intercom_new_user, headers)
   end
 
   def update_company(ids_names) do
