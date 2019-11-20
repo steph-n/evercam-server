@@ -105,6 +105,7 @@ defmodule EvercamMedia.SyncEvercamToIntercom do
 
   defp add_company_id(company_id, domain) do
     User.by_email_domain(domain)
+    |> Enum.filter(fn(u) -> u.company_id == nil end)
     |> Enum.each(fn(u) ->
       User.link_company(u, company_id)
     end)
