@@ -226,28 +226,6 @@ defmodule EvercamMediaWeb.UserController do
       changeset = User.changeset(%User{}, params)
       case Repo.insert(changeset) do
         {:ok, user} ->
-
-          case has_share_request_key?(share_request_key) do
-            false ->
-              created_at =
-                user.created_at
-                |> Calendar.Strftime.strftime!("%Y-%m-%d %T UTC")
-
-              code =
-                :crypto.hash(:sha, user.username <> created_at)
-                |> Base.encode16
-                |> String.downcase
-
-              EvercamMedia.UserMailer.confirm(user, code)
-              Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
-            true ->
-              share_request = CameraShareRequest.by_key_and_status(share_request_key)
-              create_share_for_request(share_request, user, conn)
-              Intercom.update_user(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
-              add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), share_request, user)
-          end
-          share_requests = CameraShareRequest.by_email(user.email)
-          multiple_share_create(share_requests, user, conn)
           exp =
             Calendar.DateTime.now_utc
             |> Calendar.DateTime.advance!(60 * 60 * 24 * 7)
@@ -257,10 +235,34 @@ defmodule EvercamMediaWeb.UserController do
             "exp" => exp
           }
           with {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims) do
-            update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
+
             access_token = Ecto.build_assoc(user, :access_tokens, is_revoked: false,
               request: token)
             Repo.insert(access_token)
+
+            case has_share_request_key?(share_request_key) do
+              false ->
+                created_at =
+                  user.created_at
+                  |> Calendar.Strftime.strftime!("%Y-%m-%d %T UTC")
+
+                code =
+                  :crypto.hash(:sha, user.username <> created_at)
+                  |> Base.encode16
+                  |> String.downcase
+
+                EvercamMedia.UserMailer.confirm(user, code)
+                Intercom.intercom_activity(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
+              true ->
+                share_request = CameraShareRequest.by_key_and_status(share_request_key)
+                create_share_for_request(share_request, user, conn)
+                Intercom.update_user(Application.get_env(:evercam_media, :create_intercom_user), user, user_agent, requester_ip)
+                add_contact_to_zoho(Application.get_env(:evercam_media, :run_spawn), share_request, user)
+            end
+            share_requests = CameraShareRequest.by_email(user.email)
+            multiple_share_create(share_requests, user, conn)
+
+            update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
             Logger.info "[POST v1/users] [#{user_agent}] [#{requester_ip}] [#{user.username}] [#{user.email}] [#{params["token"]}]"
             conn
             |> put_status(:created)
