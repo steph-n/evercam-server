@@ -226,10 +226,6 @@ defmodule EvercamMediaWeb.UserController do
       changeset = User.changeset(%User{}, params)
       case Repo.insert(changeset) do
         {:ok, user} ->
-          request_hex_code = UUID.uuid4(:hex)
-          token = Ecto.build_assoc(user, :access_tokens, is_revoked: false,
-            request: request_hex_code |> String.slice(0..31))
-          Repo.insert(token)
 
           case has_share_request_key?(share_request_key) do
             false ->
@@ -262,6 +258,9 @@ defmodule EvercamMediaWeb.UserController do
           }
           with {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims) do
             update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
+            access_token = Ecto.build_assoc(user, :access_tokens, is_revoked: false,
+              request: token)
+            Repo.insert(access_token)
             Logger.info "[POST v1/users] [#{user_agent}] [#{requester_ip}] [#{user.username}] [#{user.email}] [#{params["token"]}]"
             conn
             |> put_status(:created)
