@@ -83,7 +83,7 @@ defmodule EvercamMediaWeb.ArchiveView do
       file_name: archive.file_name,
       type: get_archive_type(archive.type),
       media_url: archive.url,
-      thumbnail_url: "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{archive.camera.exid}/archives/#{archive.exid}/thumbnail?type=clip"
+      thumbnail_url: get_url_thumbnail(archive.type, archive)
     }
   end
 
@@ -165,4 +165,28 @@ defmodule EvercamMediaWeb.ArchiveView do
   defp compare_status(0), do: "Processing"
   defp compare_status(1), do: "Completed"
   defp compare_status(2), do: "Failed"
+
+  defp get_url_thumbnail("url", archive) do
+    default_thumbnail = "#{EvercamMediaWeb.Endpoint.static_url}/v1/cameras/#{archive.camera.exid}/archives/#{archive.exid}/thumbnail?type=clip"
+    cond do
+      String.match?(archive.url, ~r/youtube.com/) == true ->
+        video_id = archive.url
+        |> String.split("watch?v=")
+        |> List.last
+        "http://img.youtube.com/vi/#{video_id}/hqdefault.jpg"
+      String.match?(archive.url, ~r/vimeo.com/) ->
+        case EvercamMedia.HTTPClient.get("https://vimeo.com/api/oembed.json?url=#{archive.url}") do
+          {:ok, %HTTPoison.Response{body: body}} ->
+            res = body |> Jason.decode!
+            thumbnail_width = Map.get(res, "thumbnail_width")
+            thumbnail_height = Map.get(res, "thumbnail_height")
+            url = Map.get(res, "thumbnail_url")
+            url |> String.replace("#{thumbnail_width}x#{thumbnail_height}", "640x480")
+          _ -> default_thumbnail
+        end
+      true ->
+        default_thumbnail
+    end
+
+  end
 end
