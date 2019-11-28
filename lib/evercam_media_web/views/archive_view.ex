@@ -176,7 +176,7 @@ defmodule EvercamMediaWeb.ArchiveView do
         "http://img.youtube.com/vi/#{video_id}/hqdefault.jpg"
       String.match?(archive.url, ~r/vimeo.com/) ->
         case EvercamMedia.HTTPClient.get("https://vimeo.com/api/oembed.json?url=#{archive.url}?width=640&height=480") do
-          {:ok, %HTTPoison.Response{body: body}} ->
+          {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
             case convert_to_json(body) do
               nil -> default_thumbnail
               res -> Map.get(res, "thumbnail_url") |> get_default(default_thumbnail)
