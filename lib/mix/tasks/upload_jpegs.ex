@@ -12,7 +12,11 @@ defmodule UploadJpegs do
         "" -> :noop
         timestamp ->
           image = File.read!(file)
-          seaweedfs_save_sync("everc-lqyvo", timestamp, image, "")
+          with {:ok, _response} <- seaweedfs_save_sync("everc-lqyvo", timestamp, image, "") do
+            File.rename(file, "_#{file}")
+          else
+            {:error, error} -> IO.inspect error
+          end
       end
     end)
   end
