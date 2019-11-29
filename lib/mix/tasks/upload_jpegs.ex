@@ -13,7 +13,7 @@ defmodule UploadJpegs do
         timestamp ->
           image = File.read!(file)
           seaweedfs_save_sync("everc-lqyvo", timestamp, image, "")
-          File.rename(file, "_#{file}")
+          File.rename(file, "/root/_evercamtest/#{timestamp}.JPG")
       end
     end)
   end
