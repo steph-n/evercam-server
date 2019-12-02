@@ -1,20 +1,19 @@
 defmodule UploadJpegs do
-  @location "/root/evercamtest"
+  @location "/root/_evercamtest"
   import EvercamMedia.Snapshot.Storage, only: [seaweedfs_save_sync: 4]
 
   def start do
     FileExt.ls_r(@location)
     |> Enum.each(fn(file) ->
-      Exexif.exif_from_jpeg_file!(file)[:modify_date]
-      |> String.replace("\"", "")
-      |> parse_datetime
-      |> case do
-        "" -> :noop
-        timestamp ->
-          image = File.read!(file)
-          seaweedfs_save_sync("everc-lqyvo", timestamp, image, "")
-          File.rename(file, "/root/_evercamtest/#{timestamp}.JPG")
-      end
+      timestamp =
+        file
+        |> String.replace(~r/[^\d]/, "")
+        |> Calendar.DateTime.Parse.unix!
+        |> shift_zone_to_utc("Asia/Singapore")
+        |> DateTime.to_unix
+      image = File.read!(file)
+      seaweedfs_save_sync("everc-wlaxf", timestamp, image, "")
+      File.rename(file, "/root/__evercamtest/#{timestamp}.JPG")
     end)
   end
 
