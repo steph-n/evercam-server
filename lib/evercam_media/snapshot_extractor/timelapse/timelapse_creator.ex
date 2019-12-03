@@ -25,32 +25,15 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     watermark_logo = extractor.watermark_logo
     camera_exid = extractor.camera_exid
     title = extractor.title
-    construction =
-      case requestor do
-        "marklensmen@gmail.com" ->
-          "Construction"
-        _ ->
-          "Construction2"
-      end
-    timezone =
-      case extractor.timezone do
-        nil -> "Etc/UTC"
-        _ -> extractor.timezone
-      end
+    construction = construction(requestor)
+    timezone = timezone(extractor.timezone)
     headers = extractor.headers
     format = extractor.format
     rm_date = extractor.rm_date
     video = Timelapse.by_exid(exid)
 
-    start_date =
-      extractor.from_datetime
-      |> Calendar.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!(timezone)
-
-    end_date =
-      extractor.to_datetime
-      |> Calendar.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!(timezone)
+    start_date = erl_datetime(extractor.from_datetime, timezone)
+    end_date = erl_datetime(extractor.to_datetime, timezone)
 
     total_days = find_difference(end_date, start_date) / 86400 |> round |> round_2
 
@@ -289,41 +272,24 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     end
   end
 
-  defp count_filer(starting, oct_date, my_json) do
-    case Calendar.DateTime.diff(Calendar.DateTime.Parse.unix!(starting), oct_date) do
-      {:ok, secs, _, :after} ->
-        case secs > 31536000 do
-          true ->
-            my_json["Entries"]
-            |> Enum.filter(fn(item) -> item end)
-            |> Enum.count
-          false ->
-            case my_json["Files"] do
-              nil ->
-                0
-              _ ->
-                my_json["Files"]
-                |> Enum.filter(fn(item) -> item end)
-                |> Enum.count
-            end
-        end
-      _ ->
-      case my_json["Files"] do
-        nil -> 0
-        _ ->
-          my_json["Files"]
-          |> Enum.filter(fn(item) -> item end)
-          |> Enum.count
-      end
-    end
-  end
+  defp count_filer(starting, oct_date, my_json), do:
+    starting
+    |> Calendar.DateTime.Parse.unix!
+    |> Calendar.DateTime.diff(oct_date)
+    |> calendar_diff(my_json)
+
+  defp calendar_diff({:ok, secs, _, :after}, my_json) when secs > 31536000, do: do_count(my_json, "Entries")
+  defp calendar_diff(true, _my_json), do: 0
+  defp calendar_diff(false, my_json), do: do_count(my_json, "Files")
+  defp calendar_diff(_, my_json), do: my_json["Files"] |> is_nil() |> calendar_diff(my_json)
+
+  defp do_count(json, attribute), do: json[attribute] |> Enum.count
 
   defp upload(200, response, starting, camera_exid, id, _construction) do
     image_save_path = "#{@root_dir}/#{camera_exid}/#{id}/#{starting}.jpg"
     imagef = File.write(image_save_path, response, [:binary])
     File.close imagef
   end
-
   defp upload(_, response, _starting, _camera_exid, _id, _construction), do: Logger.info "Not an Image! #{response}"
 
   defp iterate([], _start_date, _end_date,  _check_time, _timezone), do: []
@@ -333,35 +299,13 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     to_minute = "59"
     %{year: year, month: month, day: day, hour: hour} = start_date
     erl_date_time = {{year, month, day}, {hour, 0, 0}}
-    my_start =
-      case Calendar.DateTime.from_erl(erl_date_time, timezone) do
-        {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
-        {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
-        _ -> raise "Timezone conversion error"
-      end
+    my_start = Calendar.DateTime.from_erl(erl_date_time, timezone) |> ambiguous_handle() |> Calendar.DateTime.Format.unix
     %{year: year, month: month, day: day, hour: hour} = Timex.shift(end_date, hours: 1)
     erl_date_time = {{year, month, day}, {hour, 0, 0}}
-    my_end =
-      case Calendar.DateTime.from_erl(erl_date_time, timezone) do
-        {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
-        {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
-        _ -> raise "Timezone conversion error"
-      end
+    my_end = Calendar.DateTime.from_erl(erl_date_time, timezone) |> ambiguous_handle() |> Calendar.DateTime.Format.unix
     from_unix_timestamp = unix_timestamp(from_hour, from_minute, check_time, timezone)
     to_unix_timestamp = unix_timestamp(to_hour, to_minute, check_time, timezone)
-    cond do
-      from_unix_timestamp < my_start ->
-        cond do
-          to_unix_timestamp > my_end ->
-            [my_start, my_end]
-          true ->
-            [my_start, to_unix_timestamp]
-        end
-      to_unix_timestamp > my_end ->
-        [from_unix_timestamp, my_end]
-      true ->
-        [from_unix_timestamp, to_unix_timestamp]
-    end
+    [max(from_unix_timestamp, my_start), min(to_unix_timestamp, my_end)]
   end
 
   defp send_mail_start(false, _e_start_date, _e_to_date, _e_schedule, _e_interval, _camera_name, _requestor, _duration), do: Logger.info "We are in Development Mode!"
@@ -381,7 +325,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     %{year: year, month: month, day: day, hour: hour, min: min, sec: sec}
   end
 
-  defp humanize_interval(n),     do: "1 Frame in #{n}"
+  defp humanize_interval(n), do: "1 Frame in #{n}"
 
   defp get_interval(duration, c_count) do
     interval = c_count / (duration * 24)
@@ -391,25 +335,29 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     end
   end
 
-  defp compress_folder(path, exid) do
-    from_path = "#{path}"
-    files = File.ls!(from_path)
-      |> Enum.map(fn filename -> Path.join(from_path, filename) end)
-      |> Enum.map(&String.to_charlist/1)
-    to_path = "#{path}/#{exid}.zip"
-    :zip.create(to_path, files)
-  end
-
   defp available_count(dir) do
     File.ls(dir)
-    |> case do
-      {:error, :enoent} -> 0
-      {:ok, files} ->
-        Enum.count(files, fn file -> Path.extname(file) == ".jpg" end)
-        |> case do
-          [] -> 0
-          count -> count
-        end
-    end
+    |> ls_files()
+  end
+
+  defp ls_files({:error, :enoent}), do: 0
+  defp ls_files({:ok, files}) do
+    Enum.count(files, fn file -> Path.extname(file) == ".jpg" end)
+    |> ls_count()
+  end
+
+  defp ls_count([]), do: 0
+  defp ls_count(count), do: count
+
+  defp construction("marklensmen@gmail.com"), do: "Construction"
+  defp construction(_), do: "Construction2"
+
+  defp timezone(nil), do: "Etc/UTC"
+  defp timezone(timezone), do: timezone
+
+  defp erl_datetime(datetime, timezone) do
+    datetime
+    |> Calendar.DateTime.to_erl
+    |> Calendar.DateTime.from_erl!(timezone)
   end
 end
