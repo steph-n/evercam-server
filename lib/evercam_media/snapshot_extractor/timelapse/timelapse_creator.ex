@@ -253,35 +253,23 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     %{year: year, month: month, day: day, hour: hour, min: _, sec: _} = make_me_complete(starting)
     filer = point_to_seaweed(Calendar.DateTime.Parse.unix!(starting))
     url = "#{filer.url}/#{camera_exid}/snapshots/recordings/#{year}/#{month}/#{day}/#{hour}/?limit=3600"
-    oct_date =
-      {{2017, 10, 31}, {23, 59, 59}}
-      |> Calendar.DateTime.from_erl!("UTC")
-    case HTTPoison.get(url, ["Accept": "application/json"], []) do
-      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        my_json = Jason.decode!(body)
-        sum = count_filer(starting, oct_date, my_json)
-        Agent.get_and_update(c_agent, fn state -> {state, state + sum} end)
-        Enum.map(my_json[filer.files], fn x ->
-          Agent.update(i_agent, fn list -> [x[filer.name] | list] end)
-        end)
-        count_files(starting + interval, ending, camera_exid, interval, c_agent, i_agent)
-      {:ok, %HTTPoison.Response{body: "", status_code: 404}} ->
-        Logger.info "Getting nearest!"
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.info "SeaWeedFS: #{reason}!"
+    hackney = [pool: :seaweedfs_download_pool, recv_timeout: 15000]
+    with {:ok, response} <- HTTPoison.get(url, ["Accept": "application/json"], hackney: hackney),
+         %HTTPoison.Response{status_code: 200, body: body} <- response,
+         {:ok, data} <- Jason.decode(body) do
+      sum = data[filer.files] |> is_nil() |> count_filer(data, filer.files)
+      Agent.get_and_update(c_agent, fn state -> {state, state + sum} end)
+      Enum.map(data[filer.files], fn x ->
+        Agent.update(i_agent, fn list -> [x[filer.name] | list] end)
+      end)
+      count_files(starting + interval, ending, camera_exid, interval, c_agent, i_agent)
+    else
+      _ -> :noop
     end
   end
 
-  defp count_filer(starting, oct_date, my_json), do:
-    starting
-    |> Calendar.DateTime.Parse.unix!
-    |> Calendar.DateTime.diff(oct_date)
-    |> calendar_diff(my_json)
-
-  defp calendar_diff({:ok, secs, _, :after}, my_json) when secs > 31536000, do: do_count(my_json, "Entries")
-  defp calendar_diff(true, _my_json), do: 0
-  defp calendar_diff(false, my_json), do: do_count(my_json, "Files")
-  defp calendar_diff(_, my_json), do: my_json["Files"] |> is_nil() |> calendar_diff(my_json)
+  defp count_filer(true, _my_json, _attribute), do: 0
+  defp count_filer(_, my_json, attribute), do: do_count(my_json, attribute)
 
   defp do_count(json, attribute), do: json[attribute] |> Enum.count
 
