@@ -70,7 +70,8 @@ defmodule EvercamMedia.Mixfile do
     :evercam_models,
     :joken,
     :export,
-    :jason
+    :jason,
+    :exexif
   ]
 
   # Specifies which paths to compile per environment
@@ -121,6 +122,7 @@ defmodule EvercamMedia.Mixfile do
       {:evercam_models, github: "evercam/evercam_models"},
       {:joken, "~> 2.0"},
       {:export, "~> 0.1.0"},
+      {:exexif, github: "pragdave/exexif"}
     ]
   end
 end
