@@ -54,7 +54,7 @@
           <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
             <h2>Time-lapse has been created!</h2>
-            <p>Hi <%= get_user_name(@requestor), %></p>
+            <p>Hi <%= get_user_name(@requestor) %>,</p>
             <p>Here are the details about timelapse requested.</p>
             <p>&nbsp;&nbsp;- Camera: <%= @camera_name %></p>
             <p>&nbsp;&nbsp;- Requestor: <%= @requestor %></p>
