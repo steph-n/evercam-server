@@ -53,7 +53,6 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
             File.mkdir_p(images_directory)
             loop_list(snapshots, camera.exid, images_directory, 0)
             create_mp4(archive.exid, images_directory)
-            create_thumbnail(archive.exid, images_directory)
             Storage.save_mp4(camera.exid, archive.exid, images_directory)
             Storage.save_archive_thumbnail(camera.exid, archive.exid, images_directory)
             File.rm_rf images_directory
@@ -79,6 +78,7 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
   def download_snapshot(snap, camera_exid, path, index) do
     case Storage.load(camera_exid, snap.created_at, snap.notes) do
       {:ok, image, _notes} ->
+        create_thumbnail(path, camera_exid, image, index)
         File.write("#{path}#{index}.jpg", image)
         index + 1
       {:error, _error} -> index
@@ -89,9 +89,8 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
     Porcelain.shell("ffmpeg -r 6 -i #{path}%d.jpg -c:v h264_nvenc -r 6 -preset slow -bufsize 1000k -pix_fmt yuv420p -y #{path}#{id}.mp4", [err: :out]).out
   end
 
-  defp create_thumbnail(id, path) do
-    Porcelain.shell("ffmpeg -i #{path}#{id}.mp4 -vframes 1 -vf scale=640:-1 -y #{path}thumb-#{id}.jpg", [err: :out]).out
-  end
+  defp create_thumbnail(path, id, image, 0), do: File.write("#{path}thumb-#{id}.jpg", image)
+  defp create_thumbnail(_path, _id, _image, _index), do: :noop
 
   defp update_archive(archive, frames, status) do
     params = %{frames: frames, status: status}
