@@ -240,7 +240,7 @@ defmodule EvercamMedia.UserMailer do
     new()
     |> from(@no_reply)
     |> to("#{requestor}")
-    |> bcc(["marco@evercam.io","javier@evercam.io"])
+    |> bcc(["marco@evercam.io", "javier@evercam.io", "junaid@evercam.io"])
     |> subject("Time-lapse Creator Started")
     |> render_body("timelapse_started.html", %{start_date: e_start_date, to_date: e_to_date, interval: e_interval, schedule: e_schedule, camera_name: camera_name, requestor: requestor, duration: duration, year: @year})
     |> EvercamMedia.Mailer.deliver
@@ -250,7 +250,7 @@ defmodule EvercamMedia.UserMailer do
     new()
     |> from(@no_reply)
     |> to("#{requestor}")
-    |> bcc(["marco@evercam.io","javier@evercam.io"])
+    |> bcc(["marco@evercam.io", "javier@evercam.io", "junaid@evercam.io"])
     |> subject("Time-lapse Completed")
     |> render_body("timelapse_completed.html", %{start_date: e_start_date, to_date: e_to_date, interval: e_interval, schedule: e_schedule, camera_name: camera_name, requestor: requestor, duration: duration, year: @year})
     |> EvercamMedia.Mailer.deliver
