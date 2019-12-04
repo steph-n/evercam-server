@@ -24,3 +24,6 @@ storage
 
 # Python Cache
 /lib/python/__pycache__
+
+#VS Code
+.elixir_ls

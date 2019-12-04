@@ -326,9 +326,11 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def remote_password_update(conn, %{"id" => email} = params) do
-    user = conn.assigns[:current_user]
+    user =
+      conn.assigns[:current_user]
+      |> Repo.preload(:access_tokens, force: true)
     email = String.downcase(email)
-    with {:ok, user} <- user_exists(conn, email),
+    with :ok <- ensure_user_exists(user, email, conn),
          :ok <- password(params["currentPassword"], user, conn)
     do
       user_params = %{password: params["newPassword"]}
