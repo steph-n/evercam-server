@@ -4,6 +4,8 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   import EvercamMedia.Snapshot.Storage
   import Commons
 
+  @format ~r[/(?<camera_exid>.*)/snapshots/recordings/(?<year>\d{4})/(?<month>\d{1,2})/(?<day>\d{1,2})/(?<hour>\d{1,2})/(?<minute>\d{2})_(?<seconds>\d{2})_(?<milliseconds>\d{3})\.jpg]
+
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 
   def init(args) do
@@ -25,32 +27,15 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     watermark_logo = extractor.watermark_logo
     camera_exid = extractor.camera_exid
     title = extractor.title
-    construction =
-      case requestor do
-        "marklensmen@gmail.com" ->
-          "Construction"
-        _ ->
-          "Construction2"
-      end
-    timezone =
-      case extractor.timezone do
-        nil -> "Etc/UTC"
-        _ -> extractor.timezone
-      end
+    construction = construction(requestor)
+    timezone = timezone(extractor.timezone)
     headers = extractor.headers
     format = extractor.format
     rm_date = extractor.rm_date
     video = Timelapse.by_exid(exid)
 
-    start_date =
-      extractor.from_datetime
-      |> Calendar.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!(timezone)
-
-    end_date =
-      extractor.to_datetime
-      |> Calendar.DateTime.to_erl
-      |> Calendar.DateTime.from_erl!(timezone)
+    start_date = erl_datetime(extractor.from_datetime, timezone)
+    end_date = erl_datetime(extractor.to_datetime, timezone)
 
     total_days = find_difference(end_date, start_date) / 86400 |> round |> round_2
 
@@ -81,13 +66,10 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
           {:ok, _extractor} ->
             send_mail_start(true, e_start_date, e_to_date, schedule, e_interval, extractor.camera_name, requestor, duration)
             Agent.get(i_agent, fn list -> list end)
-            |> Enum.filter(fn(item) -> item end)
             |> Enum.sort
             |> Enum.with_index(1)
             |> Enum.map(fn {url, acc} ->
-              cad = String.split(url, "/")
-              starting = get_timestamp(cad)
-              starting = Calendar.DateTime.Parse.unix!(starting)
+              starting = url |> get_timestamp() |> Calendar.DateTime.Parse.unix!()
               with true <- DateTime.compare(starting, start_date) == :lt or DateTime.compare(starting, end_date) == :gt
               do
                 nil
@@ -97,7 +79,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
             end)
             |> Enum.reject(&is_nil/1)
             |> Enum.map_every(interval, fn { url , _ } ->
-              unix_date = String.split(url, "/") |> get_timestamp()
+              unix_date = url |> get_timestamp()
               File.write("#{@root_dir}/#{camera_exid}/#{exid}/CURRENT", "#{unix_date}")
               do_loop_duration(url, camera_exid, exid, construction)
             end)
@@ -133,11 +115,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
             end
           _ -> Logger.info "Status update failed!"
         end
-      false ->
-        case Timelapse.update_timelapse(video, %{status: 7}) do
-          {:ok, _extractor} -> Logger.info "No Snapshots!"
-          _ -> Logger.info "Status update failed!"
-        end
+      false -> Timelapse.update_timelapse(video, %{status: 7})
     end
   end
 
@@ -204,7 +182,6 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
         h_unique_filename = "#{images_directory}/#{h_headers}"
         Map.put(files, "#{h_unique_filename}", "#{camera_exid}/#{exid}/h-#{exid}.mp4")
     end
-    #z_unique_filename = "#{images_directory}/#{exid}.zip"
     do_save_multiple(files)
   end
 
@@ -225,105 +202,74 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
 
   defp c_do_loop(starting, ending, _camera_exid, _interval, _c_agent, _i_agent) when starting >= ending, do: Logger.info "We are finished!"
   defp c_do_loop(starting, ending, camera_exid, interval, c_agent, i_agent) do
-    #Agent.update(c_agent, fn list -> ["true" | list] end)
     count_files(starting, ending, camera_exid, interval, c_agent, i_agent)
   end
 
   defp do_loop_duration(url, camera_exid, id, construction) do
-    cad = String.split(url, "/")
-    starting = get_timestamp(cad)
-    filer = point_to_seaweed(Calendar.DateTime.Parse.unix!(starting))
-    full_url = "#{filer.url}#{url}"
-    case HTTPoison.get(full_url, [], []) do
-      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        upload(200, body, starting, camera_exid, id, construction)
-      {:ok, %HTTPoison.Response{body: _body, status_code: 404}} ->
-        Logger.info "Not found"
-      {:error, _} ->
-        :timer.sleep(:timer.seconds(3))
+    starting =
+      url
+      |> get_timestamp()
+    filer =
+      starting
+      |> point_to_seaweed()
+    hackney = [pool: :seaweedfs_download_pool, recv_timeout: 15000]
+    with {:ok, response} <- HTTPoison.get("#{filer.url}#{url}", ["Accept": "application/json"], hackney: hackney),
+         %HTTPoison.Response{status_code: 200, body: body} <- response do
+      upload(200, body, starting, camera_exid, id, construction)
+    else
+      _ -> :noop
     end
   end
 
-  defp get_timestamp(cadena) do
-    case length(cadena) do
-      9 ->
-        cad2 = String.split(Enum.at(cadena, 8), "_")
-        {year, _} = Integer.parse(Enum.at(cadena, 4))
-        {month, _} = Integer.parse(Enum.at(cadena, 5))
-        {day, _} = Integer.parse(Enum.at(cadena, 6))
-        {h, _} = Integer.parse(Enum.at(cadena, 7))
-        {m, _} = Integer.parse(Enum.at(cad2, 0))
-        {s, _} = Integer.parse(Enum.at(cad2, 1))
-        erl_date_time = {{year, month, day}, {h, m, s}}
-        case Calendar.DateTime.from_erl(erl_date_time, "UTC") do
-          {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
-          {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
-          _ -> raise "Timezone conversion error"
-        end
-      _ ->
-        Logger.info "Bad url"
-    end
+  defp url_to_erl(url) do
+    %{
+      "day" => day,
+      "hour" => hour,
+      "minute" => minutes,
+      "month" => month,
+      "seconds" => seconds,
+      "year" => year
+    } = Regex.named_captures(@format, url)
+    {{String.to_integer(year), String.to_integer(month), String.to_integer(day)}, {String.to_integer(hour), String.to_integer(minutes), String.to_integer(seconds)}}
+  end
+
+  defp get_timestamp(url) do
+    url_to_erl(url)
+    |> Calendar.DateTime.from_erl("UTC")
+    |> ambiguous_handle()
+    |> Calendar.DateTime.Format.unix
   end
 
   defp count_files(starting, ending, _camera_exid, _interval, _c_agent, _i_agent) when starting >= ending, do: Logger.info "We are finished!"
   defp count_files(starting, ending, camera_exid, interval, c_agent, i_agent) do
     %{year: year, month: month, day: day, hour: hour, min: _, sec: _} = make_me_complete(starting)
-    filer = point_to_seaweed(Calendar.DateTime.Parse.unix!(starting))
+    filer = point_to_seaweed(starting)
     url = "#{filer.url}/#{camera_exid}/snapshots/recordings/#{year}/#{month}/#{day}/#{hour}/?limit=3600"
-    oct_date =
-      {{2017, 10, 31}, {23, 59, 59}}
-      |> Calendar.DateTime.from_erl!("UTC")
-    case HTTPoison.get(url, ["Accept": "application/json"], []) do
-      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        my_json = Jason.decode!(body)
-        sum = count_filer(starting, oct_date, my_json)
-        Agent.get_and_update(c_agent, fn state -> {state, state + sum} end)
-        Enum.map(my_json[filer.files], fn x ->
-          Agent.update(i_agent, fn list -> [x[filer.name] | list] end)
-        end)
-        count_files(starting + interval, ending, camera_exid, interval, c_agent, i_agent)
-      {:ok, %HTTPoison.Response{body: "", status_code: 404}} ->
-        Logger.info "Getting nearest!"
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.info "SeaWeedFS: #{reason}!"
+    hackney = [pool: :seaweedfs_download_pool, recv_timeout: 15000]
+    with {:ok, response} <- HTTPoison.get(url, ["Accept": "application/json"], hackney: hackney),
+         %HTTPoison.Response{status_code: 200, body: body} <- response,
+         {:ok, data} <- Jason.decode(body) do
+      sum = data[filer.files] |> is_nil() |> count_filer(data, filer.files)
+      Agent.get_and_update(c_agent, fn state -> {state, state + sum} end)
+      Enum.map(data[filer.files], fn x ->
+        Agent.update(i_agent, fn list -> [x[filer.name] | list] end)
+      end)
+      count_files(starting + interval, ending, camera_exid, interval, c_agent, i_agent)
+    else
+      _ -> :noop
     end
   end
 
-  defp count_filer(starting, oct_date, my_json) do
-    case Calendar.DateTime.diff(Calendar.DateTime.Parse.unix!(starting), oct_date) do
-      {:ok, secs, _, :after} ->
-        case secs > 31536000 do
-          true ->
-            my_json["Entries"]
-            |> Enum.filter(fn(item) -> item end)
-            |> Enum.count
-          false ->
-            case my_json["Files"] do
-              nil ->
-                0
-              _ ->
-                my_json["Files"]
-                |> Enum.filter(fn(item) -> item end)
-                |> Enum.count
-            end
-        end
-      _ ->
-      case my_json["Files"] do
-        nil -> 0
-        _ ->
-          my_json["Files"]
-          |> Enum.filter(fn(item) -> item end)
-          |> Enum.count
-      end
-    end
-  end
+  defp count_filer(true, _my_json, _attribute), do: 0
+  defp count_filer(_, my_json, attribute), do: do_count(my_json, attribute)
+
+  defp do_count(json, attribute), do: json[attribute] |> Enum.count
 
   defp upload(200, response, starting, camera_exid, id, _construction) do
     image_save_path = "#{@root_dir}/#{camera_exid}/#{id}/#{starting}.jpg"
     imagef = File.write(image_save_path, response, [:binary])
     File.close imagef
   end
-
   defp upload(_, response, _starting, _camera_exid, _id, _construction), do: Logger.info "Not an Image! #{response}"
 
   defp iterate([], _start_date, _end_date,  _check_time, _timezone), do: []
@@ -333,35 +279,13 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     to_minute = "59"
     %{year: year, month: month, day: day, hour: hour} = start_date
     erl_date_time = {{year, month, day}, {hour, 0, 0}}
-    my_start =
-      case Calendar.DateTime.from_erl(erl_date_time, timezone) do
-        {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
-        {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
-        _ -> raise "Timezone conversion error"
-      end
+    my_start = Calendar.DateTime.from_erl(erl_date_time, timezone) |> ambiguous_handle() |> Calendar.DateTime.Format.unix
     %{year: year, month: month, day: day, hour: hour} = Timex.shift(end_date, hours: 1)
     erl_date_time = {{year, month, day}, {hour, 0, 0}}
-    my_end =
-      case Calendar.DateTime.from_erl(erl_date_time, timezone) do
-        {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
-        {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
-        _ -> raise "Timezone conversion error"
-      end
+    my_end = Calendar.DateTime.from_erl(erl_date_time, timezone) |> ambiguous_handle() |> Calendar.DateTime.Format.unix
     from_unix_timestamp = unix_timestamp(from_hour, from_minute, check_time, timezone)
     to_unix_timestamp = unix_timestamp(to_hour, to_minute, check_time, timezone)
-    cond do
-      from_unix_timestamp < my_start ->
-        cond do
-          to_unix_timestamp > my_end ->
-            [my_start, my_end]
-          true ->
-            [my_start, to_unix_timestamp]
-        end
-      to_unix_timestamp > my_end ->
-        [from_unix_timestamp, my_end]
-      true ->
-        [from_unix_timestamp, to_unix_timestamp]
-    end
+    [max(from_unix_timestamp, my_start), min(to_unix_timestamp, my_end)]
   end
 
   defp send_mail_start(false, _e_start_date, _e_to_date, _e_schedule, _e_interval, _camera_name, _requestor, _duration), do: Logger.info "We are in Development Mode!"
@@ -381,7 +305,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     %{year: year, month: month, day: day, hour: hour, min: min, sec: sec}
   end
 
-  defp humanize_interval(n),     do: "1 Frame in #{n}"
+  defp humanize_interval(n), do: "1 Frame in #{n}"
 
   defp get_interval(duration, c_count) do
     interval = c_count / (duration * 24)
@@ -391,25 +315,29 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
     end
   end
 
-  defp compress_folder(path, exid) do
-    from_path = "#{path}"
-    files = File.ls!(from_path)
-      |> Enum.map(fn filename -> Path.join(from_path, filename) end)
-      |> Enum.map(&String.to_charlist/1)
-    to_path = "#{path}/#{exid}.zip"
-    :zip.create(to_path, files)
-  end
-
   defp available_count(dir) do
     File.ls(dir)
-    |> case do
-      {:error, :enoent} -> 0
-      {:ok, files} ->
-        Enum.count(files, fn file -> Path.extname(file) == ".jpg" end)
-        |> case do
-          [] -> 0
-          count -> count
-        end
-    end
+    |> ls_files()
+  end
+
+  defp ls_files({:error, :enoent}), do: 0
+  defp ls_files({:ok, files}) do
+    Enum.count(files, fn file -> Path.extname(file) == ".jpg" end)
+    |> ls_count()
+  end
+
+  defp ls_count([]), do: 0
+  defp ls_count(count), do: count
+
+  defp construction("marklensmen@gmail.com"), do: "Construction"
+  defp construction(_), do: "Construction2"
+
+  defp timezone(nil), do: "Etc/UTC"
+  defp timezone(timezone), do: timezone
+
+  defp erl_datetime(datetime, timezone) do
+    datetime
+    |> Calendar.DateTime.to_erl
+    |> Calendar.DateTime.from_erl!(timezone)
   end
 end
