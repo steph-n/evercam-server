@@ -92,7 +92,7 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
   defp create_thumbnail(path, id, image, 0) do
     File.write("#{path}wm-thumb-#{id}.jpg", image)
     evercam_logo = Path.join(Application.app_dir(:evercam_media), "priv/static/images/evercam-logo-white.png")
-    Porcelain.shell("ffmpeg -i #{path}wm-thumb-#{id}.jpg -i #{evercam_logo} -filter_complex '[1]scale=iw/2:-1[wm];[0][wm]overlay=x=(main_w-overlay_w):y=(main_h-overlay_h)' #{path}thumb-#{id}.jpg")
+    Porcelain.shell("ffmpeg -i #{path}wm-thumb-#{id}.jpg -i #{evercam_logo} -filter_complex '[1]scale=iw/2:-1[wm];[0][wm]overlay=x=main_w-overlay_w-10:y=main_h-overlay_h-10' #{path}thumb-#{id}.jpg")
   end
   defp create_thumbnail(_path, _id, _image, _index), do: :noop
 
