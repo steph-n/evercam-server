@@ -54,6 +54,7 @@
           <td style="font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 14px; margin: 0; padding: 0;">
 
             <h2>Time-lapse has been created!</h2>
+            <p>Hello, <%= @requestor %></p>
             <p>Timelpse has been created with a duration of <%= @duration %> for <%= @camera_name %>.</p>
             <p>The whole process took <%= Kernel.trunc(@execution_time) %> minutes!</p>
             <p>You can see the video at <a href="http://timelapse.evercam.io/gallery">Timelapse app</a></p>
