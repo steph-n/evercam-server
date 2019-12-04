@@ -4,7 +4,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   import EvercamMedia.Snapshot.Storage
   import Commons
 
-  @format ~r[/(?<camera_exid>.*)/snapshots/recordings/(?<year>\d+{4})/(?<month>\d+{1,2})/(?<day>\d+{1,2})/(?<hour>\d+{1,2})/(?<minute>\d+{2})_(?<seconds>\d+{2})_(?<milliseconds>\d+{3})\.jpg]
+  @format ~r[/(?<camera_exid>.*)/snapshots/recordings/(?<year>\d{4})/(?<month>\d{1,2})/(?<day>\d{1,2})/(?<hour>\d{1,2})/(?<minute>\d{2})_(?<seconds>\d{2})_(?<milliseconds>\d{3})\.jpg]
 
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 
@@ -188,7 +188,6 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
         h_unique_filename = "#{images_directory}/#{h_headers}"
         Map.put(files, "#{h_unique_filename}", "#{camera_exid}/#{exid}/h-#{exid}.mp4")
     end
-    #z_unique_filename = "#{images_directory}/#{exid}.zip"
     do_save_multiple(files)
   end
 
@@ -238,7 +237,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
       "seconds" => seconds,
       "year" => year
     } = Regex.named_captures(@format, url)
-    {{year, month, day}, {hour, minutes, seconds}}
+    {{String.to_integer(year), String.to_integer(month), String.to_integer(day)}, {String.to_integer(hour), String.to_integer(minutes), String.to_integer(seconds)}}
   end
 
   defp get_timestamp(url) do
