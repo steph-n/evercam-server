@@ -51,9 +51,8 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
           true ->
             images_directory = "#{@root_dir}/#{archive.exid}/"
             File.mkdir_p(images_directory)
-            loop_list(snapshots, camera.exid, images_directory, 0)
+            loop_list(snapshots, camera.exid, archive.exid, images_directory, 0)
             create_mp4(archive.exid, images_directory)
-            create_thumbnail(archive.exid, images_directory)
             Storage.save_mp4(camera.exid, archive.exid, images_directory)
             Storage.save_archive_thumbnail(camera.exid, archive.exid, images_directory)
             File.rm_rf images_directory
@@ -70,15 +69,16 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
   end
   defp get_snapshots_and_create_archive(_state, _archive, _status), do: :noop
 
-  def loop_list([snap | rest], camera_exid, path, index) do
-    next_index = download_snapshot(snap, camera_exid, path, index)
-    loop_list(rest, camera_exid, path, next_index)
+  def loop_list([snap | rest], camera_exid, archive_exid, path, index) do
+    next_index = download_snapshot(snap, camera_exid, archive_exid, path, index)
+    loop_list(rest, camera_exid, archive_exid, path, next_index)
   end
-  def loop_list([], _camera_exid, _path, _index), do: :noop
+  def loop_list([], _camera_exid, _archive_exid, _path, _index), do: :noop
 
-  def download_snapshot(snap, camera_exid, path, index) do
+  def download_snapshot(snap, camera_exid, archive_exid, path, index) do
     case Storage.load(camera_exid, snap.created_at, snap.notes) do
       {:ok, image, _notes} ->
+        create_thumbnail(path, archive_exid, image, index)
         File.write("#{path}#{index}.jpg", image)
         index + 1
       {:error, _error} -> index
@@ -89,9 +89,12 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
     Porcelain.shell("ffmpeg -r 6 -i #{path}%d.jpg -c:v h264_nvenc -r 6 -preset slow -bufsize 1000k -pix_fmt yuv420p -y #{path}#{id}.mp4", [err: :out]).out
   end
 
-  defp create_thumbnail(id, path) do
-    Porcelain.shell("ffmpeg -i #{path}#{id}.mp4 -vframes 1 -vf scale=640:-1 -y #{path}thumb-#{id}.jpg", [err: :out]).out
+  defp create_thumbnail(path, id, image, 0) do
+    File.write("#{path}wm-thumb-#{id}.jpg", image)
+    evercam_logo = Path.join(Application.app_dir(:evercam_media), "priv/static/images/evercam-logo-white.png")
+    Porcelain.shell("ffmpeg -i #{path}wm-thumb-#{id}.jpg -i #{evercam_logo} -filter_complex 'overlay=x=(main_w-overlay_w):y=(main_h-overlay_h)' #{path}thumb-#{id}.jpg")
   end
+  defp create_thumbnail(_path, _id, _image, _index), do: :noop
 
   defp update_archive(archive, frames, status) do
     params = %{frames: frames, status: status}
