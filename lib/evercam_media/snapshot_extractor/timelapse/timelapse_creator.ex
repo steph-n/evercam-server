@@ -4,6 +4,8 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   import EvercamMedia.Snapshot.Storage
   import Commons
 
+  @format ~r[/(?<camera_exid>.*)/snapshots/recordings/(?<year>\d+{4})/(?<month>\d+{1,2})/(?<day>\d+{1,2})/(?<hour>\d+{1,2})/(?<minute>\d+{2})_(?<seconds>\d+{2})_(?<milliseconds>\d+{3})\.jpg]
+
   @root_dir Application.get_env(:evercam_media, :storage_dir)
 
   def init(args) do
@@ -68,8 +70,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
             |> Enum.sort
             |> Enum.with_index(1)
             |> Enum.map(fn {url, acc} ->
-              cad = String.split(url, "/")
-              starting = get_timestamp(cad)
+              starting = get_timestamp(url)
               starting = Calendar.DateTime.Parse.unix!(starting)
               with true <- DateTime.compare(starting, start_date) == :lt or DateTime.compare(starting, end_date) == :gt
               do
@@ -80,7 +81,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
             end)
             |> Enum.reject(&is_nil/1)
             |> Enum.map_every(interval, fn { url , _ } ->
-              unix_date = String.split(url, "/") |> get_timestamp()
+              unix_date = url |> get_timestamp()
               File.write("#{@root_dir}/#{camera_exid}/#{exid}/CURRENT", "#{unix_date}")
               do_loop_duration(url, camera_exid, exid, construction)
             end)
@@ -213,45 +214,44 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   end
 
   defp do_loop_duration(url, camera_exid, id, construction) do
-    cad = String.split(url, "/")
-    starting = get_timestamp(cad)
-    filer = point_to_seaweed(Calendar.DateTime.Parse.unix!(starting))
-    full_url = "#{filer.url}#{url}"
-    case HTTPoison.get(full_url, [], []) do
-      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        upload(200, body, starting, camera_exid, id, construction)
-      {:ok, %HTTPoison.Response{body: _body, status_code: 404}} ->
-        Logger.info "Not found"
-      {:error, _} ->
-        :timer.sleep(:timer.seconds(3))
+    starting =
+      url
+      |> get_timestamp()
+    filer =
+      starting
+      |> point_to_seaweed()
+    hackney = [pool: :seaweedfs_download_pool, recv_timeout: 15000]
+    with {:ok, response} <- HTTPoison.get("#{filer.url}#{url}", ["Accept": "application/json"], hackney: hackney),
+         %HTTPoison.Response{status_code: 200, body: body} <- response do
+      upload(200, body, starting, camera_exid, id, construction)
+    else
+      _ -> :noop
     end
   end
 
-  defp get_timestamp(cadena) do
-    case length(cadena) do
-      9 ->
-        cad2 = String.split(Enum.at(cadena, 8), "_")
-        {year, _} = Integer.parse(Enum.at(cadena, 4))
-        {month, _} = Integer.parse(Enum.at(cadena, 5))
-        {day, _} = Integer.parse(Enum.at(cadena, 6))
-        {h, _} = Integer.parse(Enum.at(cadena, 7))
-        {m, _} = Integer.parse(Enum.at(cad2, 0))
-        {s, _} = Integer.parse(Enum.at(cad2, 1))
-        erl_date_time = {{year, month, day}, {h, m, s}}
-        case Calendar.DateTime.from_erl(erl_date_time, "UTC") do
-          {:ok, datetime} -> datetime |> Calendar.DateTime.Format.unix
-          {:ambiguous, datetime} -> datetime.possible_date_times |> hd |> Calendar.DateTime.Format.unix
-          _ -> raise "Timezone conversion error"
-        end
-      _ ->
-        Logger.info "Bad url"
-    end
+  defp url_to_erl(url) do
+    %{
+      "day" => day,
+      "hour" => hour,
+      "minute" => minutes,
+      "month" => month,
+      "seconds" => seconds,
+      "year" => year
+    } = Regex.named_captures(@format, url)
+    {{year, month, day}, {hour, minutes, seconds}}
+  end
+
+  defp get_timestamp(url) do
+    url_to_erl(url)
+    |> Calendar.DateTime.from_erl("UTC")
+    |> ambiguous_handle()
+    |> Calendar.DateTime.Format.unix
   end
 
   defp count_files(starting, ending, _camera_exid, _interval, _c_agent, _i_agent) when starting >= ending, do: Logger.info "We are finished!"
   defp count_files(starting, ending, camera_exid, interval, c_agent, i_agent) do
     %{year: year, month: month, day: day, hour: hour, min: _, sec: _} = make_me_complete(starting)
-    filer = point_to_seaweed(Calendar.DateTime.Parse.unix!(starting))
+    filer = point_to_seaweed(starting)
     url = "#{filer.url}/#{camera_exid}/snapshots/recordings/#{year}/#{month}/#{day}/#{hour}/?limit=3600"
     hackney = [pool: :seaweedfs_download_pool, recv_timeout: 15000]
     with {:ok, response} <- HTTPoison.get(url, ["Accept": "application/json"], hackney: hackney),
