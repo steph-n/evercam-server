@@ -593,6 +593,7 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   defp ensure_user_exists(nil, username, conn) do
+    Logger.error "[Remote-Login] [#{username}] [User does not exist.]"
     render_error(conn, 404, "User '#{username}' does not exist.")
   end
   defp ensure_user_exists(_user, _id, _conn), do: :ok
@@ -604,12 +605,17 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
 
-  defp password(password, _, conn) when password in [nil, ""], do: render_error(conn, 400, "Invalid password.")
+  defp password(password, user, conn) when password in [nil, ""] do
+    Logger.error "[Remote-Login] [#{user.email}] [Empty password value]"
+    render_error(conn, 400, "Invalid password.")
+  end
 
   defp password(password, user, conn) do
     case Bcrypt.verify_pass(password, user.password) do
       true -> :ok
-      _ -> render_error(conn, 400, "Invalid password.")
+      _ ->
+        Logger.error "[Remote-Login] [#{user.email}] [Invalid password]"
+        render_error(conn, 400, "Invalid password.")
     end
   end
 
