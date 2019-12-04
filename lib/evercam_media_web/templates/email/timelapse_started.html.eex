@@ -61,7 +61,6 @@
             <p>&nbsp;&nbsp;- From: <%= @start_date %></p>
             <p>&nbsp;&nbsp;- To: <%= @to_date %></p>
             <p>&nbsp;&nbsp;- Output duration: <%= @duration %> seconds</p>
-            <p>&nbsp;&nbsp;- Interval: <%= @interval %></p>
             <p>&nbsp;&nbsp;- Schedule:</p>
             <%= raw render_schedule(@schedule) %>
             <br>
