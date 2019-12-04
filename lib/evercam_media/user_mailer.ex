@@ -246,13 +246,13 @@ defmodule EvercamMedia.UserMailer do
     |> EvercamMedia.Mailer.deliver
   end
 
-  def timelapse_creator_completed(count, camera_name, expected_count, extractor_id, camera_exid, requestor, execution_time, duration) do
+  def timelapse_creator_completed(e_start_date, e_to_date, e_schedule, e_interval, camera_name, requestor, duration) do
     new()
     |> from(@no_reply)
     |> to("#{requestor}")
     |> bcc(["marco@evercam.io","javier@evercam.io"])
     |> subject("Time-lapse Completed")
-    |> render_body("timelapse_completed.html", %{count: count, camera_name: camera_name, expected_count: expected_count, extractor_id: extractor_id, camera_exid: camera_exid, execution_time: execution_time, requestor: requestor, year: @year, duration: duration})
+    |> render_body("timelapse_completed.html", %{start_date: e_start_date, to_date: e_to_date, interval: e_interval, schedule: e_schedule, camera_name: camera_name, requestor: requestor, duration: duration, year: @year})
     |> EvercamMedia.Mailer.deliver
   end
 
