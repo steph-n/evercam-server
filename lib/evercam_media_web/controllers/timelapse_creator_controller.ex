@@ -132,7 +132,7 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
             rm_date: video_params["rm_date"],
             format: video_params["format"],
             headers: video_params["headers"],
-            exid: exid,
+            exid: exid
           }
           File.mkdir_p(processing_directory = "#{@root_dir}/#{full_snapshot_extractor.camera.exid}/")
           File.write!("#{processing_directory}/#{full_snapshot_extractor.id}.json", Jason.encode!(config), [:binary])

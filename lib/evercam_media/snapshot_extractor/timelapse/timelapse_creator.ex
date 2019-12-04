@@ -64,7 +64,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
       true ->
         case Timelapse.update_timelapse(video, %{status: 9}) do
           {:ok, _extractor} ->
-            send_mail_start(true, e_start_date, e_to_date, schedule, e_interval, camera_exid, requestor, duration)
+            send_mail_start(true, e_start_date, e_to_date, schedule, e_interval, extractor.camera_name, requestor, duration)
             Agent.get(i_agent, fn list -> list end)
             |> Enum.sort
             |> Enum.with_index(1)
@@ -108,7 +108,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
                 {:ok, _} ->
                   with {:ok, _full_extractor} <- SnapshotExtractor.by_id(extractor.id) |> SnapshotExtractor.update_snapshot_extactor(%{status: 22, notes: "Extracted Images = #{count} -- Expected Count = #{c_count}"})
                   do
-                    send_mail_end(true, count, camera_exid, c_count, title, exid, requestor, execution_time, duration)
+                    send_mail_end(true, e_start_date, e_to_date, schedule, e_interval, extractor.camera_name, requestor, duration)
                   end
                 _ -> Logger.info "Status update failed!"
               end
@@ -291,8 +291,8 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
   defp send_mail_start(false, _e_start_date, _e_to_date, _e_schedule, _e_interval, _camera_name, _requestor, _duration), do: Logger.info "We are in Development Mode!"
   defp send_mail_start(true, e_start_date, e_to_date, e_schedule, e_interval, camera_name, requestor, duration), do: EvercamMedia.UserMailer.timelapse_creator_started(e_start_date, e_to_date, e_schedule, e_interval, camera_name, requestor, duration)
 
-  defp send_mail_end(false, _count, _camera_name, _expected_count, _extractor_id, _camera_exid, _requestor, _execution_time, _duration), do: Logger.info "We are in Development Mode!"
-  defp send_mail_end(true, count, camera_name, expected_count, extractor_id, camera_exid, requestor, execution_time, duration), do: EvercamMedia.UserMailer.timelapse_creator_completed(count, camera_name, expected_count, extractor_id, camera_exid, requestor, execution_time, duration)
+  defp send_mail_end(false, _e_start_date, _e_to_date, _e_schedule, _e_interval, _camera_name, _requestor, _duration), do: Logger.info "We are in Development Mode!"
+  defp send_mail_end(true, e_start_date, e_to_date, e_schedule, e_interval, camera_name, requestor, duration), do: EvercamMedia.UserMailer.timelapse_creator_completed(e_start_date, e_to_date, e_schedule, e_interval, camera_name, requestor, duration)
 
   defp make_me_complete(date) do
     # %{year: year, month: month, day: day, hour: hour, min: min, sec: sec} = Calendar.DateTime.Parse.unix! date
