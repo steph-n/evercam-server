@@ -66,12 +66,10 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
           {:ok, _extractor} ->
             send_mail_start(true, e_start_date, e_to_date, schedule, e_interval, camera_exid, requestor, duration)
             Agent.get(i_agent, fn list -> list end)
-            |> Enum.filter(fn(item) -> item end)
             |> Enum.sort
             |> Enum.with_index(1)
             |> Enum.map(fn {url, acc} ->
-              starting = get_timestamp(url)
-              starting = Calendar.DateTime.Parse.unix!(starting)
+              starting = url |> get_timestamp() |> Calendar.DateTime.Parse.unix!()
               with true <- DateTime.compare(starting, start_date) == :lt or DateTime.compare(starting, end_date) == :gt
               do
                 nil
@@ -117,11 +115,7 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
             end
           _ -> Logger.info "Status update failed!"
         end
-      false ->
-        case Timelapse.update_timelapse(video, %{status: 7}) do
-          {:ok, _extractor} -> Logger.info "No Snapshots!"
-          _ -> Logger.info "Status update failed!"
-        end
+      false -> Timelapse.update_timelapse(video, %{status: 7})
     end
   end
 
@@ -208,7 +202,6 @@ defmodule EvercamMedia.SnapshotExtractor.TimelapseCreator do
 
   defp c_do_loop(starting, ending, _camera_exid, _interval, _c_agent, _i_agent) when starting >= ending, do: Logger.info "We are finished!"
   defp c_do_loop(starting, ending, camera_exid, interval, c_agent, i_agent) do
-    #Agent.update(c_agent, fn list -> ["true" | list] end)
     count_files(starting, ending, camera_exid, interval, c_agent, i_agent)
   end
 
