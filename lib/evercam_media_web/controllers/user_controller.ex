@@ -498,7 +498,9 @@ defmodule EvercamMediaWeb.UserController do
     update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
     token = Ecto.build_assoc(user, :access_tokens, is_revoked: false, request: token)
     case Repo.insert(token) do
-      {:ok, token} -> render(conn, "remote_login.json", %{token: token.request, user: user})
+      {:ok, token} ->
+        Logger.info "[Remote-Login] [#{user.email}] [Login successfully.]"
+        render(conn, "remote_login.json", %{token: token.request, user: user})
       {:error, changeset} -> {:invalid_token, changeset}
     end
   end
