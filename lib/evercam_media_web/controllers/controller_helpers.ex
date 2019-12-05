@@ -1,9 +1,13 @@
 defmodule EvercamMediaWeb.ControllerHelpers do
   import Plug.Conn
   import Phoenix.Controller
+  require Logger
   alias EvercamMediaWeb.ErrorView
 
   def render_error(conn, status, message) do
+    user = conn.assigns[:current_user]
+    Logger.error "[Handled Errors] [#{conn.method} #{conn.request_path}] [#{conn.query_string}] [#{get_user_email(user)}] [#{user_request_ip(conn)}] [#{status}] [#{inspect message}]"
+
     conn
     |> put_status(status)
     |> put_view(ErrorView)
@@ -54,4 +58,7 @@ defmodule EvercamMediaWeb.ControllerHelpers do
 
   defp parse_user_agent(nil), do: ""
   defp parse_user_agent(user_agent), do: user_agent
+
+  defp get_user_email(nil), do: "No User"
+  defp get_user_email(user), do: user.email
 end
