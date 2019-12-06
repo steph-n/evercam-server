@@ -494,6 +494,44 @@ defmodule EvercamMediaWeb.UserController do
     end
   end
 
+  def confirm_user(conn, %{"id" => username} = params) do
+    user =
+      username
+      |> String.replace_trailing(".json", "")
+      |> User.by_username_or_email
+    created_at =
+      user.created_at
+      |> Calendar.Strftime.strftime!("%Y-%m-%d %T UTC")
+    code =
+      :crypto.hash(:sha, user.username <> created_at)
+      |> Base.encode16
+      |> String.downcase
+    current_date = Calendar.DateTime.now_utc
+    exp =
+      Calendar.DateTime.now_utc
+      |> Calendar.DateTime.advance!(60 * 60 * 24 * 7)
+    case (params["c"] == code) do
+      true ->
+        user_params = %{confirmed_at: current_date}
+        changeset = User.changeset(user, user_params)
+        case Repo.update(changeset) do
+          {:ok, updated_user} ->
+            extra_claims = %{
+              "user_id" => params["username"],
+              "exp" => exp |> DateTime.to_unix
+            }
+            with :ok <- ensure_user_exists(updated_user, username, conn),
+                {:ok, token, _} <- JwtAuthToken.generate_and_sign(extra_claims)
+            do
+              save_session(conn, token, updated_user, params)
+            end
+          {:error, changeset} ->
+            render_error(conn, 400, Util.parse_changeset(changeset))
+        end
+      false -> render_error(conn, 404, "Invalid confirmation code.")
+    end
+  end
+
   defp save_session(conn, token, user, params) do
     update_last_login_and_log(Application.get_env(:evercam_media, :run_spawn), conn, user, params)
     token = Ecto.build_assoc(user, :access_tokens, is_revoked: false, request: token)
