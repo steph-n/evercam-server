@@ -86,7 +86,8 @@ defmodule EvercamMedia.ArchiveCreator.ArchiveCreator do
   end
 
   defp create_mp4(id, path) do
-    Porcelain.shell("ffmpeg -r 6 -i #{path}%d.jpg -c:v h264_nvenc -r 6 -preset slow -bufsize 1000k -pix_fmt yuv420p -y #{path}#{id}.mp4", [err: :out]).out
+    evercam_logo = Path.join(Application.app_dir(:evercam_media), "priv/static/images/evercam-logo-white.png")
+    Porcelain.shell("ffmpeg -y -framerate 6 -i #{path}%d.jpg -i #{evercam_logo} -filter_complex '[1]scale=iw/2:-1[wm];[0][wm]overlay=x=main_w-overlay_w-10:y=main_h-overlay_h-10,format=yuv420p' -c:v h264_nvenc -preset slow -bufsize 1000k #{path}#{id}.mp4", [err: :out]).out
   end
 
   defp create_thumbnail(path, id, image, 0) do
