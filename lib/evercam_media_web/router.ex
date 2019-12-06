@@ -120,6 +120,8 @@ end
       get "/users/session/activities", UserController, :user_activities
       options "/users/session/activities", UserController, :nothing
       delete "/users/invalidate/cache", UserController, :invalidate_cache
+      post "/users/:id/confirm", UserController, :confirm_user
+      options "/users/:id/confirm", UserController, :nothing
 
       # Cameras route
       get "/cameras", CameraController, :index
