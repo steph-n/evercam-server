@@ -152,6 +152,8 @@ end
       options "/cameras/:id/archives/:archive_id", ArchiveController, :nothing
       get "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :play
       options "/cameras/:id/timelapse/:archive_id/play", TimelapseCreatorController, :nothing
+      delete "/cameras/:id/timelapse/:archive_id", TimelapseCreatorController, :delete_timelapse
+      options "/cameras/:id/timelapse/:archive_id", TimelapseCreatorController, :nothing
       post "/timelapse", TimelapseCreatorController, :create
       options "/timelapse", TimelapseCreatorController, :nothing
 

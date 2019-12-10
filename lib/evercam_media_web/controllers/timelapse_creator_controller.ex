@@ -149,6 +149,34 @@ defmodule EvercamMediaWeb.TimelapseCreatorController do
     end
   end
 
+  def delete_timelapse(conn, %{"id" => camera_exid, "archive_id" => timelapse_exid} = params) do
+    caller = conn.assigns[:current_user]
+    camera = Camera.get_full(camera_exid)
+
+    with :ok <- user_can_list(conn, caller, camera),
+         {:ok, timelapse} <- timelapse_exist(conn, timelapse_exid)
+    do
+      Timelapse.delete_by_exid(timelapse_exid)
+      spawn(fn -> delete_timelapses(camera.exid, timelapse_exid) end)
+      extra = %{
+        name: timelapse.title,
+        agent: get_user_agent(conn, params["agent"])
+      }
+      |> Map.merge(get_requester_Country(user_request_ip(conn, params["requester_ip"]), params["u_country"], params["u_country_code"]))
+      Util.log_activity(caller, camera, "archive deleted", extra)
+      json(conn, %{})
+    else
+      _ -> render_error(conn, 404, "Not Found.")
+    end
+  end
+
+  defp delete_timelapses(camera_exid, timelapse_exid) do
+    archive_path = "#{camera_exid}/#{timelapse_exid}/#{timelapse_exid}.mp4"
+    archive_thumbail_path = "#{camera_exid}/#{timelapse_exid}/thumb-video.jpg"
+    ExAws.S3.delete_multiple_objects("evercam-timelapse", ["#{archive_path}", "#{archive_thumbail_path}"])
+    |> ExAws.request!
+  end
+
   defp start_snapshot_extractor(config) do
     name = :"snapshot_extractor_#{config.id}"
     case Process.whereis(name) do
