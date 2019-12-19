@@ -137,7 +137,7 @@ defmodule EvercamMedia.UserMailer do
     new()
     |> from(@no_reply)
     |> to(user.email)
-    |> bcc(["marco@evercam.io", "vinnie@evercam.io", "erin@evercam.io"])
+    |> bcc(["marco@evercam.io", "vinnie@evercam.io", "erin@evercam.io", "warren@evercam.io", "mohsin@evercam.io"])
     |> add_attachment(thumbnail)
     |> subject("A new camera has been added to your account")
     |> render_body("camera_create_notification.html", %{user: user, camera: camera, thumbnail_available: !!thumbnail, year: @year})

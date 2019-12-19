@@ -643,16 +643,18 @@ defmodule EvercamMedia.Snapshot.Storage do
   end
 
   defp delete_directory(camera_exid, url) do
+    hackney = [pool: :seaweedfs_download_pool, recv_timeout: 30_000_000]
     Enum.each(0..23, fn(hour) ->
       hour_url = url <> String.pad_leading("#{hour}", 2, "0")
       spawn(fn ->
-        hackney = [pool: :seaweedfs_download_pool, recv_timeout: 30_000_000]
         case HTTPoison.delete("#{hour_url |> String.replace_suffix("/", "")}?recursive=true", [], hackney: hackney) do
           {:ok, %HTTPoison.Response{body: _}} -> Logger.info "[#{camera_exid}] [storage_delete] [#{hour_url}]"
           {:error, %HTTPoison.Error{reason: reason}} -> Logger.info "[#{camera_exid}] [storage_delete_error] [#{hour_url}] [#{reason}]"
         end
       end)
     end)
+    HTTPoison.delete("#{url |> String.replace_suffix("/", "")}?recursive=true", [], hackney: hackney)
+    Logger.info "[#{camera_exid}] [storage_delete] [#{url}]"
   end
 
   def expired?(camera_exid, cloud_recording, url, weed_url) do
