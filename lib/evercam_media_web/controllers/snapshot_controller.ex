@@ -257,9 +257,13 @@ defmodule EvercamMediaWeb.SnapshotController do
     case old_snapshot(camera, conn.assigns[:current_user]) do
       {200, response} ->
         data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
-
         conn
         |> json(%{data: data, status: "ok", created_at: get_snapshot_timestamp(version, response[:created_at], timezone)})
+      {404, response} ->
+        data = "data:image/jpeg;base64,#{Base.encode64(response[:image])}"
+        conn
+        |> put_status(404)
+        |> json(%{data: data})
       {code, response} ->
         conn
         |> put_status(code)

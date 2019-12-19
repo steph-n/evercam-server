@@ -445,7 +445,7 @@ defmodule EvercamMedia.Snapshot.Storage do
         end
       end)
     case snapshot do
-      {} -> {:error, "Oldest image does not exist."}
+      {} -> {:error, Util.unavailable}
       {:ok, image, datetime} ->
         spawn fn -> save_oldest_snapshot(camera_exid, image, datetime, server.url) end
         {:ok, image, datetime}
