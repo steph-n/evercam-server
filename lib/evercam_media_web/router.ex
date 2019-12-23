@@ -49,11 +49,6 @@ end
     plug EvercamMediaWeb.AuthenticationPlug
   end
 
-  pipeline :jwt_auth do
-    plug :accepts, ["json"]
-    plug EvercamMediaWeb.JwtAuthPlug
-  end
-
   pipeline :onvif do
     plug EvercamMediaWeb.ONVIFAccessPlug
   end
