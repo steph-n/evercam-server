@@ -71,7 +71,10 @@ defmodule EvercamMediaWeb.UserController do
   end
 
   def remote_logout(conn, params) do
-    spawn(fn -> AccessToken.delete_by_token(params["token"]) end)
+    spawn(fn ->
+      AccessToken.delete_by_token(params["token"])
+      User.invalidate_auth(params["token"])
+    end)
     json(conn, %{})
   end
 
