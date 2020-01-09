@@ -1,5 +1,4 @@
 defmodule EvercamMediaWeb.Auth do
-  alias EvercamMediaWeb.JwtAuthToken
 
   def validate("", "", ""), do: :valid
   def validate(api_id, api_key, token) do
