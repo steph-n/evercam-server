@@ -94,7 +94,7 @@ defmodule EvercamMedia.Mixfile do
       {:jsx, "~> 2.10.0", override: true},
       {:swoosh, "~> 0.24.1", override: true},
       {:phoenix_swoosh, "~> 0.2"},
-      {:nadia, "~> 0.5.0"},
+      {:nadia, "~> 0.6.0"},
       {:phoenix, "~> 1.4", override: true},
       {:phoenix_ecto, "~> 4.1.0"},
       {:phoenix_html, "~> 2.13.3"},
