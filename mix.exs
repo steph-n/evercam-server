@@ -109,7 +109,7 @@ defmodule EvercamMedia.Mixfile do
       {:cf, "~> 0.3.1", override: true},
       {:exvcr, "~> 0.11.0", only: :test},
       {:meck,  "~> 0.8.4", override: :true},
-      {:html_sanitize_ex, "~> 1.4.0"},
+      {:html_sanitize_ex, "~> 1.4.0", override: :true},
       {:gen_stage, "~> 0.14"},
       {:jason, "~> 1.1"},
       {:ex_aws, "~> 1.1.5"},
