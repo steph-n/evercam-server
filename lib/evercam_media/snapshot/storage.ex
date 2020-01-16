@@ -396,7 +396,7 @@ defmodule EvercamMedia.Snapshot.Storage do
   ##########################
   def get_or_save_oldest_snapshot(camera_exid, update_image \\ false) do
     [{_, _, _, _, [server]}] = :ets.match_object(:storage_servers, {:_, "RW", :_, :_, :_})
-
+    spawn(fn -> search_oldest_snapshot(update_image, camera_exid) end)
     "#{server.url}/#{camera_exid}/snapshots/"
     |> request_from_seaweedfs(server.type, server.attribute)
     |> Enum.map(fn dir ->
@@ -406,8 +406,6 @@ defmodule EvercamMedia.Snapshot.Storage do
     |> Enum.sort(&(&2 > &1))
     |> List.first
     |> load_oldest_snapshot(camera_exid, server)
-
-    spawn(fn -> search_oldest_snapshot(update_image, camera_exid) end)
   end
 
   defp search_oldest_snapshot(true, camera_exid) do
