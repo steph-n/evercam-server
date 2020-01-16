@@ -421,6 +421,7 @@ defmodule EvercamMedia.Snapshot.Storage do
 
   defp loop_server_to_find_snap([], _), do: :noop
   defp loop_server_to_find_snap([server | rest], camera_id) do
+    Logger.info "start searching on server: #{server.url}"
     case import_oldest_image(camera_id, server) do
       {:error, _} -> loop_server_to_find_snap(rest, camera_id)
       {:ok, image, datetime} -> Logger.info "Oldest snapshot updated. Server"
